@@ -1,0 +1,39 @@
+{
+  "name": "peki-senior-high-school---verification",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:dev": "vite build --mode development",
+    "lint": "tsc --noEmit",
+    "preview": "vite preview",
+    "sync:in": "git pull",
+    "sync:out": "git add -A && git commit -m \"chore: sync to GitHub\" --allow-empty && git push origin HEAD",
+    "setup:github": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-github-sync.ps1"
+  },
+  "dependencies": {
+    "@google/genai": "^1.25.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.575.0",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.13.1",
+    "recharts": "^3.7.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  },
+  "overrides": {
+    "glob": "^13.0.6",
+    "node-domexception": "^2.0.2"
+  }
+}

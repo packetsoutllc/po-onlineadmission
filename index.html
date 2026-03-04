@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Admission Portal</title>
+    
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'logip-primary': '#2563EB',
+                        'logip-primary-hover': '#1D4ED8',
+                        'logip-blue': '#3b82f6',
+                        'logip-blue-hover': '#2563eb',
+                        'logip-green': '#10b981',
+                        'logip-red': '#ef4444',
+                        'logip-orange': '#f97316',
+                        'logip-orange-btn': '#f59e0b',
+                        'logip-orange-btn-hover': '#d97706',
+                        'logip-accent': '#60A5FA',
+                        'logip-bg': '#f3f4f6',
+                        'logip-white': '#ffffff',
+                        'logip-border': '#d1d5db',
+                        'logip-text-header': '#1f2937',
+                        'logip-text-body': '#4b5563',
+                        'logip-text-subtle': '#6b7280',
+                        'logip-danger': '#dc2626',
+                        'logip-danger-bg': 'rgba(239, 68, 68, 0.1)',
+                        'logip-success': '#16a34a',
+                        'logip-success-bg': 'rgba(22, 163, 74, 0.1)',
+                        'logip-chat-bubble': '#f3f4f6',
+                        'logip-upgrade-bg': '#eff6ff',
+
+                        // Dark mode colors
+                        'background-dark': '#111015',
+                        'report-dark': '#1C1A27',
+                        'report-button': '#3A374C',
+                        'report-border': '#3A374C',
+                        'report-subtle': '#8C899D',
+                        'dark-surface': '#252331',
+                        'dark-bg': '#1a1823',
+                        'dark-border': '#373447',
+                        'dark-text-primary': '#f9fafb',
+                        'dark-text-secondary': '#9ca3af',
+                        'dark-accent-blue': '#60A5FA',
+
+                        'input-border-light': 'rgba(0,0,0,0.2)',
+                        'input-border-dark': 'rgba(255,255,255,0.15)',
+
+                        'info-bg-light': 'rgba(251, 191, 36, 0.1)',
+                        'info-border-light': '#f59e0b',
+                        'info-text-light': '#b45309',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+                        scaleIn: { '0%': { opacity: 0, transform: 'scale(0.95)' }, '100%': { opacity: 1, transform: 'scale(1)' } },
+                        slideInUp: { '0%': { opacity: 0, transform: 'translateY(10px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+                        borderRotate: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' }
+                        }
+                    },
+                    animation: {
+                        fadeIn: 'fadeIn 0.15s ease-in-out',
+                        scaleIn: 'scaleIn 0.3s ease-out forwards',
+                        slideInUp: 'slideInUp 0.4s ease-out forwards',
+                        'border-spin': 'borderRotate 4s linear infinite',
+                    },
+                },
+            },
+        };
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    
+    <style type="text/css">
+        /* Base color scheme for native elements */
+        html { color-scheme: light; font-size: 85%; }
+        html.dark { color-scheme: dark; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Custom Chat Scrollbar */
+        .custom-chat-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-chat-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-chat-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .dark .custom-chat-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .custom-chat-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .dark .custom-chat-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        
+        /* Native input fixes */
+        input[type="datetime-local"],
+        input[type="date"] {
+            color-scheme: inherit !important;
+        }
+
+        /* Ensure the native date picker icon is visible and themed correctly */
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(0.4) brightness(0.6); /* Clear dark gray in light mode */
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator,
+        input[type="date"]:hover::-webkit-calendar-picker-indicator {
+            opacity: 1;
+        }
+
+        .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+        .dark input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1) brightness(10) !important; /* Force pure white in dark mode */
+            opacity: 1 !important;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .printable-area { overflow: visible !important; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+<script>
+    // Polyfill process for browser environments to prevent crashes in dependency logic
+    window.process = window.process || { env: { NODE_ENV: 'development', API_KEY: '' } };
+</script>
+<!-- Import map removed for local dev: Vite bundles deps from node_modules. Restore for AI Studio / no-bundler hosting if needed. -->
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-logip-bg dark:bg-background-dark font-display text-logip-text-body dark:text-dark-text-secondary">
+    <div id="root">
+        <p style="padding: 24px; text-align: center; color: #6b7280;">Loading…</p>
+    </div>
+    <script>
+        document.documentElement.classList.remove('opacity-0');
+    </script>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

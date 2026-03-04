@@ -1,0 +1,3 @@
+#!/bin/sh
+# Auto-push to GitHub after every commit (2-way sync)
+exec git push origin HEAD

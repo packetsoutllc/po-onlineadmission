@@ -1,0 +1,9 @@
+{
+  "name": "Multi-School Admission System v1.3",
+  "description": "Multi-School Admission System\n",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "display-capture"
+  ]
+}
