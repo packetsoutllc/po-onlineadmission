@@ -212,7 +212,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
   const activeSchool = useMemo(() => {
       const school = schoolSlug ? schools.find(s => s.slug === schoolSlug) : schools.find(s => s.id === 's1');
       if (school) {
-          document.title = `${school.name} - Online Admission Portal`;
+          document.title = 'Packets Out - Online Admission System';
           updateFaviconForSchool(school);
       }
       return school;

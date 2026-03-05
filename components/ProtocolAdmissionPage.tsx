@@ -76,14 +76,14 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
         if (schoolSlug) {
             const bySlug = schools.find(s => s.slug === schoolSlug);
             if (bySlug) {
-                document.title = `${bySlug.name} - Online Admission Portal`;
+                document.title = 'Packets Out - Online Admission System';
                 updateFaviconForSchool(bySlug);
                 return bySlug;
             }
         }
         const fallback = schools.find(s => s.id === 's1') || null;
         if (fallback) {
-            document.title = `${fallback.name} - Online Admission Portal`;
+            document.title = 'Packets Out - Online Admission System';
             updateFaviconForSchool(fallback);
         }
         return fallback;

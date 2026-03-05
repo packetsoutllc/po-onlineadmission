@@ -250,7 +250,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
   const lastScrollTopRef = useRef(0);
   const scrollSpyRafRef = useRef<number | null>(null);
   const lastActiveSectionRef = useRef<Page | null>(null);
-  /** On mobile/tablet, skip scroll-spy until this time (ms) to avoid flicker after menu tap */
+  /** Skip scroll-spy until this time (ms) after menu click so programmatic scroll doesn't override selection (all viewports) */
   const skipScrollSpyUntilRef = useRef(0);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -274,8 +274,8 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
       const container = scrollContainerRef.current;
       if (!container) return;
 
-      // On mobile/tablet, ignore scroll-spy briefly after menu tap to prevent flicker during smooth scroll
-      if (window.innerWidth < 1024 && Date.now() < skipScrollSpyUntilRef.current) return;
+      // After menu click we scroll programmatically; ignore scroll-spy briefly so the selected item stays active (fixes "select twice" on desktop and flicker on mobile/tablet)
+      if (Date.now() < skipScrollSpyUntilRef.current) return;
 
       // Reference point: 25% from top of visible area (stable rule to avoid boundary flicker)
       const referenceY = st + container.clientHeight * 0.25;
@@ -358,7 +358,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
   const school = useMemo(() => {
       const s = schools.find(s => s.id === initialStudent.schoolId);
       if (s) {
-          document.title = `${s.name} - Online Admission Portal`;
+          document.title = 'Packets Out - Online Admission System';
           updateFaviconForSchool(s);
       }
       return s;
@@ -415,12 +415,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
       // Always update current page for consistent navigation and validation jumps
       setCurrentPage(pageId);
       lastActiveSectionRef.current = pageId;
+      // Skip scroll-spy briefly on all viewports so programmatic scroll doesn't override selection (fixes desktop "select twice" and mobile/tablet flicker)
+      skipScrollSpyUntilRef.current = Date.now() + 1000;
 
-      // On mobile/tablet, temporarily skip scroll-spy so smooth scroll doesn't flicker the nav
-      if (window.innerWidth < 1024) {
-        skipScrollSpyUntilRef.current = Date.now() + 1000;
-        setIsSidebarOpen(false);
-      }
+      if (window.innerWidth < 1024) setIsSidebarOpen(false);
       
       // Scroll immediately for a snappier navigation experience
       if (fieldId) {

@@ -1274,7 +1274,18 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                     </table>
                 </div>
                  <div className="p-4 border-t border-logip-border dark:border-dark-border flex flex-col sm:flex-row items-center justify-between no-print gap-4">
-                     <div className="flex items-center gap-4">{canDelete && selectedStudentIds.length > 0 && (<button onClick={() => handleOpenModal('bulkDelete')} className="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline animate-fadeIn">Delete Selected ({selectedStudentIds.length})</button>)}</div>
+                     <div className="flex items-center gap-4">
+                        {canDelete && selectedStudentIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenModal('bulkDelete')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all duration-200 animate-fadeIn"
+                          >
+                            <Icon name="delete" className="w-4 h-4 text-white" />
+                            Delete Selected ({selectedStudentIds.length})
+                          </button>
+                        )}
+                      </div>
                      <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={sortedStudents.length} itemsPerPage={itemsPerPage} onItemsPerPageChange={setItemsPerPage} startItem={startItem} endItem={endItem} />
                 </div>
             </div>

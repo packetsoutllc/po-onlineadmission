@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Online Admission Portal</title>
+    <meta name="theme-color" content="#2563EB" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Admission" />
+    <title>Packets Out - Online Admission System</title>
     
     <!-- Google Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -167,8 +171,7 @@
         @keyframes rootLogoPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.02); } }
         #root .root-loader-bar { animation: rootLogoBar 0.2s ease-out infinite; }
         #root .root-loader-bar.b1 { transform-origin: 8.5px 32px; }
-        #root .root-loader-bar.b2 { transform-origin: 16.5px 32px; animation-delay: 35ms; }
-        #root .root-loader-bar.b3 { transform-origin: 24.5px 32px; animation-delay: 70ms; }
+        #root .root-loader-bar.b2 { transform-origin: 20.5px 32px; animation-delay: 35ms; }
         #root .root-loader-pulse { animation: rootLogoPulse 0.25s ease-out infinite; transform-origin: 25px 12px; }
     </style>
 <script>
@@ -177,14 +180,15 @@
 </script>
 <!-- Import map removed for local dev: Vite bundles deps from node_modules. Restore for AI Studio / no-bundler hosting if needed. -->
 <link rel="stylesheet" href="/index.css">
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
 </head>
 <body class="bg-logip-bg dark:bg-background-dark font-display text-logip-text-body dark:text-dark-text-secondary">
     <div id="root">
         <div class="root-logo-loader" aria-hidden="true">
             <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="6" y="12" width="5" height="20" rx="2.5" fill="#4B5563" class="root-loader-bar b1"/>
-                <rect x="14" y="15" width="5" height="17" rx="2.5" fill="#4B5563" class="root-loader-bar b2"/>
-                <rect x="22" y="20" width="5" height="12" rx="2.5" fill="#4B5563" class="root-loader-bar b3"/>
+                <rect x="18" y="15" width="5" height="17" rx="2.5" fill="#4B5563" class="root-loader-bar b2"/>
                 <g class="root-loader-pulse">
                     <path d="M22 11L27 9L28 14L24 15.5L22 11Z" fill="none" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M22 11L25.5 14.5L28 14" fill="none" stroke="#0EA5E9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>

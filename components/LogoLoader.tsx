@@ -1,6 +1,6 @@
 import React from 'react';
 
-/** Packets Out logo loading animation: 3 gray bars + blue angular shape. Very fast, no lag. */
+/** Packets Out logo loading animation: 2 gray bars ("ii") + blue angular shape. Very fast, no lag. */
 export const LogoLoader: React.FC<{
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'light';
@@ -8,8 +8,8 @@ export const LogoLoader: React.FC<{
 }> = ({ size = 'md', variant = 'default', className = '' }) => {
   const sizeMap = { sm: 'w-6 h-5', md: 'w-10 h-8', lg: 'w-14 h-11' };
   const barW = 5;
-  const barXs = [6, 14, 22];
-  const barHeights = [20, 17, 12];
+  const barXs = [6, 18];
+  const barHeights = [20, 17];
   const barYs = barHeights.map((h) => 32 - h);
   const barFill = variant === 'light' ? '#e5e7eb' : '#4B5563';
   const strokeColor = variant === 'light' ? '#93c5fd' : '#0EA5E9';
@@ -22,7 +22,7 @@ export const LogoLoader: React.FC<{
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      {[0, 1, 2].map((i) => (
+      {[0, 1].map((i) => (
         <rect
           key={i}
           x={barXs[i]}

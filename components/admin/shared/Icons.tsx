@@ -112,9 +112,6 @@ const iconMap: Record<string, React.ReactNode> = {
     chevron_right: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 18l6-6-6-6"/></svg>
     ),
-    expand_less: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 15l-6-6-6 6"/></svg>
-    ),
     unfold_more: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 5v14"/><path d="M5 12h14"/></svg>
     ),
