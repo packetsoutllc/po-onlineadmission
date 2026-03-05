@@ -15,6 +15,7 @@ import SortableHeader from '../shared/SortableHeader';
 import { Admission } from './SettingsPage';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { AdminUser } from '../AdminLayout';
+import Icon from '../shared/Icons';
 
 // --- TYPE DEFINITIONS ---
 export interface Class {
@@ -313,7 +314,7 @@ const ClassesPage: React.FC<ClassesPageProps> = ({ selectedSchool, selectedAdmis
                  {/* Search & Filters */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 no-print">
                     <div className="relative w-full sm:w-auto sm:flex-1 max-sm-sm">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-logip-text-subtle dark:text-dark-text-secondary">search</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="search" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" /></span>
                         <input
                             type="text"
                             placeholder="Search classes..."

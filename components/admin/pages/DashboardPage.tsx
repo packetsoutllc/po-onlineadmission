@@ -1,13 +1,13 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { AdminStudent, StudentStatus } from './StudentsPage';
 import { School, Admission } from './SettingsPage';
-// FIX: Added missing Class type import from ClassesPage
 import { Class } from './ClassesPage';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { AdminUser } from '../AdminLayout';
 import { Role, INITIAL_ROLES } from './RolesAndPermissionsPage';
 import { getHouseColor, initialHouses, House } from '../shared/houseData';
 import DatePicker from '../../DatePicker';
+import Icon from '../shared/Icons';
 
 const StatCard: React.FC<{
     icon: string;
@@ -24,7 +24,7 @@ const StatCard: React.FC<{
         <div className="bg-logip-white dark:bg-report-dark p-4 rounded-xl border border-logip-border dark:border-report-border flex flex-col justify-between">
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-logip-border dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-xl text-logip-text-header dark:text-gray-200">{icon}</span>
+                    <Icon name={icon} className={`w-5 h-5 ${iconColorClass}`} />
                 </div>
                 <h3 className="text-sm text-gray-500 dark:text-gray-400">{title}</h3>
             </div>
@@ -108,7 +108,7 @@ const RecentAdmissionsTable: React.FC<{ students: AdminStudent[], onEditStudent:
                 <h3 className="text-xl font-bold text-logip-text-header dark:text-gray-100">Recent Applications</h3>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                      <div className="relative flex-grow sm:flex-grow-0">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-logip-text-subtle">search</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-logip-text-subtle pointer-events-none"><Icon name="search" className="w-5 h-5" /></span>
                         <input
                             type="text"
                             placeholder="Search name or index..."
@@ -177,7 +177,7 @@ const RecentAdmissionsTable: React.FC<{ students: AdminStudent[], onEditStudent:
                 </table>
                  {filteredStudents.length === 0 && (
                     <div className="text-center py-16 text-logip-text-subtle">
-                        <span className="material-symbols-outlined text-5xl">search_off</span>
+                        <Icon name="search_off" className="w-12 h-12 text-logip-text-subtle" />
                         <p className="mt-2 font-medium">No students found</p>
                     </div>
                 )}

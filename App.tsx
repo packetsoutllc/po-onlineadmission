@@ -244,9 +244,36 @@ function App() {
         className="absolute top-4 right-4 z-50 p-2 rounded-full text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm hover:bg-gray-200/50 dark:hover:bg-gray-800/50 transition-colors"
         aria-label="Toggle theme"
       >
-        <span className="material-symbols-outlined">
-          {isDarkMode ? 'light_mode' : 'dark_mode'}
-        </span>
+        <svg
+          className="w-5 h-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          {isDarkMode ? (
+            // Sun icon for light mode
+            <>
+              <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M12 3V5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M12 18.5V21" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M4.22 4.22L5.99 5.99" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M18.01 18.01L19.78 19.78" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M3 12H5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M18.5 12H21" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M4.22 19.78L5.99 18.01" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M18.01 5.99L19.78 4.22" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </>
+          ) : (
+            // Moon icon for dark mode
+            <path
+              d="M19.5 13.25C19.19 13.3 18.87 13.33 18.55 13.33C13.9 13.33 10.17 9.6 10.17 4.95C10.17 4.63 10.2 4.31 10.25 4C7.48 4.47 5.39 6.85 5.39 9.71C5.39 13.35 8.34 16.29 11.98 16.29C14.84 16.29 17.22 14.21 17.69 11.43C17.62 11.45 17.55 11.46 17.48 11.47L19.5 13.25Z"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+        </svg>
       </button>
 
       <div className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden bg-logip-bg dark:bg-background-dark">

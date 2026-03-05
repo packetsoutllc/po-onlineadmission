@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Icon from './Icons';
 
 export const AdminFormField: React.FC<{ label: string; children: React.ReactNode; className?: string }> = ({ label, children, className = '' }) => (
     <div className={className}>
@@ -58,9 +59,7 @@ export const AdminSelect: React.FC<AdminSelectProps> = ({ children, value, onCha
                 className={`flex w-full items-center justify-between px-2.5 py-1.5 bg-logip-white dark:bg-dark-bg border ${isOpen ? 'border-logip-primary ring-1 ring-logip-primary/20' : 'border-logip-border dark:border-report-border'} rounded-xl text-sm font-medium text-left text-logip-text-header dark:text-dark-text-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed gap-3 shadow-sm`}
             >
                 <span className="truncate">{displayValue}</span>
-                <span className={`material-symbols-outlined text-logip-text-subtle text-lg transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
-                    expand_more
-                </span>
+                <Icon name="expand_more" className={`w-5 h-5 text-logip-text-subtle transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isOpen && (

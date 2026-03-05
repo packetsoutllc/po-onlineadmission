@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { SortConfig } from '../../hooks/useSortableData';
+import Icon from './Icons';
 
 interface SortableHeaderProps {
   children: React.ReactNode;
@@ -33,9 +33,7 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
     <th className={`${className} ${baseClassName}`} onClick={() => requestSort(sortKey)}>
       <div className="flex items-center gap-1">
         {children}
-        <span className="material-symbols-outlined text-base no-print">
-          {getIcon()}
-        </span>
+        <Icon name={getIcon()} className="w-4 h-4 no-print" />
       </div>
     </th>
   );

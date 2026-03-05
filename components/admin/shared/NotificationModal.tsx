@@ -5,6 +5,7 @@ import { mockNotifications, Notification } from './notificationsData';
 import ConfirmationModal from './ConfirmationModal';
 import { useToast } from './ToastContext';
 import { School, Admission } from '../pages/SettingsPage';
+import Icon from './Icons';
 
 const NOTIFICATIONS_STORAGE_KEY = 'admin_notifications';
 
@@ -91,7 +92,7 @@ const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, onClose, 
                     {/* Header with Search and Filters */}
                     <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
                         <div className="relative w-full sm:w-auto sm:flex-1 max-sm-sm">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-logip-text-subtle dark:text-dark-text-secondary">search</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="search" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" /></span>
                             <input
                                 type="text"
                                 placeholder="Search notifications..."
@@ -144,7 +145,7 @@ const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, onClose, 
                         </ul>
                          {filteredNotifications.length === 0 && (
                             <div className="text-center py-20 text-logip-text-subtle">
-                                <span className="material-symbols-outlined text-5xl">notifications_off</span>
+                                <Icon name="notifications_off" className="w-12 h-12" />
                                 <p className="mt-2 font-medium">No notifications found</p>
                                 <p className="text-sm">Try adjusting your search or filters.</p>
                             </div>
@@ -154,7 +155,7 @@ const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, onClose, 
                     <div className="flex-shrink-0 pt-6 flex justify-between items-center">
                         <button onClick={() => setNotifToDelete('all')} className="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline">Clear All Notifications</button>
                         <button onClick={markAllAsRead} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-logip-text-body dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border">
-                            <span className="material-symbols-outlined text-base">drafts</span>
+                            <Icon name="drafts" className="w-4 h-4" />
                             Mark all as read
                         </button>
                     </div>

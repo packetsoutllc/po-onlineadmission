@@ -25,6 +25,7 @@ import { School, initialSchools, Admission, initialAdmissions } from './admin/pa
 import { initialClasses, Class } from './admin/pages/ClassesPage';
 import { allocateHouseForStudent, allocateDormForStudent } from './admin/shared/houseAllocationService';
 import LogoLoader from './LogoLoader';
+import Icon from './admin/shared/Icons';
 
 export type ApplicationStatus = 'not_submitted' | 'submitted';
 export type AppStatus = ApplicationStatus | StudentStatus;
@@ -139,7 +140,7 @@ const SchoolLogo: React.FC<{school?: School}> = ({ school }) => (
 const NavItem: React.FC<{ icon: string; label: string; active?: boolean; onClick?: () => void; color?: string; }> = ({ icon, label, active, onClick, color }) => (
   <button onClick={onClick} className={`w-full flex items-center justify-between py-2.5 px-3 rounded-lg text-sm text-black dark:text-report-subtle transition-colors text-left ${active ? 'bg-gray-100 dark:bg-gray-800 font-normal text-black dark:text-gray-100' : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'}`}>
     <div className="flex items-center gap-3">
-        <span className={`material-symbols-outlined ${color || 'text-logip-primary'}`} style={{ fontVariationSettings: "'wght' 300" }}>{icon}</span>
+        <Icon name={icon} className={`w-5 h-5 ${color || 'text-logip-primary'}`} />
         <span>{label}</span>
     </div>
   </button>
@@ -247,6 +248,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
   // Mobile Nav/Scroll Logic
   const [isScrollingUp, setIsScrollingUp] = useState(true);
   const lastScrollTopRef = useRef(0);
+  const scrollSpyRafRef = useRef<number | null>(null);
+  const lastActiveSectionRef = useRef<Page | null>(null);
+  /** On mobile/tablet, skip scroll-spy until this time (ms) to avoid flicker after menu tap */
+  const skipScrollSpyUntilRef = useRef(0);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -260,35 +265,43 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
     
     lastScrollTopRef.current = st <= 0 ? 0 : st;
 
-    // On mobile & tablet, smoothly update the active section / progress bar while scrolling
-    if (window.innerWidth < 1024) {
+    // Scroll-spy: update active section on desktop, tablet, and mobile (throttled via rAF to avoid flicker)
+    if (scrollSpyRafRef.current !== null) {
+      cancelAnimationFrame(scrollSpyRafRef.current);
+    }
+    scrollSpyRafRef.current = requestAnimationFrame(() => {
+      scrollSpyRafRef.current = null;
       const container = scrollContainerRef.current;
       if (!container) return;
 
-      const containerTop = container.offsetTop;
-      const viewportOffset = containerTop;
-      const referenceY = st + container.clientHeight * 0.2; // bias toward content near the top
+      // On mobile/tablet, ignore scroll-spy briefly after menu tap to prevent flicker during smooth scroll
+      if (window.innerWidth < 1024 && Date.now() < skipScrollSpyUntilRef.current) return;
 
-      let closestId: Page | null = null;
-      let closestDistance = Number.POSITIVE_INFINITY;
+      // Reference point: 25% from top of visible area (stable rule to avoid boundary flicker)
+      const referenceY = st + container.clientHeight * 0.25;
 
-      Object.entries(sectionRefs.current).forEach(([id, el]) => {
-        if (!el) return;
-        const sectionTop = el.offsetTop - viewportOffset;
-        const sectionHeight = el.offsetHeight || 1;
-        const sectionCenter = sectionTop + sectionHeight / 2;
-        const distance = Math.abs(sectionCenter - referenceY);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestId = id as Page;
-        }
-      });
+      // Sections are direct children; offsetTop is relative to scroll container content
+      const entries = Object.entries(sectionRefs.current)
+        .filter(([, el]) => el != null)
+        .map(([id, el]) => ({
+          id: id as Page,
+          top: (el as HTMLElement).offsetTop,
+        }))
+        .sort((a, b) => a.top - b.top);
 
-      if (closestId && closestId !== currentPage) {
-        setCurrentPage(closestId);
+      // Active section = last section whose top is at or above the reference line (stable, no flicker)
+      let activeId: Page | null = entries.length > 0 ? entries[0].id : null;
+      for (const { id, top } of entries) {
+        if (top <= referenceY) activeId = id;
+        else break;
       }
-    }
-  }, [currentPage]);
+
+      if (activeId && activeId !== lastActiveSectionRef.current) {
+        lastActiveSectionRef.current = activeId;
+        setCurrentPage(activeId);
+      }
+    });
+  }, []);
 
   const [isConfirmUnlockModalOpen, setIsConfirmUnlockModalOpen] = useState(false);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
@@ -401,6 +414,13 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
       
       // Always update current page for consistent navigation and validation jumps
       setCurrentPage(pageId);
+      lastActiveSectionRef.current = pageId;
+
+      // On mobile/tablet, temporarily skip scroll-spy so smooth scroll doesn't flicker the nav
+      if (window.innerWidth < 1024) {
+        skipScrollSpyUntilRef.current = Date.now() + 1000;
+        setIsSidebarOpen(false);
+      }
       
       // Scroll immediately for a snappier navigation experience
       if (fieldId) {
@@ -415,9 +435,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
           }
       } else {
           sectionRefs.current[pageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      
-      if (window.innerWidth < 1024) setIsSidebarOpen(false); 
+      } 
   };
 
   useEffect(() => {
@@ -952,7 +970,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
   const logoutAndBranding = (isSidebar: boolean = false) => (
     <div className={`mt-auto w-full ${isSidebar ? 'px-3' : ''}`}>
         <button onClick={() => onReturn()} className={`flex items-center gap-3 py-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50 text-sm text-black dark:text-report-subtle w-full text-left ${isSidebar ? 'pl-0 pr-3' : 'px-3'}`}>
-            <span className="material-symbols-outlined flex-shrink-0">power_settings_new</span>
+            <Icon name="power_settings_new" className="w-5 h-5 flex-shrink-0" />
             <span>{isAdminEditMode ? 'Close Editor' : 'Log out'}</span>
         </button>
         <p className={`text-[10px] text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1 text-left justify-start ${isSidebar ? 'pl-0' : 'justify-center'}`}>
@@ -975,7 +993,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
       <>
           <Modal isOpen={isConfirmUnlockModalOpen} onClose={() => setIsConfirmUnlockModalOpen(false)}>
               <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-5"><span className="material-symbols-outlined text-4xl text-yellow-500">lock_open</span></div>
+                  <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-5"><Icon name="lock_open" className="w-10 h-10 text-yellow-500" /></div>
                   <h2 id="modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">Unlock Application?</h2>
                   <p className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed text-center">Are you sure you want to unlock your application for editing? You will need to re-submit once changes are made.</p>
                   <div className="mt-8 w-full flex items-center gap-4"><button onClick={() => setIsConfirmUnlockModalOpen(false)} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">Cancel</button><button onClick={handleProceedToOtp} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md">Proceed</button></div>
@@ -983,7 +1001,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
           </Modal>
           <Modal isOpen={isOtpModalOpen} onClose={() => setIsOtpModalOpen(false)} size="md">
               <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-5"><span className="material-symbols-outlined text-4xl text-blue-500">sms</span></div>
+                  <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-5"><Icon name="sms" className="w-10 h-10 text-blue-500" /></div>
                   <h2 id="modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">Verification Required</h2>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 text-center">Enter the 6-digit code sent to your phone number ending in ...{liveStudent.phoneNumber?.slice(-4)}</p>
                   <div className="mt-8 flex justify-center gap-2 sm:gap-3">
@@ -998,7 +1016,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
           </Modal>
           <Modal isOpen={isLimitModalOpen} onClose={() => setIsLimitModalOpen(false)}>
               <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-5"><span className="material-symbols-outlined text-4xl text-red-500">history_toggle_off</span></div>
+                  <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-5"><Icon name="history_toggle_off" className="w-10 h-10 text-red-500" /></div>
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Daily Limit Reached</h2>
                   <p className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed text-center">You have exhausted your daily limit. Call the School on <a href={`tel:${contactInfo.school}`} className="font-bold underline text-logip-primary">{contactInfo.school}</a> or call the IT Department on <a href={`tel:${contactInfo.it}`} className="font-bold underline text-logip-primary">{contactInfo.it}</a>.</p>
                   <button onClick={() => setIsLimitModalOpen(false)} className="mt-8 w-full py-2 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover shadow-md transition-all">Close</button>
@@ -1039,7 +1057,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                             onClick={(e) => { e.stopPropagation(); handleRequestUnlock(); }} 
                             className="pointer-events-auto w-full max-w-md py-3 text-sm font-semibold rounded-2xl text-white bg-blue-600 shadow-2xl transform active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
                         >
-                            <span className="material-symbols-outlined text-lg">edit_note</span>
+                            <Icon name="edit_note" className="w-5 h-5" />
                             Edit Application
                         </button>
                     </div>
@@ -1065,7 +1083,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                                         isTrulyActive ? 'bg-gray-100/90 dark:bg-gray-800/80' : 'bg-transparent'
                                     }`}
                                 >
-                                    <span className={`material-symbols-outlined text-2xl transition-colors duration-200 ${item.color} ${isTrulyActive ? 'opacity-100' : 'opacity-70'}`}>{item.icon}</span>
+                                    <Icon name={item.icon} className={`w-6 h-6 transition-colors duration-200 ${item.color} ${isTrulyActive ? 'opacity-100' : 'opacity-70'}`} />
                                     <span className={`text-[9px] mt-1 transition-colors duration-200 uppercase tracking-tight font-medium ${isTrulyActive ? item.color : 'text-gray-400 dark:text-gray-500'}`}>{item.label}</span>
                                 </button>
                             );
@@ -1099,13 +1117,13 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                     <header className="lg:hidden flex-shrink-0 flex flex-col gap-4 px-4 py-3 sm:px-6 border-b border-logip-border dark:border-report-border bg-logip-white dark:bg-report-dark">
                         <div className="flex items-center justify-between w-full gap-4 min-w-0">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <button onClick={() => setIsSidebarOpen(true)} className="p-1.5 -ml-1 rounded-md text-black dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0" aria-label="Open menu"><span className="material-symbols-outlined text-xl">menu</span></button>
+                                <button onClick={() => setIsSidebarOpen(true)} className="p-1.5 -ml-1 rounded-md text-black dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0" aria-label="Open menu"><Icon name="menu" className="w-5 h-5" /></button>
                                 <div className="min-w-0">
                                     <h1 className="text-xl font-bold text-black dark:text-gray-100 truncate">{pageTitles.admission_docs.title}</h1>
                                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{pageTitles.admission_docs.subtitle}</p>
                                 </div>
                             </div>
-                            <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm flex-shrink-0" aria-label="Toggle theme"><span className="material-symbols-outlined text-xl">{isDarkMode ? 'light_mode' : 'dark_mode'}</span></button>
+                            <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm flex-shrink-0" aria-label="Toggle theme"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
                         </div>
                         <div className="flex items-center justify-between w-full gap-4">
                             <div className="min-w-0 flex-1">
@@ -1125,7 +1143,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                                 <SchoolLogo school={school} />
                                 {admission && (<><span className="font-light text-2xl text-gray-300 dark:text-gray-600">|</span><h1 className="text-lg text-gray-500 dark:text-gray-400 truncate">{admission.title}</h1></>)}
                             </div>
-                            <button onClick={toggleTheme} className="p-2 rounded-lg border border-logip-border dark:border-report-border text-logip-text-body dark:text-gray-400 bg-logip-white/50 dark:bg-report-button hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm"><span className="material-symbols-outlined text-xl">{isDarkMode ? 'light_mode' : 'dark_mode'}</span></button>
+                            <button onClick={toggleTheme} className="p-2 rounded-lg border border-logip-border dark:border-report-border text-logip-text-body dark:text-gray-400 bg-logip-white/50 dark:bg-report-button hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
                         </div>
                         <div className="flex items-center justify-between gap-4">
                             <div className="text-right">
@@ -1173,10 +1191,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                 </main>
                 <MobileBottomNav />
                 {aiSettings?.enableAiChat && (
-                    <button onClick={() => setIsChatModalOpen(true)} className="xl:hidden fixed bottom-28 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-logip-primary to-blue-600 text-white shadow-2xl flex items-center justify-center z-[50] transform hover:scale-110 active:scale-95 transition-all animate-fadeIn"><span className="material-symbols-outlined text-2xl">support_agent</span></button>
+                    <button onClick={() => setIsChatModalOpen(true)} className="xl:hidden fixed bottom-28 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-logip-primary to-blue-600 text-white shadow-2xl flex items-center justify-center z-[50] transform hover:scale-110 active:scale-95 transition-all animate-fadeIn"><Icon name="support_agent" className="w-6 h-6" /></button>
                 )}
                 {CommonModals}
-                {toastMessage && (<div className={`fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full dark:shadow-lg animate-fadeIn flex items-center gap-2 ${toastMessage.type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'}`}>{toastMessage.type === 'error' && <span className="material-symbols-outlined">error</span>}{toastMessage.message}</div>)}
+                {toastMessage && (<div className={`fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full dark:shadow-lg animate-fadeIn flex items-center gap-2 ${toastMessage.type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'}`}>{toastMessage.type === 'error' && <Icon name="error" className="w-5 h-5" />}{toastMessage.message}</div>)}
             </div>
         );
     }
@@ -1202,13 +1220,13 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
         <header className="lg:hidden flex-shrink-0 flex flex-col gap-4 px-4 py-3 sm:px-6 border-b border-logip-border dark:border-report-border bg-logip-white dark:bg-report-dark">
             <div className="flex items-center justify-between w-full gap-4 min-w-0">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-1.5 -ml-1 rounded-md text-black dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0" aria-label="Open menu"><span className="material-symbols-outlined text-xl">menu</span></button>
+                    <button onClick={() => setIsSidebarOpen(true)} className="p-1.5 -ml-1 rounded-md text-black dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0" aria-label="Open menu"><Icon name="menu" className="w-5 h-5" /></button>
                     <div className="min-w-0">
                         <h1 className="text-xl font-bold text-black dark:text-gray-100 truncate">{pageTitles[currentPage]?.title || 'Dashboard'}</h1>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{pageTitles[currentPage]?.subtitle || 'Welcome'}</p>
                     </div>
                 </div>
-                <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm flex-shrink-0" aria-label="Toggle theme"><span className="material-symbols-outlined text-xl">{isDarkMode ? 'light_mode' : 'dark_mode'}</span></button>
+                <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm flex-shrink-0" aria-label="Toggle theme"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
             </div>
             <div className="flex items-center justify-between w-full gap-4">
                 <div className="min-w-0 flex-1">
@@ -1456,10 +1474,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
           )}
       </aside>
       {aiSettings?.enableAiChat && (
-        <button onClick={() => setIsChatModalOpen(true)} className="xl:hidden fixed bottom-28 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-logip-primary to-blue-600 text-white shadow-2xl flex items-center justify-center z-[50] transform hover:scale-110 active:scale-95 transition-all animate-fadeIn"><span className="material-symbols-outlined text-2xl">support_agent</span></button>
+        <button onClick={() => setIsChatModalOpen(true)} className="xl:hidden fixed bottom-28 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-logip-primary to-blue-600 text-white shadow-2xl flex items-center justify-center z-[50] transform hover:scale-110 active:scale-95 transition-all animate-fadeIn"><Icon name="support_agent" className="w-6 h-6" /></button>
       )}
       {CommonModals}
-      {toastMessage && (<div className={`fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full dark:shadow-lg animate-fadeIn flex items-center gap-2 ${toastMessage.type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'}`}>{toastMessage.type === 'error' && <span className="material-symbols-outlined">error</span>}{toastMessage.message}</div>)}
+      {toastMessage && (<div className={`fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full dark:shadow-lg animate-fadeIn flex items-center gap-2 ${toastMessage.type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'}`}>{toastMessage.type === 'error' && <Icon name="error" className="w-5 h-5" />}{toastMessage.message}</div>)}
     </div>
   );
 };

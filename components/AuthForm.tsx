@@ -9,6 +9,7 @@ import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
 import VideoPreviewModal from './admin/shared/VideoPreviewModal';
 import LogoLoader from './LogoLoader';
+import Icon from './admin/shared/Icons';
 
 // Default settings
 const defaultAdmissionSettings: AdmissionSettings = {
@@ -606,7 +607,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
             </div>
             <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600 dark:text-gray-300 max-w-xl">
               <div className="flex items-start gap-2.5 p-0">
-                <span className="material-symbols-outlined text-lg flex-shrink-0 mt-0.5 text-emerald-500 rounded-full bg-emerald-50 dark:bg-emerald-500/20 p-0.5">verified_user</span>
+                <Icon name="verified_user" className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-500 rounded-full bg-emerald-50 dark:bg-emerald-500/20 p-0.5" />
                 <div className="min-w-0">
                   <p className="font-semibold text-gray-900 dark:text-gray-100">Placed Students Verification</p>
                   <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
@@ -615,7 +616,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                 </div>
               </div>
               <div className="flex items-start gap-2.5 p-0">
-                <span className="material-symbols-outlined text-lg flex-shrink-0 mt-0.5 text-sky-500 rounded-full bg-sky-50 dark:bg-sky-500/20 p-0.5">lock</span>
+                <Icon name="lock" className="w-5 h-5 flex-shrink-0 mt-0.5 text-sky-500 rounded-full bg-sky-50 dark:bg-sky-500/20 p-0.5" />
                 <div className="min-w-0">
                   <p className="font-semibold text-gray-900 dark:text-gray-100">Applicant Login Credentials</p>
                   <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
@@ -688,7 +689,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                   </label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                      {icon !== '#' && <span className="material-symbols-outlined text-xl">{icon}</span>}
+                      {icon !== '#' && <Icon name={icon} className="w-5 h-5" />}
                     </span>
                     <input
                       id="auth-input"
@@ -708,7 +709,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                 {displayedHint && (
                   <div className="mt-3">
                     <div className="bg-info-bg-light/90 dark:bg-yellow-950/50 border border-info-border-light/80 dark:border-yellow-500/50 rounded-lg px-4 py-3 flex items-start space-x-3 overflow-x-auto no-scrollbar">
-                      <span className="material-symbols-outlined text-xl mt-0.5 flex-shrink-0 text-red-500">info</span>
+                      <Icon name="info" className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
                       <div className="min-w-0 flex-1">
                         {displayedHint.split('\n').map((line, i) => {
                           const parts = line.split(/(Example:.*)/);
@@ -760,7 +761,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                   type="button"
                   className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-base">headphones</span>
+                  <Icon name="headphones" className="w-4 h-4" />
                   Protocol Admission Request
                 </button>
               </div>
@@ -813,7 +814,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         <div className="flex flex-col items-center">
             {/* Top Warning Icon */}
             <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-5">
-                <span className="material-symbols-outlined text-4xl text-yellow-500">warning</span>
+                <Icon name="warning" className="w-10 h-10 text-yellow-500" />
             </div>
             
             {/* Title & Instruction */}
@@ -870,7 +871,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
 
       <Modal isOpen={isErrorModalOpen} onClose={closeErrorModal}>
         <div className="flex flex-col items-center">
-            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-5"><span className="material-symbols-outlined text-4xl text-red-500">report_problem</span></div>
+            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-5"><Icon name="report_problem" className="w-10 h-10 text-red-500" /></div>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{errorTitle}</h2>
             <div className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed">{errorMessage}</div>
             <button onClick={closeErrorModal} className="mt-8 w-full py-2 px-4 text-base font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700">{errorButtonText}</button>

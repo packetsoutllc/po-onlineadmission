@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from './Icons';
 
 const StatCard: React.FC<{
     icon: string;
@@ -14,7 +15,7 @@ const StatCard: React.FC<{
     return (
         <div className="bg-logip-white dark:bg-dark-surface p-4 rounded-xl border border-logip-border dark:border-dark-border flex items-center gap-4">
             <div className={`w-12 h-12 rounded-full ${iconBgClass} flex items-center justify-center flex-shrink-0`}>
-                <span className={`material-symbols-outlined text-2xl ${iconColorClass}`}>{icon}</span>
+                <Icon name={icon} className={`w-6 h-6 ${iconColorClass}`} />
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm text-logip-text-body dark:text-gray-400 truncate">{title}</p>

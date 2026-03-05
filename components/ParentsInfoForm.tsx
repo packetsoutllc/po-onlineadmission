@@ -6,6 +6,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 import { FormSettings, FormFieldConfig } from './admin/pages/ApplicationDashboardSettings';
 import DynamicFormField from './DynamicFormField';
+import Icon from './admin/shared/Icons';
 
 // FIX: Exporting ParentsInfoFormData to be used in other components.
 export interface ParentsInfoFormData {
@@ -347,7 +348,7 @@ const ParentsInfoForm: React.FC<ParentsInfoFormProps> = ({ student, showToast, i
                             type="button"
                             className="inline-flex items-center gap-2 px-4 py-2 text-base font-semibold rounded-lg text-logip-primary bg-logip-primary/10 hover:bg-logip-primary/20 transition-colors"
                         >
-                            <span className="material-symbols-outlined text-lg">add</span>
+                            <Icon name="add" className="w-5 h-5" />
                             Add Secondary Guardian
                         </button>
                     </div>
@@ -363,7 +364,7 @@ const ParentsInfoForm: React.FC<ParentsInfoFormProps> = ({ student, showToast, i
                                     type="button"
                                     className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-semibold rounded-lg text-red-600 dark:text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"
                                 >
-                                    <span className="material-symbols-outlined text-base">delete</span>
+                                    <Icon name="delete" className="w-4 h-4" />
                                     Remove
                                 </button>
                              )}

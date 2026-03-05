@@ -5,6 +5,7 @@ import { useToast } from '../shared/ToastContext';
 import { AdminInput, AdminSelect, AdminCheckbox } from '../shared/forms';
 import { AdminStudent, initialAdminStudents } from './StudentsPage';
 import { ToggleSwitch } from './SecuritySettingsTab';
+import Icon from '../shared/Icons';
 
 interface TabProps {
     selectedSchool?: School | null;
@@ -346,7 +347,7 @@ const FinancialsSettingsTab: React.FC<TabProps> = ({ selectedSchool, selectedAdm
                             </div>
                             
                             <div className="relative">
-                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">person_search</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="person_search" className="w-5 h-5 text-gray-400" /></span>
                                 <AdminInput 
                                     value={studentSearch} 
                                     onChange={(e) => setStudentSearch(e.target.value)} 

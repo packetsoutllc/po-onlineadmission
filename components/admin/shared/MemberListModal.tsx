@@ -5,6 +5,7 @@ import { School } from '../pages/SettingsPage';
 import { printTable } from './PrintService';
 import ImagePreviewModal from '../../shared/ImagePreviewModal';
 import { initialClasses } from '../pages/ClassesPage';
+import Icon from './Icons';
 
 interface MemberListModalProps {
     isOpen: boolean;
@@ -163,7 +164,7 @@ const MemberListModal: React.FC<MemberListModalProps> = ({ isOpen, onClose, titl
                 {/* Controls */}
                 <div className="p-4 border-b border-logip-border dark:border-dark-border flex items-center justify-between">
                      <div className="relative w-full sm:w-auto sm:flex-1 max-w-sm">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-logip-text-subtle dark:text-dark-text-secondary">search</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="search" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" /></span>
                         <input
                             type="text"
                             placeholder="Search members..."

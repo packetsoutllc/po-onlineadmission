@@ -5,6 +5,7 @@ import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useToast } from '../shared/ToastContext';
 import { AdminInput, AdminSelect } from '../shared/forms';
 import { AdminStudent, initialAdminStudents } from './StudentsPage';
+import Icon from '../shared/Icons';
 
 interface TabProps {
     selectedSchool?: School | null;
@@ -250,7 +251,7 @@ const SmsSettingsTab: React.FC<TabProps> = ({ selectedSchool, selectedAdmission 
                             <div>
                                 <h4 className="text-[11px] font-bold text-logip-text-subtle dark:text-gray-500 mb-2 uppercase tracking-wider">Search Applicants</h4>
                                 <div className="relative">
-                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">person_search</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="person_search" className="w-5 h-5 text-gray-400" /></span>
                                     <AdminInput 
                                         value={studentSearch} 
                                         onChange={(e) => setStudentSearch(e.target.value)} 

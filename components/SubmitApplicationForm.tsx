@@ -3,6 +3,7 @@ import { Student } from './StudentDetails';
 import Modal from './Modal';
 import { StudentStatus } from './admin/pages/StudentsPage';
 import { FormSettings, FormFieldConfig } from './admin/pages/ApplicationDashboardSettings';
+import Icon from './admin/shared/Icons';
 
 interface DisplayStatus {
     visible: boolean;
@@ -74,7 +75,7 @@ const SummaryItem: React.FC<{ label: string; value: React.ReactNode }> = ({ labe
 
 const DocumentStatus: React.FC<{ name: string }> = ({ name }) => (
     <div className="flex items-center gap-1.5 text-logip-green">
-        <span className="material-symbols-outlined text-base">check_circle</span>
+        <Icon name="check_circle" className="w-4 h-4" />
         <span className="font-medium text-sm">Uploaded</span>
     </div>
 );
@@ -389,9 +390,7 @@ const SubmitApplicationForm: React.FC<SubmitApplicationFormProps> = ({
             <Modal isOpen={isConfirmModalOpen} onClose={closeConfirmModal}>
                 <div className="flex flex-col items-center">
                     <div className="w-16 h-16 rounded-full bg-[#FEF9C3] dark:bg-yellow-500/10 flex items-center justify-center mb-5">
-                        <span className="material-symbols-outlined text-4xl text-[#EAB308]">
-                            warning
-                        </span>
+                        <Icon name="warning" className="w-10 h-10 text-[#EAB308]" />
                     </div>
                     <h2 id="modal-title" className="text-2xl font-bold text-[#111827] dark:text-gray-100">
                         Confirm Submission
@@ -421,9 +420,7 @@ const SubmitApplicationForm: React.FC<SubmitApplicationFormProps> = ({
             <Modal isOpen={isSuccessModalOpen} onClose={closeSuccessModal}>
                 <div className="flex flex-col items-center">
                     <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-5">
-                        <span className="material-symbols-outlined text-4xl text-green-500">
-                            task_alt
-                        </span>
+                        <Icon name="task_alt" className="w-10 h-10 text-green-500" />
                     </div>
                     <h2 id="modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                         Application Submitted!

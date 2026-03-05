@@ -7,6 +7,7 @@ import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
 import VideoPreviewModal from './admin/shared/VideoPreviewModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import LogoLoader from './LogoLoader';
+import Icon from './admin/shared/Icons';
 
 interface ApplicantLoginFormProps {
   student: Student;
@@ -146,7 +147,7 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
                         className="absolute top-0 right-0 p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-gray-800"
                         aria-label="Close"
                     >
-                        <span className="material-symbols-outlined text-lg">close</span>
+                        <Icon name="close" className="w-5 h-5" />
                     </button>
                 )}
                 <div className="text-center">
@@ -194,12 +195,12 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
                     />
                   </div>
                 </div>
-                <div className="flex items-center justify-between mb-6"><label htmlFor="remember-credentials" className="flex items-center cursor-pointer select-none"><input id="remember-credentials" name="remember-credentials" type="checkbox" checked={retrieveCredentials} onChange={e => setRetrieveCredentials(e.target.checked)} className="sr-only peer" /><div className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-colors ${retrieveCredentials ? 'bg-indigo-600 border-indigo-600' : 'border-gray-400 dark:border-gray-500'}`}>{retrieveCredentials && <span className="material-symbols-outlined text-white text-xs">check</span>}</div><span className="ml-2 block text-sm text-gray-900 dark:text-gray-300">Retrieve my credentials</span></label></div>
-                {error && <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-200 p-4 rounded-r mb-6 flex items-start space-x-3 animate-fadeIn"><span className="material-symbols-outlined text-xl mt-0.5">error</span><p>{error}</p></div>}
-                {infoMessage && <div className="bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-700 dark:text-blue-200 p-4 rounded-r mb-6 flex items-start space-x-3 animate-fadeIn"><span className="material-symbols-outlined text-xl mt-0.5">info</span><p>{infoMessage}</p></div>}
+                <div className="flex items-center justify-between mb-6"><label htmlFor="remember-credentials" className="flex items-center cursor-pointer select-none"><input id="remember-credentials" name="remember-credentials" type="checkbox" checked={retrieveCredentials} onChange={e => setRetrieveCredentials(e.target.checked)} className="sr-only peer" /><div className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-colors ${retrieveCredentials ? 'bg-indigo-600 border-indigo-600' : 'border-gray-400 dark:border-gray-500'}`}>{retrieveCredentials && <Icon name="check" className="w-3 h-3 text-white" />}</div><span className="ml-2 block text-sm text-gray-900 dark:text-gray-300">Retrieve my credentials</span></label></div>
+                {error && <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-200 p-4 rounded-r mb-6 flex items-start space-x-3 animate-fadeIn"><Icon name="error" className="w-5 h-5 mt-0.5" /><p>{error}</p></div>}
+                {infoMessage && <div className="bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-700 dark:text-blue-200 p-4 rounded-r mb-6 flex items-start space-x-3 animate-fadeIn"><Icon name="info" className="w-5 h-5 mt-0.5" /><p>{infoMessage}</p></div>}
                 <div><button type="submit" disabled={isLoading} className="w-full flex justify-center items-center gap-2 py-2 px-4 text-lg font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transform transition-all duration-300 disabled:opacity-60">{isLoading ? (<><LogoLoader size="sm" variant="light" /> Authenticating...</>) : 'Login to Continue'}</button></div>
             </form>
-            <Modal isOpen={isLimitModalOpen} onClose={() => setIsLimitModalOpen(false)}><div className="flex flex-col items-center"><div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-5"><span className="material-symbols-outlined text-4xl text-red-500">history_toggle_off</span></div><h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Daily Limit Reached</h2><p className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed text-center">You have exhausted your daily retrieval limit. Call the School on <a href={`tel:${contactInfo.school}`} className="font-bold underline text-logip-primary">{contactInfo.school}</a> or call the IT Department on <a href={`tel:${contactInfo.it}`} className="font-bold underline text-logip-primary">{contactInfo.it}</a>.</p><button onClick={() => setIsLimitModalOpen(false)} className="mt-8 w-full py-2 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover shadow-md transition-all">Close</button></div></Modal>
+            <Modal isOpen={isLimitModalOpen} onClose={() => setIsLimitModalOpen(false)}><div className="flex flex-col items-center"><div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-5"><Icon name="history_toggle_off" className="w-10 h-10 text-red-500" /></div><h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Daily Limit Reached</h2><p className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed text-center">You have exhausted your daily retrieval limit. Call the School on <a href={`tel:${contactInfo.school}`} className="font-bold underline text-logip-primary">{contactInfo.school}</a> or call the IT Department on <a href={`tel:${contactInfo.it}`} className="font-bold underline text-logip-primary">{contactInfo.it}</a>.</p><button onClick={() => setIsLimitModalOpen(false)} className="mt-8 w-full py-2 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover shadow-md transition-all">Close</button></div></Modal>
         </div>
     </>
   );

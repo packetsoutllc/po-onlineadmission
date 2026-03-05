@@ -6,6 +6,7 @@ import { Role } from './pages/RolesAndPermissionsPage';
 import { Notification } from './shared/notificationsData';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import NotificationModal from './shared/NotificationModal';
+import Icon from './shared/Icons';
 
 interface HeaderProps {
     adminUser: AdminUser;
@@ -57,7 +58,7 @@ const LiveClock: React.FC = () => {
 
     return (
         <div className="hidden md:flex flex-shrink-0 items-center gap-3 bg-logip-white dark:bg-report-dark border border-logip-border dark:border-report-border px-3 py-1.5 rounded-lg">
-            <span className="material-symbols-outlined text-xl text-logip-text-subtle">calendar_today</span>
+            <Icon name="calendar_today" className="w-5 h-5 text-logip-text-subtle" />
             <div className="text-sm text-logip-text-header dark:text-gray-100 whitespace-nowrap">
                 <strong className="font-bold">{datePart}</strong>
                 <span className="ml-2 font-medium text-logip-text-body dark:text-gray-400">{timePart}</span>
@@ -124,7 +125,7 @@ const NotificationDropdown: React.FC<{
                 className="relative w-9 h-9 flex items-center justify-center rounded-lg border border-logip-border dark:border-report-border text-logip-text-body dark:text-gray-400 hover:bg-logip-border/60 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Notifications"
             >
-                <span className="material-symbols-outlined text-xl">notifications</span>
+                <Icon name="notifications" className="w-5 h-5" />
                  {unreadCount > 0 && (
                     <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -174,18 +175,18 @@ const ProfileDropdown: React.FC<{
                     <span className="text-sm font-semibold text-logip-text-header dark:text-gray-100">{adminUser.name}</span>
                     <span className="text-xs text-logip-text-subtle">{userRole?.name || 'User'}</span>
                 </div>
-                <span className="material-symbols-outlined text-xl text-logip-text-subtle hidden lg:block">{isOpen ? 'expand_less' : 'expand_more'}</span>
+                <Icon name={isOpen ? 'expand_less' : 'expand_more'} className="w-5 h-5 text-logip-text-subtle hidden lg:block" />
             </button>
 
             {isOpen && (
                 <div className="absolute right-0 top-full mt-2 w-56 bg-logip-white dark:bg-dark-surface border border-logip-border dark:border-dark-border rounded-lg dark:shadow-lg z-20 animate-scaleIn origin-top-right">
                     <div className="p-2">
                         <button onClick={() => handleNavigate('Settings')} className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg text-base text-logip-text-body dark:text-report-subtle hover:bg-logip-border/60 dark:hover:bg-gray-800/50 transition-colors">
-                            <span className="material-symbols-outlined text-xl">settings</span> Settings
+                            <Icon name="settings" className="w-5 h-5" /> Settings
                         </button>
                         <div className="my-1 border-t border-logip-border dark:border-report-border"></div>
                         <button onClick={onExitAdmin} className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg text-base text-logip-danger hover:bg-logip-danger-bg transition-colors">
-                            <span className="material-symbols-outlined text-xl">logout</span> Logout
+                            <Icon name="logout" className="w-5 h-5" /> Logout
                         </button>
                     </div>
                 </div>
@@ -218,14 +219,14 @@ const Header: React.FC<HeaderProps> = ({
             <header className={`flex justify-between items-center p-3 flex-shrink-0 border-b border-logip-border dark:border-report-border bg-logip-white dark:bg-report-dark ${className}`}>
                 <div className="flex items-center gap-3 min-w-0">
                      <button onClick={onMenuClick} className="p-2 rounded-full lg:hidden text-logip-text-body dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
-                        <span className="material-symbols-outlined">menu</span>
+                        <Icon name="menu" className="w-5 h-5" />
                     </button>
                     {selectedSchool && (
                         <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/40">
                             {selectedSchool.logo ? (
                                 <img src={selectedSchool.logo} alt={selectedSchool.name} className="w-full h-full object-contain p-1 rounded-lg" />
                             ) : (
-                                <span className="material-symbols-outlined text-xl text-purple-600 dark:text-purple-300">school</span>
+                                <Icon name="school" className="w-5 h-5 text-purple-600 dark:text-purple-300" />
                             )}
                         </div>
                     )}
@@ -254,9 +255,7 @@ const Header: React.FC<HeaderProps> = ({
                         aria-label="Toggle theme"
                         title="Toggle theme"
                     >
-                        <span className="material-symbols-outlined text-xl">
-                            {isDarkMode ? 'light_mode' : 'dark_mode'}
-                        </span>
+                        <Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" />
                     </button>
                     <div className="w-px h-6 bg-logip-border dark:border-report-border mx-2 hidden sm:block"></div>
                     <ProfileDropdown adminUser={adminUser} userRole={userRole} setActivePage={setActivePage} onExitAdmin={onExitAdmin} />

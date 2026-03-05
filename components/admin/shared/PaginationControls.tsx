@@ -1,5 +1,5 @@
-
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import Icon from './Icons';
 
 interface PaginationControlsProps {
     currentPage: number;
@@ -98,9 +98,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
                         className={`h-8 min-w-[54px] flex items-center justify-between px-2 bg-white dark:bg-dark-bg border ${isDropdownOpen ? 'border-logip-primary' : 'border-gray-200 dark:border-dark-border'} rounded-md text-xs font-bold text-gray-700 dark:text-gray-200 transition-all cursor-pointer outline-none focus:outline-none`}
                     >
                         <span>{itemsPerPage}</span>
-                        <span className={`material-symbols-outlined text-lg leading-none transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}>
-                            expand_more
-                        </span>
+                        <Icon name="expand_more" className={`w-5 h-5 leading-none transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {isDropdownOpen && (
@@ -137,7 +135,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
                             className="w-8 h-8 flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-gray-200 dark:hover:bg-gray-700 outline-none focus:outline-none"
                             aria-label="Previous Page"
                         >
-                            <span className="material-symbols-outlined text-lg leading-none">chevron_left</span>
+                            <Icon name="chevron_left" className="w-5 h-5 leading-none" />
                         </button>
                     </li>
                     
@@ -174,7 +172,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
                             className="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border text-gray-400 dark:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-gray-50 dark:hover:bg-gray-800 outline-none focus:outline-none"
                             aria-label="Next Page"
                         >
-                            <span className="material-symbols-outlined text-lg leading-none">chevron_right</span>
+                            <Icon name="chevron_right" className="w-5 h-5 leading-none" />
                         </button>
                     </li>
                 </ul>

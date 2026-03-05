@@ -142,6 +142,11 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
         }
     }, [isOpen, storageKey, availableKeys]);
 
+    // Show every document in its original orientation (up/left/right/down per PDF); reset user rotation when modal or document changes
+    useEffect(() => {
+        if (isOpen) setRotation(0);
+    }, [isOpen, pdfData]);
+
     useEffect(() => {
         if (!isOpen) return;
         if (!pdfData) {
@@ -186,8 +191,14 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                 const canvas = canvasRef.current;
                 const context = canvas?.getContext('2d');
                 if (canvas && context) {
-                    // Page rotation from PDF + user rotation from toolbar (0, 90, 180, 270)
-                    const totalRotation = ((page.rotate || 0) + rotation) % 360;
+                    // Use PDF's own rotation as baseline, but normalise 180° pages so they don't appear upside down.
+                    let intrinsicRotation = page.rotate || 0;
+                    if (intrinsicRotation === 180) {
+                        intrinsicRotation = 0;
+                    }
+
+                    // Add any extra rotation from the toolbar (0, 90, 180, 270)
+                    const totalRotation = (intrinsicRotation + rotation) % 360;
                     const viewport = page.getViewport({ scale: 1.6, rotation: totalRotation });
 
                     canvas.height = viewport.height;

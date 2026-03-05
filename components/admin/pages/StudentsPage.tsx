@@ -28,6 +28,7 @@ import { FormSettings, INITIAL_FORM_SETTINGS, FormFieldConfig } from './Applicat
 import { AdminFormField, AdminInput, AdminSelect, AdminCheckbox } from '../shared/forms';
 import ColumnSelectionModal from '../shared/ColumnSelectionModal';
 import StatCard from '../shared/StatCard';
+import Icon from '../shared/Icons';
 import StudentPhotoAlbumModal from '../shared/StudentPhotoAlbumModal';
 import { AdminUser } from '../AdminLayout';
 
@@ -976,7 +977,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 no-print">
                     <div className="flex items-center gap-2 relative w-full sm:w-auto sm:flex-1 max-w-4xl">
                         <div className="relative flex-1">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-logip-text-subtle dark:text-dark-text-secondary">search</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="search" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" /></span>
                             <input type="text" placeholder="Search by name or index no..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full h-[38px] bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg pl-10 pr-4 py-1.5 text-base text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle focus:outline-none focus:border-logip-primary focus:ring-1 focus:ring-logip-primary/20 transition-colors" />
                         </div>
                         

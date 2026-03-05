@@ -1,6 +1,6 @@
-
 import React, { useMemo } from 'react';
 import { Conversation } from './pages/MessagesPage';
+import Icon from './shared/Icons';
 
 interface NavItemProps {
     icon: string;
@@ -52,7 +52,7 @@ const LogipLogo: React.FC = () => (
 const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, notificationCount, color }) => (
     <button onClick={onClick} className={`w-full flex items-center justify-between py-2.5 px-3 rounded-lg text-base transition-colors text-left ${active ? 'bg-logip-border dark:bg-gray-800 font-bold text-logip-text-header dark:text-gray-100' : 'text-logip-text-body dark:text-report-subtle hover:bg-logip-border/60 dark:hover:bg-gray-800/50'}`}>
         <div className="flex items-center gap-3">
-            <span className={`material-symbols-outlined text-xl ${!active ? color : ''}`}>{icon}</span>
+            <Icon name={icon} className={`w-5 h-5 ${!active ? color : ''}`} />
             <span>{label}</span>
         </div>
         {typeof notificationCount === 'number' && notificationCount > 0 ? (
@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onExitAdmi
             </div>
             <div className="w-full px-3">
                 <button onClick={onExitAdmin} className="w-full flex items-center gap-3 pl-0 pr-0 py-2 rounded-lg hover:bg-logip-danger-bg text-logip-danger font-medium transition-colors text-left">
-                    <span className="material-symbols-outlined flex-shrink-0">power_settings_new</span>
+                    <Icon name="power_settings_new" className="w-5 h-5 flex-shrink-0" />
                     <span>Log out</span>
                 </button>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 flex items-center gap-1 text-left justify-start pl-0">

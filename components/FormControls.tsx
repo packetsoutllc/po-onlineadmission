@@ -1,5 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
+import Icon from './admin/shared/Icons';
 
 // Reusable Form Field components for consistent styling
 export const FormField = React.forwardRef<HTMLDivElement, { label: React.ReactNode; children: React.ReactNode; className?: string }>(({ label, children, className = '' }, ref) => (
@@ -62,9 +62,7 @@ export const Select: React.FC<SelectProps> = ({ children, value, onChange, place
                 className={`flex w-full items-center justify-between px-2.5 py-1.5 bg-logip-white dark:bg-report-dark border ${isOpen ? 'border-logip-primary ring-1 ring-logip-primary/20' : 'border-logip-border dark:border-report-border'} rounded-lg text-sm font-medium text-left text-black dark:text-gray-100 transition-all duration-200 disabled:bg-gray-100 dark:disabled:bg-gray-800/50 disabled:cursor-not-allowed gap-3 shadow-sm`}
             >
                 <span className="truncate">{displayValue}</span>
-                <span className={`material-symbols-outlined text-logip-text-subtle text-xl transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
-                    expand_more
-                </span>
+                <Icon name="expand_more" className={`w-5 h-5 text-logip-text-subtle transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isOpen && (

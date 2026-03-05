@@ -1,6 +1,6 @@
-
 import React, { useMemo } from 'react';
 import { Student, AiSettings } from './StudentDetails';
+import Icon from './admin/shared/Icons';
 import { FormSettings, FormFieldConfig } from './admin/pages/ApplicationDashboardSettings';
 import FileUploadInput from './FileUploadInput';
 import DynamicFormField from './DynamicFormField';
@@ -75,7 +75,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({ student, isSubmitte
                         className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-semibold rounded-lg text-red-600 dark:text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"
                         aria-label="Remove this section"
                     >
-                        <span className="material-symbols-outlined text-base">close</span>
+                        <Icon name="close" className="w-4 h-4" />
                         <span>Remove</span>
                     </button>
                 )}

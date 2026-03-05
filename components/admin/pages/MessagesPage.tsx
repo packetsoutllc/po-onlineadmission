@@ -5,6 +5,7 @@ import ConfirmationModal from '../shared/ConfirmationModal';
 import AudioCallModal from '../shared/AudioCallModal';
 import VideoCallModal from '../shared/VideoCallModal';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import Icon from '../shared/Icons';
 
 // --- TYPE DEFINITIONS ---
 export type MessageStatus = 'read' | 'unread' | 'blocked' | 'trash';
@@ -236,7 +237,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
                         {unreadCount > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount} New</span>}
                     </div>
                      <div className="relative mt-4">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-logip-text-subtle">search</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="search" className="w-5 h-5 text-logip-text-subtle" /></span>
                         <input type="text" placeholder="Search messages..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-logip-primary transition-all" />
                     </div>
                 </div>

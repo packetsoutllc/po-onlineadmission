@@ -4,6 +4,7 @@ import { Student, AiSettings } from './StudentDetails';
 import { appendToLocalStorageArray, getChangedFields, usePrevious } from '../utils/storage';
 import { FormSettings } from './admin/pages/ApplicationDashboardSettings';
 import { Textarea } from './FormControls';
+import Icon from './admin/shared/Icons';
 
 interface OtherRelevantInfoFormProps {
     student: Student;
@@ -89,7 +90,7 @@ const OtherRelevantInfoForm: React.FC<OtherRelevantInfoFormProps> = ({ student, 
                         type="button"
                         className="inline-flex items-center gap-2 px-4 py-2 text-base font-semibold rounded-lg text-logip-primary bg-logip-primary/10 hover:bg-logip-primary/20 transition-colors"
                     >
-                        <span className="material-symbols-outlined text-lg">add</span>
+                        <Icon name="add" className="w-5 h-5" />
                         Add Clubs, Associations and Others
                     </button>
                 </div>
@@ -103,7 +104,7 @@ const OtherRelevantInfoForm: React.FC<OtherRelevantInfoFormProps> = ({ student, 
                                 type="button"
                                 className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-lg text-red-600 dark:text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors border border-red-200 dark:border-red-900/30"
                             >
-                                <span className="material-symbols-outlined text-lg">delete</span>
+                                <Icon name="delete" className="w-5 h-5" />
                                 Remove Section
                             </button>
                         )}

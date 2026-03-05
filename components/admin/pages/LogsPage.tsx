@@ -8,6 +8,7 @@ import { AdminInput, AdminSelect } from '../shared/forms';
 import { School } from './SettingsPage';
 import { useToast } from '../shared/ToastContext';
 import ConfirmationModal from '../shared/ConfirmationModal';
+import Icon from '../shared/Icons';
 
 // --- TYPE DEFINITIONS ---
 type LogEventType = 'user_management' | 'student_update' | 'system_settings' | 'admission_process' | 'student_delete' | 'user_add' | 'security' | 'navigation' | 'document_access';
@@ -168,7 +169,7 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
                             </button>
                         </div>
                         <div className="relative w-full sm:w-auto sm:flex-1 min-w-[200px]">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-logip-text-subtle dark:text-dark-text-secondary">search</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="search" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" /></span>
                             <AdminInput
                                 type="text"
                                 placeholder="Search activities..."

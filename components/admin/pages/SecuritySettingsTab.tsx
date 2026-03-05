@@ -12,6 +12,7 @@ import PaginationControls from '../shared/PaginationControls';
 import { AdminStudent, initialAdminStudents } from './StudentsPage';
 import DatePicker from '../../DatePicker';
 import { appendToLocalStorageArray } from '../../../utils/storage';
+import Icon from '../shared/Icons';
 
 // --- TYPE DEFINITIONS ---
 
@@ -692,7 +693,7 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
                         <p className="text-sm text-logip-text-subtle dark:text-dark-text-secondary">Tracking visitor IP addresses and geolocation for security.</p>
                     </div>
                     <div className="relative w-full md:w-64">
-                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                         <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="search" className="w-5 h-5 text-gray-400" /></span>
                          <AdminInput value={browsingSearchTerm} onChange={e => setBrowsingSearchTerm(e.target.value)} placeholder="Filter logs..." className="pl-10 !py-1.5 !text-sm" />
                     </div>
                 </div>

@@ -7,6 +7,7 @@ import { Class } from './admin/pages/ClassesPage';
 import { AdminStudent } from './admin/pages/StudentsPage';
 import { FormSettings, FormFieldConfig } from './admin/pages/ApplicationDashboardSettings';
 import DynamicFormField from './DynamicFormField';
+import Icon from './admin/shared/Icons';
 
 export interface AcademicInfoFormData {
     studentClass?: string;
@@ -144,7 +145,7 @@ const AcademicInfoForm: React.FC<AcademicInfoFormProps> = ({ student, showToast,
                         <div className="flex flex-wrap gap-2">
                             {selectedClassData.coreSubjects.map(subject => (
                                 <span key={subject} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
-                                    <span className="material-symbols-outlined text-base">check_circle</span>
+                                    <Icon name="check_circle" className="w-4 h-4" />
                                     {subject}
                                 </span>
                             ))}
@@ -157,7 +158,7 @@ const AcademicInfoForm: React.FC<AcademicInfoFormProps> = ({ student, showToast,
                         <div className="flex flex-wrap gap-2">
                              {selectedClassData.electiveSubjects.map(subject => (
                                 <span key={subject} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                                    <span className="material-symbols-outlined text-base">check_circle</span>
+                                    <Icon name="check_circle" className="w-4 h-4" />
                                     {subject}
                                 </span>
                             ))}

@@ -54,6 +54,66 @@ const PekiLogo: React.FC = () => {
     );
 };
 
+// Inline SVG icons so we don't depend on external icon fonts (prevents seeing raw text like "mail" or "lock")
+const MailIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+    >
+        <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+        <path
+            d="M4.5 7L12 12.5L19.5 7"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
+const LockIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+    >
+        <rect x="5" y="10" width="14" height="10" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+        <path
+            d="M9 10V8.5C9 6.57 10.57 5 12.5 5C14.43 5 16 6.57 16 8.5V10"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+        />
+        <path
+            d="M12.5 13V16"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+        />
+    </svg>
+);
+
+const ErrorIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+    >
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+        <path
+            d="M12 8V13"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+        />
+        <circle cx="12" cy="16" r="0.9" fill="currentColor" />
+    </svg>
+);
+
 interface AdminLoginProps {
   onLoginSuccess: (user: AdminUser) => void;
   onReturnToStudentView: () => void;
@@ -207,7 +267,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
         <label htmlFor="email" className="sr-only">Email address</label>
         <div className="relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500">
-            <span className="material-symbols-outlined">mail</span>
+                <MailIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </span>
             <input
             id="email"
@@ -226,7 +286,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
         <label htmlFor="password" className="sr-only">Password</label>
         <div className="relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500">
-            <span className="material-symbols-outlined">lock</span>
+                <LockIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </span>
             <input
             id="password"
@@ -253,7 +313,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
 
         {error && (
         <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-200 p-4 rounded-r mb-6 flex items-start space-x-3 animate-fadeIn">
-            <span className="material-symbols-outlined text-xl mt-0.5">error</span>
+            <ErrorIcon className="w-5 h-5 mt-0.5 text-red-500 flex-shrink-0" />
             <p>{error}</p>
         </div>
         )}
@@ -292,7 +352,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
         </div>
          {error && (
             <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-200 p-4 rounded-r mb-6 flex items-start space-x-3 animate-fadeIn">
-                <span className="material-symbols-outlined text-xl mt-0.5">error</span>
+                <ErrorIcon className="w-5 h-5 mt-0.5 text-red-500 flex-shrink-0" />
                 <p>{error}</p>
             </div>
         )}
@@ -340,7 +400,20 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
               type="button"
               className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
-              <span className="material-symbols-outlined text-base">arrow_back</span>
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M15 6L9 12L15 18"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               Back to Login
             </button>
           </div>
@@ -351,9 +424,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
         {resetState === 'success' ? (
           <div className="flex flex-col items-center">
             <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-5">
-                <span className="material-symbols-outlined text-4xl text-green-500">
-                    mark_email_read
-                </span>
+                <MailIcon className="w-10 h-10 text-green-500" />
             </div>
             <h2 id="modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 Check Your Email
@@ -372,9 +443,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
           <form onSubmit={handleForgotPasswordSubmit}>
             <div className="flex flex-col items-center">
                 <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-5">
-                    <span className="material-symbols-outlined text-4xl text-indigo-500">
-                        lock_reset
-                    </span>
+                    <LockIcon className="w-10 h-10 text-indigo-500" />
                 </div>
                 <h2 id="modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                     Reset Password
@@ -386,7 +455,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
                     <label htmlFor="reset-email" className="sr-only">Email address</label>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500">
-                            <span className="material-symbols-outlined">mail</span>
+                            <MailIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                         </span>
                         <input
                             id="reset-email"
