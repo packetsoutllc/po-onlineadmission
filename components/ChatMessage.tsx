@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Message } from '../types';
-import { Bot, User, Volume2, Loader2, ExternalLink } from 'lucide-react';
+import { Bot, User, Volume2, ExternalLink } from 'lucide-react';
 import { generateSpeech } from '../services/geminiService';
+import LogoLoader from './LogoLoader';
 
 interface ChatMessageProps {
   message: Message;
@@ -135,7 +136,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast }) => {
                 className={`p-1.5 rounded-full hover:bg-neutral-800 text-neutral-400 transition-colors ${isPlaying ? 'text-green-400' : ''}`}
                 title="Read Aloud"
               >
-                {isLoadingAudio ? <Loader2 className="animate-spin" size={14} /> : <Volume2 size={16} />}
+                {isLoadingAudio ? <LogoLoader size="sm" variant="default" className="w-3.5 h-3.5" /> : <Volume2 size={16} />}
               </button>
             </div>
           )}

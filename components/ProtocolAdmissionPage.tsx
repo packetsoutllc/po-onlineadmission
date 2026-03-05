@@ -7,6 +7,7 @@ import { Admission, initialAdmissions, School, initialSchools } from './admin/pa
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
 import VideoPreviewModal from './admin/shared/VideoPreviewModal';
+import LogoLoader from './LogoLoader';
 
 const isNotificationActive = (notif: any, admissionId: string, type: 'scrolling' | 'popup' | 'video', currentPage: string) => {
     if (!notif || !notif.enabled) return false;
@@ -296,7 +297,7 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
                                 <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">I confirm that all information provided on this form is accurate and a true representation of the applicant. I also acknowledge that the school reserves the right to approve or decline my protocol request.</span>
                             </label>
                         </div>
-                        <button type="submit" disabled={isLoading || !isValid} className="w-full flex justify-center py-2.5 px-4 text-lg font-bold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed shadow-md">{isLoading ? 'Submitting...' : 'Submit Request'}</button>
+                        <button type="submit" disabled={isLoading || !isValid} className="w-full flex justify-center items-center gap-2 py-2.5 px-4 text-lg font-bold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed shadow-md">{isLoading ? (<><LogoLoader size="sm" variant="light" /> Submitting...</>) : 'Submit Request'}</button>
                     </div>
                 </form>
             </div>

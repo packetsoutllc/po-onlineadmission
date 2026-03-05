@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Check, ChevronRight, FileText, Sparkles, Loader2 } from 'lucide-react';
+import { Check, ChevronRight, FileText, Sparkles } from 'lucide-react';
 import { MOCK_SCHOOLS } from '../constants';
+import LogoLoader from '../components/LogoLoader';
 import { reviewAdmissionEssay } from '../services/geminiService';
 
 const AdmissionForm: React.FC = () => {
@@ -156,7 +157,7 @@ const AdmissionForm: React.FC = () => {
                                     disabled={isReviewing || formData.essay.length < 20}
                                     className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-50 transition-colors"
                                 >
-                                    {isReviewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                    {isReviewing ? <LogoLoader size="sm" variant="default" className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                                     Get AI Feedback
                                 </button>
                             </div>
@@ -192,7 +193,7 @@ const AdmissionForm: React.FC = () => {
                         </button>
                     ) : (
                         <button type="submit" disabled={isSubmitting} className="px-8 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2 shadow-md disabled:opacity-70">
-                             {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                             {isSubmitting ? (<><LogoLoader size="sm" variant="light" /> Submitting...</>) : 'Submit Application'}
                              {!isSubmitting && <FileText className="w-4 h-4" />}
                         </button>
                     )}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { Select } from './FormControls';
 import { initialSchools, initialAdmissions, School, Admission } from './admin/pages/SettingsPage';
 
 interface LandingPageProps {
@@ -162,30 +163,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
 
       <main className="w-full max-w-6xl grid lg:grid-cols-[1.25fr,1.2fr] gap-10 items-start mt-28">
         <section>
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-500/30 mb-4">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Live admissions platform
-          </span>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-logip-text-header dark:text-dark-text-primary mb-4">
-            <span className="block whitespace-nowrap">Seamless Online Admissions</span>
+            <span className="block whitespace-nowrap">Seamless Online Admission</span>
             <span className="block whitespace-nowrap">for Senior High Schools.</span>
           </h1>
           <p className="text-base sm:text-lg text-logip-text-body/80 dark:text-dark-text-secondary max-w-xl mb-6">
-            Secure, modern online admission portals for schools across Ghana.
-            Choose your school to verify placement, complete forms, and download admission documents.
+            A secure and modern online admission system for schools across Ghana.
+            Simply search for your school, verify your placement, complete the online admission form, and download your admission documents.
           </p>
           <div className="flex flex-col gap-2 text-xs sm:text-sm text-logip-text-subtle dark:text-dark-text-secondary mb-10">
             <span className="inline-flex items-center gap-1">
               <span className="material-symbols-outlined text-base text-emerald-500">verified_user</span>
-              Secure student verification
+              Self-Service System
             </span>
             <span className="inline-flex items-center gap-1">
               <span className="material-symbols-outlined text-base text-sky-500">cloud_done</span>
-              Cloud-based records
+              Secure data protection
             </span>
             <span className="inline-flex items-center gap-1">
               <span className="material-symbols-outlined text-base text-violet-500">chat</span>
-              Built-in support connect
+              Built-in Live chat support
             </span>
           </div>
         </section>
@@ -213,11 +210,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
                 className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-logip-border dark:border-report-border bg-white dark:bg-dark-bg text-logip-text-header dark:text-dark-text-primary placeholder:text-logip-text-subtle/80 dark:placeholder:text-dark-text-secondary/80 focus:outline-none focus:ring-2 focus:ring-logip-primary/70"
               />
             </div>
-            <div>
-              <select
+            <div className="w-full sm:w-48">
+              <Select
+                name="regionFilter"
                 value={regionFilter}
                 onChange={(e) => setRegionFilter(e.target.value)}
-                className="w-full sm:w-48 px-3 py-2 text-sm rounded-lg border border-logip-border dark:border-report-border bg-white dark:bg-dark-bg text-logip-text-header dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-logip-primary/70"
               >
                 <option value="All regions">All regions</option>
                 {regions.map((region) => (
@@ -225,7 +222,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
                     {region}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 

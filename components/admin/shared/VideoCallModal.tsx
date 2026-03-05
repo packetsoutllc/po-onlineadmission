@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
+import LogoLoader from '../../LogoLoader';
 
 interface VideoCallModalProps {
     isOpen: boolean;
@@ -137,7 +137,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({ isOpen, onClose, userNa
                         </div>
                     ) : isLoading ? (
                         <div className="w-full h-full bg-black flex flex-col items-center justify-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+                            <LogoLoader size="lg" variant="light" />
                             <p className="mt-4 text-gray-300">Initializing source...</p>
                         </div>
                     ) : (

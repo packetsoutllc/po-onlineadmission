@@ -3,7 +3,7 @@ import { Staff, Role } from './types';
 
 export const APP_VERSION = '2.1.0';
 export const PORTAL_NAME = 'Logip Admission Portal';
-export const POWERED_BY = 'Packets Out LLC';
+export const POWERED_BY = 'Packets Out';
 
 export const ADMISSION_STATUS_COLORS = {
     'Admitted': 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300',

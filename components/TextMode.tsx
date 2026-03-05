@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { generateText } from '../services/geminiService';
-import { Loader2, Send, Wand2 } from 'lucide-react';
+import { Send, Wand2 } from 'lucide-react';
+import LogoLoader from './LogoLoader';
 import ReactMarkdown from 'react-markdown';
 
 const TextMode: React.FC = () => {
@@ -57,7 +58,7 @@ const TextMode: React.FC = () => {
           >
             {isLoading ? (
               <>
-                <Loader2 size={18} className="animate-spin" />
+                <LogoLoader size="sm" variant="light" />
                 Generating...
               </>
             ) : (

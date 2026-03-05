@@ -109,26 +109,24 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onExitAdmi
                     ))}
                 </nav>
             </div>
-            <div>
-                <button onClick={onExitAdmin} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-logip-danger-bg text-logip-danger font-medium transition-colors">
-                    <span className="material-symbols-outlined">power_settings_new</span>
+            <div className="w-full px-3">
+                <button onClick={onExitAdmin} className="w-full flex items-center gap-3 pl-0 pr-0 py-2 rounded-lg hover:bg-logip-danger-bg text-logip-danger font-medium transition-colors text-left">
+                    <span className="material-symbols-outlined flex-shrink-0">power_settings_new</span>
                     <span>Log out</span>
                 </button>
-                <div className="mt-4 px-3">
-                    <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                        Powered by:
-                        <span className="inline-flex items-center gap-0.5 font-semibold">
-                            <span className="w-1.5 h-4 bg-current rounded-full opacity-80" />
-                            <span className="w-1.5 h-3 bg-current rounded-full opacity-80" />
-                            <svg className="w-3.5 h-3.5 text-sky-500" viewBox="0 0 24 24" fill="none" aria-hidden>
-                                <path d="M3 11L10.5 4H21L13.5 11H3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M13.5 11L21 4V14L13.5 21V11Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M3 11L13.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </span>
-                        Packets Out LLC
-                    </p>
-                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 flex items-center gap-1 text-left justify-start pl-0">
+                    Powered by:
+                    <span className="inline-flex items-center gap-0.5 font-semibold">
+                        <span className="w-1.5 h-4 bg-current rounded-full opacity-80" />
+                        <span className="w-1.5 h-3 bg-current rounded-full opacity-80" />
+                        <svg className="w-3.5 h-3.5 text-sky-500" viewBox="0 0 24 24" fill="none" aria-hidden>
+                            <path d="M3 11L10.5 4H21L13.5 11H3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M13.5 11L21 4V14L13.5 21V11Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M3 11L13.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </span>
+                    Packets Out
+                </p>
             </div>
         </aside>
     );

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import LogoLoader from './LogoLoader';
 
 interface PDFPreviewModalProps {
     isOpen: boolean;
@@ -114,7 +115,7 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({ isOpen, onClose, pdfD
                     ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400">
                              <div className="flex flex-col items-center gap-2">
-                                <span className="w-8 h-8 border-2 border-gray-300 border-t-logip-primary rounded-full animate-spin"></span>
+                                <LogoLoader size="md" variant="default" />
                                 <span>Loading PDF...</span>
                              </div>
                         </div>

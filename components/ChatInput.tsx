@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Image as ImageIcon, X, Loader2 } from 'lucide-react';
+import { Send, Image as ImageIcon, X } from 'lucide-react';
 import { Attachment } from '../types';
+import LogoLoader from './LogoLoader';
 
 interface ChatInputProps {
   onSend: (text: string, attachment: Attachment | null) => void;
@@ -132,7 +133,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
           }`}
         >
           {isLoading ? (
-            <Loader2 size={20} className="animate-spin" />
+            <LogoLoader size="sm" variant="light" />
           ) : (
             <Send size={20} />
           )}

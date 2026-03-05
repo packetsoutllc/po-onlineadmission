@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { FormField, Input, Textarea } from './FormControls';
+import LogoLoader from './LogoLoader';
 
 interface AIAutosuggestInputProps {
     label: string;
@@ -124,7 +124,9 @@ const AIAutosuggestInput: React.FC<AIAutosuggestInputProps> = ({ label, name, va
             {isDropdownVisible && (suggestions.length > 0 || isLoading) && (
                 <div className="absolute z-10 top-full mt-1 w-full bg-logip-white dark:bg-report-dark border border-logip-border dark:border-report-border rounded-lg shadow-lg overflow-hidden animate-fadeIn">
                     {isLoading ? (
-                        <div className="p-3 text-sm text-logip-text-subtle">Searching...</div>
+                        <div className="p-3 flex items-center gap-2 text-sm text-logip-text-subtle">
+                            <LogoLoader size="sm" variant="default" /> Searching...
+                        </div>
                     ) : (
                         <ul className="py-1">
                             {suggestions.map((s, i) => (

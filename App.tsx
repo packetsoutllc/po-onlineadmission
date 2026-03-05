@@ -129,10 +129,11 @@ function App() {
   };
 
   const handleAdminLogoutAndReturn = () => {
-    setAppMode('student');
     setAdminUser(null);
     setCurrentView('auth');
+    setAppMode('admin');
     setVerifiedStudent(null);
+    window.history.replaceState({}, '', '/login/admin');
   };
 
   const isDashboardView = (appMode === 'admin' && !!adminUser) || 
@@ -161,7 +162,7 @@ function App() {
         />;
       
     return (
-      <div className="animate-fadeIn">
+      <div>
         {dashboardContent}
       </div>
     );
@@ -249,7 +250,7 @@ function App() {
       </button>
 
       <div className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden bg-logip-bg dark:bg-background-dark">
-        <main className={`relative z-10 w-full ${mainMaxWidthClass} transition-all duration-300`}>
+        <main className={`relative z-10 w-full ${mainMaxWidthClass}`}>
           <div
             className={`relative w-full ${
               isAuthView
@@ -259,7 +260,7 @@ function App() {
                   }`
             }`}
           >
-            <div key={authContentKey} className="animate-fadeIn">
+            <div key={authContentKey}>
               {authContent}
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { analyzeImage, fileToGenerativePart } from '../services/geminiService';
-import { Image as ImageIcon, Upload, Loader2, X, Eye } from 'lucide-react';
+import { Image as ImageIcon, Upload, X, Eye } from 'lucide-react';
+import LogoLoader from './LogoLoader';
 import ReactMarkdown from 'react-markdown';
 
 const VisionMode: React.FC = () => {
@@ -122,7 +123,7 @@ const VisionMode: React.FC = () => {
             >
               {isLoading ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" />
+                  <LogoLoader size="sm" variant="light" />
                   Analyzing...
                 </>
               ) : (

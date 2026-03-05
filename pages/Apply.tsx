@@ -3,8 +3,9 @@ import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SCHOOLS } from '../constants';
 import { improveEssay } from '../services/geminiService';
-import { Sparkles, Save, CheckCircle, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Sparkles, Save, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { AIResponse } from '../types';
+import LogoLoader from '../components/LogoLoader';
 
 const Apply: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -206,7 +207,7 @@ const Apply: React.FC = () => {
                     >
                         {isAnalyzing ? (
                             <>
-                                <RefreshCw className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                                <LogoLoader size="sm" variant="light" className="mr-2" />
                                 Analyzing...
                             </>
                         ) : (
@@ -277,9 +278,9 @@ const Apply: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                {isSubmitting ? (<><LogoLoader size="sm" variant="light" /> Submitting...</>) : 'Submit Application'}
                 {!isSubmitting && <Save className="ml-2 -mr-1 h-5 w-5" />}
               </button>
             </div>

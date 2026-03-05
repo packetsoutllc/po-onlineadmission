@@ -10,6 +10,7 @@ import { initialClasses } from './admin/pages/ClassesPage';
 import { initialHouses } from './admin/shared/houseData';
 import { logActivity, setLocalStorageAndNotify } from '../utils/storage';
 import Modal from './Modal';
+import LogoLoader from './LogoLoader';
 import PaymentGateway from './PaymentGateway';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 
@@ -116,7 +117,7 @@ const DocumentItem: React.FC<{
                         className="flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-bold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         {loading ? (
-                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                            <LogoLoader size="sm" variant="light" />
                         ) : (
                             <span className="material-symbols-outlined text-lg">download</span>
                         )}

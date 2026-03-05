@@ -8,6 +8,7 @@ import { AdminStudent, initialAdminStudents, StudentStatus } from './admin/pages
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
 import VideoPreviewModal from './admin/shared/VideoPreviewModal';
+import LogoLoader from './LogoLoader';
 
 // Default settings
 const defaultAdmissionSettings: AdmissionSettings = {
@@ -677,7 +678,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                 <div>
                   <label
                     htmlFor="auth-input"
-                    className="mb-1.5 block text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-50 text-center"
+                    className="mb-1.5 block text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-50 text-center"
                   >
                     {authMethod === 'Full name only'
                       ? 'Full name'
@@ -694,7 +695,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                       name="authInput"
                       type="text"
                       required
-                      className={`appearance-none rounded-lg relative block w-full pr-4 py-3.5 sm:py-4 border border-input-border-light dark:border-input-border-dark bg-white dark:bg-black/30 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-logip-primary/80 focus:border-logip-primary text-sm sm:text-base transition ${
+                      className={`appearance-none rounded-lg relative block w-full pr-4 py-3.5 sm:py-4 border border-input-border-light dark:border-input-border-dark bg-white dark:bg-black/30 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-logip-primary/80 focus:border-logip-primary text-base sm:text-lg transition ${
                         icon === '#' ? 'pl-3.5 sm:pl-4' : 'pl-10'
                       }`}
                       placeholder={placeholder}
@@ -734,9 +735,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full flex justify-center py-2.5 px-4 text-lg font-bold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
+                    className="w-full flex justify-center items-center gap-2 py-2.5 px-4 text-lg font-bold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
                   >
-                    {isLoading ? 'Verifying...' : 'Verify and Continue'}
+                    {isLoading ? (
+                      <>
+                        <LogoLoader size="sm" variant="light" className="mr-2" />
+                        Verifying...
+                      </>
+                    ) : (
+                      'Verify and Continue'
+                    )}
                   </button>
                   <p className="text-[11px] text-gray-500 dark:text-gray-400 text-left">
                     By continuing you agree to the school’s rules and regulations and also the admission guidelines.
@@ -753,7 +761,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                   className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
                 >
                   <span className="material-symbols-outlined text-base">headphones</span>
-                  Protocol Admission support
+                  Protocol Admission Request
                 </button>
               </div>
             )}

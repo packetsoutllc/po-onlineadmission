@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import LogoLoader from '../LogoLoader';
 import { AdminUser } from './AdminLayout';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { GlobalAdminSecuritySettings, SecurityLog } from './pages/SecuritySettingsTab';
@@ -261,9 +262,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
         <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 text-lg font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transform transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900 focus:ring-violet-500 disabled:opacity-60 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:hover:-translate-y-0.5"
+            className="w-full flex justify-center items-center gap-2 py-2 px-4 text-lg font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transform transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900 focus:ring-violet-500 disabled:opacity-60 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:hover:-translate-y-0.5"
         >
-            {isLoading ? 'Signing In...' : 'Sign In'}
+            {isLoading ? (<><LogoLoader size="sm" variant="light" className="mr-2" /> Signing In...</>) : 'Sign In'}
         </button>
         </div>
     </form>
@@ -299,9 +300,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 text-lg font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transform transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center gap-2 py-2 px-4 text-lg font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transform transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
             >
-                {isLoading ? 'Verifying...' : 'Verify'}
+                {isLoading ? (<><LogoLoader size="sm" variant="light" className="mr-2" /> Verifying...</>) : 'Verify'}
             </button>
         </div>
     </form>
@@ -309,7 +310,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
 
   return (
     <>
-      <div>
+      <div className="max-w-sm w-full mx-auto">
         <div className="text-center mb-8">
           {loginStep === 'credentials' ? (
             <>
@@ -411,9 +412,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
                     <button
                         type="submit"
                         disabled={resetState === 'loading'}
-                        className="w-full flex justify-center py-2 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-colors disabled:opacity-60"
+                        className="w-full flex justify-center items-center gap-2 py-2 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-colors disabled:opacity-60"
                     >
-                        {resetState === 'loading' ? 'Sending...' : 'Send Reset Link'}
+                        {resetState === 'loading' ? (<><LogoLoader size="sm" variant="light" className="mr-2" /> Sending...</>) : 'Send Reset Link'}
                     </button>
                 </div>
             </div>

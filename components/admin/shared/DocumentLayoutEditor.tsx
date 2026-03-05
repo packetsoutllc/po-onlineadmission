@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AdminModal from './AdminModal';
+import LogoLoader from '../../LogoLoader';
 import { useToast } from '../shared/ToastContext';
 import { AdminInput, AdminSelect } from './forms';
 
@@ -163,10 +164,10 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                 const canvas = canvasRef.current;
                 const context = canvas?.getContext('2d');
                 if (canvas && context) {
-                    const viewport = page.getViewport({ scale: 2.0 }); 
+                    const viewport = page.getViewport({ scale: 2.0 });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
-                    setBaseDimensions({ width: viewport.width / 2, height: viewport.height / 2 }); 
+                    setBaseDimensions({ width: viewport.width / 2, height: viewport.height / 2 });
                     await page.render({ canvasContext: context, viewport }).promise;
                 }
             } catch (error) {
@@ -339,7 +340,7 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                 <div className="flex-1 bg-gray-200 dark:bg-black/40 rounded-lg overflow-auto relative select-none" ref={scrollContainerRef} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
                     <div className="min-w-full min-h-full flex items-start justify-center p-8">
                         <div className="relative shadow-2xl transition-transform origin-top-left" ref={containerRef} style={{ width: baseDimensions.width, height: baseDimensions.height, transform: `scale(${zoom})`, transformOrigin: 'top left', marginLeft: 'auto', marginRight: 'auto' }}>
-                            {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-20"><span>Loading Preview...</span></div>}
+                            {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-20"><LogoLoader size="md" variant="default" /></div>}
                             <canvas ref={canvasRef} className="block w-full h-full" />
                             {alignmentGuides.map((guide, idx) => (
                                 <div key={idx} className={`absolute z-50 pointer-events-none ${guide.isCenter ? 'bg-purple-500' : 'bg-blue-400'}`} style={guide.type === 'vertical' ? { left: `${guide.position}%`, top: 0, bottom: 0, width: '1px', opacity: 0.8 } : { top: `${guide.position}%`, left: 0, right: 0, height: '1px', opacity: 0.8 }} />

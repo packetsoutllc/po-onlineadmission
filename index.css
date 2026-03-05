@@ -1,16 +1,54 @@
-/* Base styles */
+/* Base styles - no opacity/transition on root to avoid ghost or delayed appearance */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  opacity: 1;
+}
+
 body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  opacity: 1;
 }
 
 #root {
   min-height: 100vh;
+  opacity: 1;
+}
+
+/* Logo loader animations (works in all environments, no Tailwind required) */
+@keyframes poLogoBar {
+  0%,
+  100% {
+    transform: scaleY(0.6);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes poLogoPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+.po-logo-bar {
+  animation: poLogoBar 0.25s ease-out infinite;
+  transform-origin: center bottom;
+}
+
+.po-logo-pulse {
+  animation: poLogoPulse 0.3s ease-out infinite;
 }

@@ -24,6 +24,7 @@ import { FormSettings, INITIAL_FORM_SETTINGS } from './admin/pages/ApplicationDa
 import { School, initialSchools, Admission, initialAdmissions } from './admin/pages/SettingsPage';
 import { initialClasses, Class } from './admin/pages/ClassesPage';
 import { allocateHouseForStudent, allocateDormForStudent } from './admin/shared/houseAllocationService';
+import LogoLoader from './LogoLoader';
 
 export type ApplicationStatus = 'not_submitted' | 'submitted';
 export type AppStatus = ApplicationStatus | StudentStatus;
@@ -949,12 +950,12 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
   const displayedAdmissionNumber = useMemo(() => { if (admissionNumber) return admissionNumber; if (realTimeApplicationStatus === 'Admitted') { const counterKey = `admissionSubmissionCounter_${initialStudent.schoolId}`; const currentCount = localStorage.getItem(counterKey) || '0'; return `${liveStudent.programme.substring(0,3).toUpperCase()}-${activeStudentIndex.slice(-3)}/${String(currentCount).padStart(3, '0')}`; } return null; }, [admissionNumber, realTimeApplicationStatus, liveStudent.programme, activeStudentIndex, initialStudent.schoolId]);
   const displayedSubmissionDate = useMemo(() => { if (submissionDate) return submissionDate; if (realTimeApplicationStatus === 'Admitted') return new Date().toISOString(); return null; }, [submissionDate, realTimeApplicationStatus]);
   const logoutAndBranding = (isSidebar: boolean = false) => (
-    <div className={`mt-auto ${isSidebar ? 'px-3' : ''}`}>
-        <button onClick={() => onReturn()} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50 text-sm text-black dark:text-report-subtle w-full text-left`}>
-            <span className="material-symbols-outlined">power_settings_new</span>
+    <div className={`mt-auto w-full ${isSidebar ? 'px-3' : ''}`}>
+        <button onClick={() => onReturn()} className={`flex items-center gap-3 py-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50 text-sm text-black dark:text-report-subtle w-full text-left ${isSidebar ? 'pl-0 pr-3' : 'px-3'}`}>
+            <span className="material-symbols-outlined flex-shrink-0">power_settings_new</span>
             <span>{isAdminEditMode ? 'Close Editor' : 'Log out'}</span>
         </button>
-        <p className={`text-[10px] text-gray-400 dark:text-gray-500 mt-2 flex items-center justify-center gap-1 ${isSidebar ? 'pl-3 justify-start' : ''}`}>
+        <p className={`text-[10px] text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1 text-left justify-start ${isSidebar ? 'pl-0' : 'justify-center'}`}>
           Powered by:
           <span className="inline-flex items-center gap-0.5 font-semibold">
             <span className="w-1.5 h-4 bg-current rounded-full opacity-80" />
@@ -965,7 +966,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
               <path d="M3 11L13.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          Packets Out LLC
+          Packets Out
         </p>
     </div>
   );
@@ -992,7 +993,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                   </div>
                   {otpError && <p className="mt-4 text-sm text-red-500 animate-fadeIn">{otpError}</p>}
                   <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">Code expires in <span className="font-bold text-logip-primary">{formatTime(otpTimeLeft)}</span></p>
-                  <div className="mt-8 w-full flex items-center gap-4"><button onClick={() => setIsOtpModalOpen(false)} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">Cancel</button><button onClick={handleVerifyOtp} disabled={isVerifyingOtp || otpArray.join('').length < 6} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">{isVerifyingOtp ? <><svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Verifying...</> : 'Unlock Now'}</button></div>
+                  <div className="mt-8 w-full flex items-center gap-4"><button onClick={() => setIsOtpModalOpen(false)} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">Cancel</button><button onClick={handleVerifyOtp} disabled={isVerifyingOtp || otpArray.join('').length < 6} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">{isVerifyingOtp ? <><LogoLoader size="sm" variant="light" /> Verifying...</> : 'Unlock Now'}</button></div>
               </div>
           </Modal>
           <Modal isOpen={isLimitModalOpen} onClose={() => setIsLimitModalOpen(false)}>
