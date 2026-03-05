@@ -48,63 +48,54 @@ export const printTable = (
                     
                     body { 
                         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-                        color: #1f2937;
+                        color: #111827;
                         margin: 0;
-                        padding: 12mm 15mm 15mm 15mm; /* Top Right Bottom Left - Manual content margins */
+                        padding: 18mm 20mm 20mm 20mm; /* Top Right Bottom Left - manual content margins */
                         -webkit-print-color-adjust: exact; 
                         print-color-adjust: exact; 
-                        background-color: white;
+                        background-color: #ffffff;
                         position: relative;
                     }
                     
-                    /* Header Layout */
+                    /* Header Layout – match sample image: logo, bold name, subtitle, generated line */
                     .print-header {
                         text-align: center;
-                        margin-bottom: 2rem;
-                        padding-bottom: 1rem;
-                        border-bottom: 2px solid #f3f4f6;
+                        margin: 0 0 16mm 0;
+                        padding-bottom: 5mm;
+                        border-bottom: 1px solid #e5e7eb;
                     }
                     
                     .school-logo {
-                        height: 60px;
+                        height: 64px;
                         width: auto;
                         object-fit: contain;
-                        margin-bottom: 0.75rem;
+                        margin: 0 auto 6px auto;
                         display: block;
-                        margin-left: auto;
-                        margin-right: auto;
                     }
                     
                     .school-name {
-                        font-size: 20px;
+                        font-size: 22px;
                         font-weight: 800;
                         color: #111827; /* Gray 900 */
-                        margin: 0 0 0.25rem 0;
-                        letter-spacing: -0.015em;
-                        line-height: 1.2;
-                        text-transform: uppercase;
+                        margin: 0 0 4px 0;
+                        letter-spacing: -0.02em;
                     }
                     
                     .admission-title {
                         font-size: 15px;
                         font-weight: 500;
-                        color: #374151; /* Gray 700 */
-                        margin: 0 0 0.25rem 0;
+                        color: #4b5563; /* Gray 600 */
+                        margin: 0 0 2px 0;
                     }
                     
                     .page-title {
-                        font-size: 13px;
-                        font-weight: 700;
-                        color: #6b7280; /* Gray 500 */
-                        margin: 0 0 0.5rem 0;
-                        text-transform: uppercase;
-                        letter-spacing: 0.05em;
+                        display: none; /* not used in this header design */
                     }
-
+                    
                     .meta-date {
-                        font-size: 10px;
+                        font-size: 11px;
                         color: #9ca3af; /* Gray 400 */
-                        font-style: normal; /* Changed from italic per user request */
+                        margin: 0;
                     }
 
                     /* Content Styling */
@@ -198,8 +189,7 @@ export const printTable = (
                 <div class="print-header">
                     ${schoolLogo ? `<img src="${schoolLogo}" alt="Logo" class="school-logo" />` : ''}
                     <div class="school-name">${schoolName}</div>
-                    ${admissionName ? `<div class="admission-title">${admissionName}</div>` : ''}
-                    <div class="page-title">${title}</div>
+                    <div class="admission-title">${admissionName || title}</div>
                     <div class="meta-date">Generated on ${formattedDate} at ${formattedTime}</div>
                 </div>
 

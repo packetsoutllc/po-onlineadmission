@@ -34,24 +34,110 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ isOpen, onClose, 
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        printWindow.document.write(`
+        // Try to infer active school for header (fallback to generic)
+        let schoolName = 'School Name';
+        let schoolLogo: string | null = null;
+        try {
+            const rawSchools = localStorage.getItem('admin_schools');
+            if (rawSchools) {
+                const schools = JSON.parse(rawSchools) as Array<{ name: string; logo?: string; status?: string }>;
+                const active = schools.find(s => s.status === 'Active') || schools[0];
+                if (active) {
+                    schoolName = active.name || schoolName;
+                    schoolLogo = active.logo || null;
+                }
+            }
+        } catch (e) {
+            // ignore parsing errors and keep defaults
+        }
+
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        const doc = `
+            <!DOCTYPE html>
             <html>
                 <head>
                     <title>Print - ${altText}</title>
+                    <link rel="preconnect" href="https://fonts.googleapis.com">
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
                     <style>
-                        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
-                        img { max-width: 100%; max-height: 100%; object-fit: contain; }
-                        @media print {
-                            body { margin: 0; padding: 0; }
-                            img { width: 100%; height: auto; page-break-after: avoid; }
+                        @page { size: A4 portrait; margin: 0; }
+                        body {
+                            margin: 0;
+                            padding: 14mm 18mm 18mm 18mm;
+                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                            background: #ffffff;
+                            color: #111827;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .print-header {
+                            text-align: center;
+                            margin-bottom: 1.75rem;
+                            padding-bottom: 0.85rem;
+                            border-bottom: 1px solid #e5e7eb;
+                        }
+                        .school-logo {
+                            height: 72px;
+                            width: auto;
+                            object-fit: contain;
+                            margin-bottom: 0.5rem;
+                            display: block;
+                            margin-left: auto;
+                            margin-right: auto;
+                        }
+                        .school-name {
+                            font-size: 22px;
+                            font-weight: 800;
+                            letter-spacing: -0.03em;
+                            margin: 0 0 0.25rem 0;
+                            text-transform: uppercase;
+                        }
+                        .page-title {
+                            font-size: 11px;
+                            font-weight: 500;
+                            color: #6b7280;
+                            margin: 0 0 0.25rem 0;
+                        }
+                        .meta-date {
+                            font-size: 9px;
+                            color: #9ca3af;
+                            text-transform: uppercase;
+                            letter-spacing: 0.12em;
+                            font-weight: 500;
+                        }
+                        .image-wrapper {
+                            margin-top: 1.25rem;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                        }
+                        img.print-image {
+                            max-width: 100%;
+                            max-height: 80vh;
+                            object-fit: contain;
+                            border-radius: 6px;
                         }
                     </style>
                 </head>
                 <body>
-                    <img src="${imageUrl}" onload="window.print(); window.close();" />
+                    <div class="print-header">
+                        ${schoolLogo ? `<img src="${schoolLogo}" alt="Logo" class="school-logo" />` : ''}
+                        <div class="school-name">${schoolName}</div>
+                        <div class="page-title">${altText}</div>
+                        <div class="meta-date">Generated on ${formattedDate} at ${formattedTime}</div>
+                    </div>
+                    <div class="image-wrapper">
+                        <img src="${imageUrl}" class="print-image" onload="window.print(); window.close();" />
+                    </div>
                 </body>
             </html>
-        `);
+        `;
+
+        printWindow.document.write(doc);
         printWindow.document.close();
     };
 

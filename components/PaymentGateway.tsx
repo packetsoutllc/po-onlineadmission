@@ -221,7 +221,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
     const initials = student.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
     return (
-        <div className="relative flex flex-col lg:flex-row min-h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden animate-scaleIn font-display text-left">
+        <div className="relative flex flex-col lg:flex-row min-h-[600px] bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.35)] overflow-hidden animate-scaleIn font-display text-left border border-white/60">
             {/* Beautiful Close Button */}
             {onClose && (
                 <button 
@@ -234,11 +234,11 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
             )}
 
             {/* Left side: Student Info Panel */}
-            <div className="lg:w-1/2 bg-[#1A1F36] p-6 sm:p-8 flex flex-col text-white relative">
+            <div className="lg:w-1/2 bg-[#050816] p-6 sm:p-8 flex flex-col text-white relative">
                 <div className="relative z-10 flex-grow">
                     {/* Student Profile Header */}
                     <div className="flex items-center gap-3.5 mb-6 pt-1">
-                        <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-gradient-to-br from-logip-primary to-indigo-600 flex items-center justify-center text-sm font-normal shadow-xl border border-white/10">
+                        <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-gradient-to-br from-logip-primary to-indigo-600 flex items-center justify-center text-sm font-semibold shadow-xl border border-white/10">
                             {initials}
                         </div>
                         <div className="min-w-0">
@@ -248,7 +248,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                     </div>
 
                     {/* Summary Card - Strictly left aligned */}
-                    <div className="space-y-4 mb-8 bg-[#232942] p-5 rounded-xl border border-white/5 shadow-sm">
+                    <div className="space-y-4 mb-8 bg-[#111827] p-5 rounded-2xl border border-white/10 shadow-sm/60">
                         <div className="grid grid-cols-2 gap-4">
                             <SummaryItem label="Programme" value={student.programme} />
                             <SummaryItem label="Gender" value={student.gender} />
@@ -261,7 +261,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
 
                     {/* Included List */}
                     <div className="px-0.5 text-left">
-                        <h5 className="text-[11px] font-bold text-white/30 tracking-[0.2em] mb-4 uppercase text-left">What you are paying for</h5>
+                        <h5 className="text-[11px] font-bold text-white/40 tracking-[0.2em] mb-4 uppercase text-left">What you are paying for</h5>
                         <ul className="space-y-3">
                             {applicationList.map((item, idx) => (
                                 <li key={item} className="flex items-center gap-3 animate-slideInUp" style={{ animationDelay: `${idx * 100}ms` }}>
@@ -275,26 +275,27 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                     </div>
                 </div>
                 
-                {/* Total Fee Footer */}
-                <div className="relative z-10 pt-5 mt-8 border-t border-white/5 mb-1 text-left">
+                {/* Total Fee Footer – minimal, only total amount */}
+                <div className="relative z-10 pt-5 mt-8 border-t border-white/10 mb-1 text-left">
                     <div className="flex flex-col gap-1.5 items-start">
                         <div className="flex items-baseline gap-2 whitespace-nowrap">
                             <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">Total:</span>
-                            <span className="text-3xl font-black text-white tracking-tighter">GH¢ {voucherPrice}.00</span>
-                        </div>
-                        <div>
-                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1.5 rounded-lg inline-block border border-emerald-500/20 shadow-sm">Secure Payment Gate</span>
+                            <span className="text-3xl font-black text-white tracking-tight">GH¢ {voucherPrice}.00</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Right side: Payment Details Panel */}
-            <div className="lg:w-1/2 p-6 sm:p-8 flex flex-col bg-white text-left">
+            <div className="lg:w-1/2 p-6 sm:p-8 flex flex-col bg-white/95 backdrop-blur text-left">
                 <div className="flex justify-between items-start mb-6">
                     <div className="min-w-0 flex-1 text-left">
-                        <h2 className="text-2xl font-black text-black tracking-tight leading-tight text-left">{customTitle || "Payment Checkout"}</h2>
-                        <p className="text-[13px] font-medium text-gray-500 mt-1 text-left leading-relaxed">{customSubtitle || "Securely complete your transaction using mobile money."}</p>
+                        <h2 className="text-[22px] sm:text-2xl font-black text-slate-900 tracking-tight leading-tight text-left">
+                            {customTitle || "Payment Checkout"}
+                        </h2>
+                        <p className="text-[13px] font-medium text-gray-500 mt-1 text-left leading-relaxed">
+                            {customSubtitle || "Securely complete your transaction using mobile money."}
+                        </p>
                     </div>
                 </div>
 
@@ -329,7 +330,11 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                                         key={key}
                                         type="button"
                                         onClick={() => setNetwork(key)}
-                                        className={`flex flex-col items-center justify-center py-4 px-2 rounded-xl border-2 transition-all group ${network === key ? 'border-logip-primary bg-blue-50/50 shadow-md' : 'border-gray-50 hover:border-gray-200 bg-gray-50/30'}`}
+                                        className={`flex flex-col items-center justify-center py-4 px-2 rounded-xl border-2 transition-all group ${
+                                            network === key
+                                                ? 'border-logip-primary bg-blue-50 shadow-md shadow-blue-100'
+                                                : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                                        }`}
                                     >
                                         <div className="transform transition-transform mb-2 scale-110">
                                             {value.icon}

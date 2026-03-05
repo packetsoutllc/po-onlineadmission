@@ -76,6 +76,7 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
     const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [zoom, setZoom] = useState(1); 
+    const [rotation, setRotation] = useState(0); // in degrees: 0, 90, 180, 270
     const [baseDimensions, setBaseDimensions] = useState({ width: 0, height: 0 });
     const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
     const [addFieldData, setAddFieldData] = useState({
@@ -142,43 +143,68 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
     }, [isOpen, storageKey, availableKeys]);
 
     useEffect(() => {
-        if (!isOpen || !pdfData) return;
-        if (typeof window !== 'undefined' && window.pdfjsLib) {
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        if (!isOpen) return;
+        if (!pdfData) {
+            return;
         }
+
+        if (typeof window !== 'undefined' && window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        }
+
         const loadPdf = async () => {
             setIsLoading(true);
             try {
-                let base64 = pdfData;
-                if (pdfData.includes(',')) {
-                    base64 = pdfData.split(',')[1];
+                if (typeof window === 'undefined' || !window.pdfjsLib || !window.pdfjsLib.getDocument) {
+                    console.error('pdfjsLib is not available on window.');
+                    showToast('PDF engine failed to load. Please refresh the page and try again.', 'error');
+                    return;
                 }
+
+                // Ensure we are working with a PDF data URL or raw base64
+                let base64 = pdfData;
+                if (base64.startsWith('data:') && base64.includes(',')) {
+                    const [meta, dataPart] = base64.split(',');
+                    if (!meta.includes('application/pdf')) {
+                        showToast('Uploaded document is not a valid PDF file.', 'error');
+                        return;
+                    }
+                    base64 = dataPart;
+                }
+
                 const cleanBase64 = base64.trim().replace(/\s/g, '');
                 const binary = atob(cleanBase64);
                 const len = binary.length;
                 const bytes = new Uint8Array(len);
                 for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+
                 const loadingTask = window.pdfjsLib.getDocument({ data: bytes });
                 const pdf = await loadingTask.promise;
                 const page = await pdf.getPage(1);
+
                 const canvas = canvasRef.current;
                 const context = canvas?.getContext('2d');
                 if (canvas && context) {
-                    const viewport = page.getViewport({ scale: 2.0 });
+                    // Page rotation from PDF + user rotation from toolbar (0, 90, 180, 270)
+                    const totalRotation = ((page.rotate || 0) + rotation) % 360;
+                    const viewport = page.getViewport({ scale: 1.6, rotation: totalRotation });
+
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
-                    setBaseDimensions({ width: viewport.width / 2, height: viewport.height / 2 });
+                    setBaseDimensions({ width: viewport.width, height: viewport.height });
+
                     await page.render({ canvasContext: context, viewport }).promise;
                 }
             } catch (error) {
-                console.error("Error rendering PDF for editor", error);
-                showToast("Could not render PDF preview.", "error");
+                console.error('Error rendering PDF for editor', error);
             } finally {
                 setIsLoading(false);
             }
         };
+
         loadPdf();
-    }, [isOpen, pdfData]);
+    }, [isOpen, pdfData, rotation]);
 
     const handleMouseDown = (e: React.MouseEvent, field: LayoutField, handle?: string) => {
         if (!containerRef.current) return;
@@ -289,6 +315,76 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
         setAlignmentGuides([]);
     };
 
+    // Zoom with mouse wheel / touchpad (Ctrl + scroll / pinch)
+    const handleWheelZoom = (e: React.WheelEvent<HTMLDivElement>) => {
+        // Require Ctrl to avoid hijacking normal scrolling
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+
+        setZoom(prev => {
+            const factor = e.deltaY < 0 ? 1.05 : 0.95;
+            const next = prev * factor;
+            return Math.min(2, Math.max(0.25, next));
+        });
+    };
+
+    // Enable keyboard arrow-key nudging for precise positioning of the selected field
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!selectedFieldId) return;
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+
+            // Do not hijack arrows when user is typing in an input/select/textarea or editable region
+            const activeEl = document.activeElement as HTMLElement | null;
+            if (activeEl) {
+                const tag = activeEl.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || activeEl.isContentEditable) {
+                    return;
+                }
+            }
+
+            e.preventDefault();
+            const step = e.shiftKey ? 2 : 0.5; // Shift+Arrow = faster movement
+
+            setFields(prev =>
+                prev.map(field => {
+                    if (field.id !== selectedFieldId) return field;
+
+                    let newX = field.x;
+                    let newY = field.y;
+
+                    switch (e.key) {
+                        case 'ArrowLeft':
+                            newX = field.x - step;
+                            break;
+                        case 'ArrowRight':
+                            newX = field.x + step;
+                            break;
+                        case 'ArrowUp':
+                            newY = field.y - step;
+                            break;
+                        case 'ArrowDown':
+                            newY = field.y + step;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // Clamp coordinates to the document area
+                    newX = Math.max(0, Math.min(100, newX));
+                    newY = Math.max(0, Math.min(100, newY));
+
+                    return { ...field, x: newX, y: newY };
+                })
+            );
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, selectedFieldId]);
+
     const toggleField = (id: string) => {
         setFields(prev => prev.map(f => f.id === id ? { ...f, enabled: !f.enabled } : f));
     };
@@ -337,11 +433,37 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                         ))}
                     </div>
                 </div>
-                <div className="flex-1 bg-gray-200 dark:bg-black/40 rounded-lg overflow-auto relative select-none" ref={scrollContainerRef} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-                    <div className="min-w-full min-h-full flex items-start justify-center p-8">
-                        <div className="relative shadow-2xl transition-transform origin-top-left" ref={containerRef} style={{ width: baseDimensions.width, height: baseDimensions.height, transform: `scale(${zoom})`, transformOrigin: 'top left', marginLeft: 'auto', marginRight: 'auto' }}>
-                            {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-20"><LogoLoader size="md" variant="default" /></div>}
-                            <canvas ref={canvasRef} className="block w-full h-full" />
+                <div className="flex-1 flex flex-col bg-gray-200 dark:bg-black/40 rounded-lg overflow-hidden relative">
+                    <div
+                        className="flex-1 overflow-auto select-none"
+                        ref={scrollContainerRef}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onWheel={handleWheelZoom}
+                    >
+                    {/* Top-left alignment: same inset for top and left so both edges stay visible when zooming */}
+                    <div className="min-w-full min-h-full flex items-start justify-start p-6">
+                        <div
+                            className="relative shadow-2xl flex-shrink-0"
+                            ref={containerRef}
+                            style={{
+                                width: baseDimensions.width * zoom || 0,
+                                height: baseDimensions.height * zoom || 0,
+                            }}
+                            onMouseDown={() => setSelectedFieldId(null)}
+                        >
+                            {isLoading && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-20">
+                                    <LogoLoader size="md" variant="default" />
+                                </div>
+                            )}
+                            {/* Canvas fills container; container is baseDimensions*zoom so aspect ratio is preserved */}
+                            <canvas
+                                ref={canvasRef}
+                                className="block w-full h-full"
+                                style={{ width: '100%', height: '100%' }}
+                            />
                             {alignmentGuides.map((guide, idx) => (
                                 <div key={idx} className={`absolute z-50 pointer-events-none ${guide.isCenter ? 'bg-purple-500' : 'bg-blue-400'}`} style={guide.type === 'vertical' ? { left: `${guide.position}%`, top: 0, bottom: 0, width: '1px', opacity: 0.8 } : { top: `${guide.position}%`, left: 0, right: 0, height: '1px', opacity: 0.8 }} />
                             ))}
@@ -363,6 +485,66 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                                 );
                             })}
                         </div>
+                    </div>
+                    </div>
+                    <div className="flex-shrink-0 flex items-center gap-4 px-4 py-2 bg-gray-100 dark:bg-dark-surface border-t border-logip-border dark:border-dark-border">
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setRotation((prev) => (prev + 270) % 360)}
+                                className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                                title="Rotate left"
+                            >
+                                <span className="material-symbols-outlined text-xl">rotate_left</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                                className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                                title="Rotate right"
+                            >
+                                <span className="material-symbols-outlined text-xl">rotate_right</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!pdfData) return;
+                                    const printWindow = window.open('', '_blank');
+                                    if (!printWindow) return;
+                                    const src = pdfData.startsWith('data:') ? pdfData : `data:application/pdf;base64,${pdfData}`;
+                                    printWindow.document.write(`
+                                        <html>
+                                          <head>
+                                            <title>Print Document</title>
+                                            <style>
+                                              html, body { margin: 0; padding: 0; height: 100%; }
+                                              iframe { border: 0; width: 100%; height: 100%; }
+                                            </style>
+                                          </head>
+                                          <body>
+                                            <iframe src="${src}" onload="this.contentWindow?.print();"></iframe>
+                                          </body>
+                                        </html>
+                                    `);
+                                    printWindow.document.close();
+                                }}
+                                className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                                title="Print document"
+                            >
+                                <span className="material-symbols-outlined text-xl">print</span>
+                            </button>
+                        </div>
+                        <span className="text-sm font-medium text-logip-text-body dark:text-dark-text-secondary whitespace-nowrap ml-4">Zoom</span>
+                        <input
+                            type="range"
+                            min={0.25}
+                            max={2}
+                            step={0.05}
+                            value={zoom}
+                            onChange={(e) => setZoom(Number(e.target.value))}
+                            className="flex-1 h-2 bg-gray-200 dark:bg-dark-bg rounded-lg appearance-none cursor-pointer accent-logip-primary min-w-[100px]"
+                        />
+                        <span className="text-sm font-semibold text-logip-text-header dark:text-dark-text-primary tabular-nums w-12 text-right">{Math.round(zoom * 100)}%</span>
                     </div>
                 </div>
             </div>
