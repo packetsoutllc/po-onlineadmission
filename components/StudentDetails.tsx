@@ -16,6 +16,7 @@ import { getHouseColor, initialHouses, House } from './admin/shared/houseData';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { StudentStatus, AdminStudent, initialAdminStudents } from './admin/pages/StudentsPage';
 import { setLocalStorageAndNotify, logActivity } from '../utils/storage';
+import { setFavicon } from '../utils/favicon';
 import { Dormitory, initialDormitories } from './admin/shared/dormitoryData';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
@@ -54,25 +55,6 @@ export interface Student {
   phoneNumber?: string;
   parentContact?: string; 
 }
-
-const updateFaviconForSchool = (school?: School | null) => {
-    if (!school?.logo) return;
-    if (typeof document === 'undefined') return;
-    try {
-        const head = document.head || document.getElementsByTagName('head')[0];
-        if (!head) return;
-
-        const existingIcons = head.querySelectorAll("link[rel*='icon']");
-        existingIcons.forEach(el => head.removeChild(el));
-
-        const link = document.createElement('link');
-        link.rel = 'icon';
-        link.href = school.logo;
-        head.appendChild(link);
-    } catch (e) {
-        // Silently ignore favicon update errors
-    }
-};
 
 export interface AiSettings {
     enableAiChat: boolean;
@@ -360,7 +342,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
       const s = schools.find(s => s.id === initialStudent.schoolId);
       if (s) {
           document.title = 'Packets Out - Online Admission System';
-          updateFaviconForSchool(s);
+          setFavicon(s.logo ?? null);
       }
       return s;
   }, [schools, initialStudent.schoolId]);

@@ -3,6 +3,7 @@ import Modal from './Modal';
 import { Select } from './FormControls';
 import { Student, ApplicationStatus } from './StudentDetails';
 import { setLocalStorageAndNotify, logActivity } from '../utils/storage';
+import { setFavicon } from '../utils/favicon';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Admission, initialAdmissions, School, initialSchools } from './admin/pages/SettingsPage';
 import { AdminStudent, initialAdminStudents, StudentStatus } from './admin/pages/StudentsPage';
@@ -35,25 +36,6 @@ const defaultAdmissionSettings: AdmissionSettings = {
     maintenanceTitle: 'Site under maintenance',
     maintenanceMessage: 'The online admission system is currently offline and will be back online soon.',
     maintenanceCountdownEnd: null,
-};
-
-const updateFaviconForSchool = (school?: School | null) => {
-    if (!school?.logo) return;
-    if (typeof document === 'undefined') return;
-    try {
-        const head = document.head || document.getElementsByTagName('head')[0];
-        if (!head) return;
-
-        const existingIcons = head.querySelectorAll("link[rel*='icon']");
-        existingIcons.forEach(el => head.removeChild(el));
-
-        const link = document.createElement('link');
-        link.rel = 'icon';
-        link.href = school.logo;
-        head.appendChild(link);
-    } catch (e) {
-        // Silently ignore favicon update errors
-    }
 };
 
 // Helper function to check if a notification should be active
@@ -222,12 +204,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
     return () => clearInterval(interval);
   }, [activeSchoolsList]);
 
-  // Multi-tenancy isolation: determine context based on slugs
+  // Multi-tenancy isolation: determine context based on slugs; each school's logo is used as favicon
   const activeSchool = useMemo(() => {
       const school = schoolSlug ? schools.find(s => s.slug === schoolSlug) : schools.find(s => s.id === 's1');
       if (school) {
           document.title = 'Packets Out - Online Admission System';
-          updateFaviconForSchool(school);
+          setFavicon(school.logo ?? null);
       }
       return school;
   }, [schools, schoolSlug]);

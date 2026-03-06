@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { setFavicon } from './utils/favicon';
 import AuthForm from './components/AuthForm';
 import StudentDetails, { ApplicationStatus, Student } from './components/StudentDetails';
 import AdminLayout, { AdminUser } from './components/admin/AdminLayout';
@@ -50,42 +51,25 @@ function App() {
     }
   }, [isDarkMode]);
 
-  const setPacketsOutBranding = () => {
+  const setAdminFaviconAndTitle = () => {
     document.title = 'Packets Out - Online Admission System';
-
-    try {
-      const head = document.head || document.getElementsByTagName('head')[0];
-      if (!head) return;
-
-      let link = head.querySelector("link[rel*='icon']") as HTMLLinkElement | null;
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        head.appendChild(link);
-      }
-
-      const svgIcon =
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="6" y="6" width="5" height="20" rx="2.5" fill="#111827"/><rect x="14" y="9" width="5" height="17" rx="2.5" fill="#111827"/><path d="M22 11L27 9L28 14L24 15.5L22 11Z" fill="none" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 11L25.5 14.5L28 14" fill="none" stroke="#0EA5E9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      const encoded = encodeURIComponent(svgIcon);
-      link.href = `data:image/svg+xml,${encoded}`;
-    } catch {
-      // ignore favicon errors
-    }
+    setFavicon(null); // use main admin (Packets Out) logo as favicon
   };
 
-  // Set title and favicon for admin login route
-  useEffect(() => {
-    if (isAdminLoginRoute && !adminUser) {
-      setPacketsOutBranding();
-    }
-  }, [isAdminLoginRoute, adminUser]);
-
-  // Set title and favicon for main landing page
+  // Favicon + title: landing, admin login, and admin dashboard use main admin logo
   useEffect(() => {
     if (isLandingRoute) {
-      setPacketsOutBranding();
+      setAdminFaviconAndTitle();
+      return;
     }
-  }, [isLandingRoute]);
+    if (isAdminLoginRoute && !adminUser) {
+      setAdminFaviconAndTitle();
+      return;
+    }
+    if (appMode === 'admin' && adminUser) {
+      setAdminFaviconAndTitle();
+    }
+  }, [isLandingRoute, isAdminLoginRoute, appMode, adminUser]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
   

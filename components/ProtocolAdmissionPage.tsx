@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Modal from './Modal';
 import { FormField, Input, Select } from './FormControls';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { setFavicon } from '../utils/favicon';
 import { AdminStudent, initialAdminStudents } from './admin/pages/StudentsPage';
 import { Admission, initialAdmissions, School, initialSchools } from './admin/pages/SettingsPage';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
@@ -19,25 +20,6 @@ const isNotificationActive = (notif: any, admissionId: string, type: 'scrolling'
         if (sessionStorage.getItem(sessionKey)) return false;
     }
     return true;
-};
-
-const updateFaviconForSchool = (school?: School | null) => {
-    if (!school?.logo) return;
-    if (typeof document === 'undefined') return;
-    try {
-        const head = document.head || document.getElementsByTagName('head')[0];
-        if (!head) return;
-
-        const existingIcons = head.querySelectorAll("link[rel*='icon']");
-        existingIcons.forEach(el => head.removeChild(el));
-
-        const link = document.createElement('link');
-        link.rel = 'icon';
-        link.href = school.logo;
-        head.appendChild(link);
-    } catch (e) {
-        // Silently ignore favicon update errors
-    }
 };
 
 interface ProtocolAdmissionPageProps {
@@ -76,14 +58,14 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
             const bySlug = schools.find(s => s.slug === schoolSlug);
             if (bySlug) {
                 document.title = 'Packets Out - Online Admission System';
-                updateFaviconForSchool(bySlug);
+                setFavicon(bySlug.logo ?? null);
                 return bySlug;
             }
         }
         const fallback = schools.find(s => s.id === 's1') || null;
         if (fallback) {
             document.title = 'Packets Out - Online Admission System';
-            updateFaviconForSchool(fallback);
+            setFavicon(fallback.logo ?? null);
         }
         return fallback;
     }, [schools, schoolSlug]);
