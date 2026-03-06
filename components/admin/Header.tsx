@@ -231,11 +231,18 @@ const Header: React.FC<HeaderProps> = ({
                         </div>
                     )}
                     <div className="flex items-center gap-3 min-w-0">
-                        <h1 className="text-lg md:text-xl font-bold text-logip-text-header dark:text-gray-100 truncate">{selectedSchool?.name || 'No School Selected'}</h1>
+                        <h1 className="text-lg md:text-xl font-bold text-logip-text-header dark:text-gray-100 truncate">
+                            {selectedSchool?.name || 'No School Selected'}
+                        </h1>
                         {selectedAdmission && (
                             <>
-                                <span className="text-xl font-light text-gray-300 dark:text-gray-600 hidden sm:block">|</span>
-                                <p className="text-base text-logip-text-subtle dark:text-gray-400 truncate hidden sm:block">{selectedAdmission.title}</p>
+                                <span
+                                    className="hidden sm:block w-px h-6 bg-logip-border dark:bg-report-border"
+                                    aria-hidden="true"
+                                />
+                                <p className="text-base text-logip-text-subtle dark:text-gray-400 truncate hidden sm:block">
+                                    {selectedAdmission.title}
+                                </p>
                             </>
                         )}
                     </div>

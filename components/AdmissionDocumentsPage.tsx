@@ -10,7 +10,6 @@ import { initialClasses } from './admin/pages/ClassesPage';
 import { initialHouses } from './admin/shared/houseData';
 import { logActivity, setLocalStorageAndNotify } from '../utils/storage';
 import Modal from './Modal';
-import LogoLoader from './LogoLoader';
 import PaymentGateway from './PaymentGateway';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 
@@ -117,7 +116,7 @@ const DocumentItem: React.FC<{
                         className="flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-bold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         {loading ? (
-                            <LogoLoader size="sm" variant="light" />
+                            <span className="text-logip-text-subtle dark:text-dark-text-secondary">Loading...</span>
                         ) : (
                             <span className="material-symbols-outlined text-lg">download</span>
                         )}
@@ -373,7 +372,7 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
         if (!admission || !admission.date) return null;
         const d = new Date(admission.date);
         const day = String(d.getDate()).padStart(2, '0');
-        const month = d.toLocaleString('default', { month: 'short' });
+        const month = d.toLocaleString('default', { month: 'long' });
         const year = d.getFullYear();
         return `${day}-${month}-${year}`;
     }, [admission]);
@@ -394,7 +393,7 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
                 </div>
                 {reopeningDateDisplay && (
                     <div className="flex flex-row items-center gap-3 self-start sm:self-auto justify-start sm:justify-end">
-                        <span className="text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest whitespace-nowrap">Admission/Reporting Date</span>
+                        <span className="text-sm sm:text-base font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">Admission/Reporting Date</span>
                         <span className="text-sm font-black text-white bg-red-600 px-4 py-2 rounded-xl shadow-md whitespace-nowrap leading-none flex items-center h-fit transform hover:scale-105 transition-transform">{reopeningDateDisplay}</span>
                     </div>
                 )}
@@ -411,17 +410,13 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
                             <p className="text-sm text-emerald-700 dark:text-emerald-400/80 font-medium leading-relaxed">System charge of GHS {financials.docAccessFeePrice}.00 is required to print or download your documents.</p>
                         </div>
                     </div>
-                    {/* Rotating Light Outline Button */}
-                    <div className="relative p-[2.5px] overflow-hidden rounded-xl shadow-lg transition-transform active:scale-95 group">
-                        <div className="absolute inset-[-1000%] animate-border-spin bg-[conic-gradient(from_90deg_at_50%_50%,#fbbf24_0%,#d97706_25%,#f59e0b_50%,#d97706_75%,#fbbf24_100%)] opacity-100"></div>
-                        <button 
-                            onClick={() => setIsPaymentActive(true)}
-                            className="relative z-10 px-8 py-3.5 text-sm font-black rounded-[10px] text-black bg-yellow-400 hover:bg-yellow-500 transition-colors uppercase tracking-widest whitespace-nowrap flex items-center gap-3"
-                        >
-                            <span className="material-symbols-outlined text-xl">payments</span>
-                            Click here to pay to unlock your documents
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setIsPaymentActive(true)}
+                        className="px-8 py-3.5 text-sm font-black rounded-xl text-black bg-yellow-400 hover:bg-yellow-500 transition-colors uppercase tracking-widest whitespace-nowrap flex items-center gap-3 shadow-md active:scale-[0.98]"
+                    >
+                        <span className="material-symbols-outlined text-xl">payments</span>
+                        Click here to pay to unlock your documents
+                    </button>
                 </div>
             )}
 
@@ -484,7 +479,7 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
                         onClose={() => setIsPaymentActive(false)}
                         isInitialVoucherPayment={false}
                         customPrice={financials.docAccessFeePrice}
-                        customTitle="Document Access Fee"
+                        customTitle="Admission Document Access"
                         customSubtitle="One-time payment to unlock your admission documents for printing."
                     />
                 </div>

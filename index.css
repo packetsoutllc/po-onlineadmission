@@ -21,34 +21,19 @@ body {
   opacity: 1;
 }
 
-/* Logo loader animations (works in all environments, no Tailwind required) */
-@keyframes poLogoBar {
-  0%,
-  100% {
-    transform: scaleY(0.6);
+/* Popup dropdown animation (e.g. Accept/Reject) */
+@keyframes popupIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(-4px);
   }
-  50% {
-    transform: scaleY(1);
-  }
-}
-
-@keyframes poLogoPulse {
-  0%,
   100% {
     opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.02);
+    transform: scale(1) translateY(0);
   }
 }
 
-.po-logo-bar {
-  animation: poLogoBar 0.25s ease-out infinite;
-  transform-origin: center bottom;
-}
-
-.po-logo-pulse {
-  animation: poLogoPulse 0.3s ease-out infinite;
+.animate-popup-in {
+  animation: popupIn 0.2s ease-out forwards;
+  transform-origin: top left;
 }

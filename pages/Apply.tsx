@@ -5,7 +5,6 @@ import { SCHOOLS } from '../constants';
 import { improveEssay } from '../services/geminiService';
 import { Sparkles, Save, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { AIResponse } from '../types';
-import LogoLoader from '../components/LogoLoader';
 
 const Apply: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -205,12 +204,7 @@ const Apply: React.FC = () => {
                             transition-colors
                         `}
                     >
-                        {isAnalyzing ? (
-                            <>
-                                <LogoLoader size="sm" variant="light" className="mr-2" />
-                                Analyzing...
-                            </>
-                        ) : (
+                        {isAnalyzing ? 'Analyzing...' : (
                             <>
                                 <Sparkles className="-ml-1 mr-2 h-4 w-4" />
                                 Improve with AI
@@ -280,7 +274,7 @@ const Apply: React.FC = () => {
                 disabled={isSubmitting}
                 className="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all"
               >
-                {isSubmitting ? (<><LogoLoader size="sm" variant="light" /> Submitting...</>) : 'Submit Application'}
+                {isSubmitting ? 'Submitting...' : 'Submit Application'}
                 {!isSubmitting && <Save className="ml-2 -mr-1 h-5 w-5" />}
               </button>
             </div>

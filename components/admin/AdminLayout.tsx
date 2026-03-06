@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import PageContent from './PageContent';
 import Header from './Header';
@@ -61,6 +61,10 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
     const { showToast } = useToast();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activePage, setActivePage] = useState('Dashboard');
+    const setActivePageWithTransition = useCallback((page: string) => {
+        setActivePage(page);
+        setIsSidebarOpen(false);
+    }, []);
     const [allSchools, setAllSchools] = useLocalStorage<School[]>('admin_schools', initialSchools);
     const [allAdmissions, setAllAdmissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
     const [students, setStudents] = useLocalStorage<AdminStudent[]>('admin_students', initialAdminStudents);
@@ -211,10 +215,7 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
                 
                 <Sidebar 
                     activePage={activePage} 
-                    setActivePage={(page) => {
-                        setActivePage(page);
-                        setIsSidebarOpen(false);
-                    }} 
+                    setActivePage={setActivePageWithTransition} 
                     onExitAdmin={onExitAdmin} 
                     permissions={permissions} 
                     conversations={conversations} 
@@ -234,14 +235,14 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
                         admissions={admissions} 
                         selectedAdmission={admissions.find(a => a.id === selectedAdmissionId)} 
                         setSelectedAdmissionId={setSelectedAdmissionId} 
-                        setActivePage={setActivePage} 
+                        setActivePage={setActivePageWithTransition} 
                         onExitAdmin={onExitAdmin} 
                         onMenuClick={() => setIsSidebarOpen(true)} 
                     />
                     <div className="flex-1 overflow-x-hidden overflow-y-auto no-scrollbar">
                         <PageContent 
                             activePage={activePage} 
-                            setActivePage={setActivePage} 
+                            setActivePage={setActivePageWithTransition} 
                             selectedSchool={schools.find(s => s.id === selectedSchoolId)} 
                             selectedAdmission={admissions.find(a => a.id === selectedAdmissionId)} 
                             setSelectedSchoolId={setSelectedSchoolId} 

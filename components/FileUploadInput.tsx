@@ -3,7 +3,6 @@ import { Student, AiSettings } from './StudentDetails';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { usePrevious } from '../utils/storage';
 import ImagePreviewModal from './shared/ImagePreviewModal';
-import LogoLoader from './LogoLoader';
 import WebcamCaptureModal from './WebcamCaptureModal';
 import { FormFieldConfig } from './admin/pages/ApplicationDashboardSettings';
 import PDFPreviewModal from './PDFPreviewModal';
@@ -21,6 +20,8 @@ interface FileUploadInputProps {
     id?: string;
     field: FormFieldConfig;
     studentIndexNumber: string;
+    /** Required to scope storage by school and avoid cross-school data. */
+    schoolId?: string;
     isSubmitted?: boolean;
     gender?: string;
     isAdminEditMode?: boolean;
@@ -29,7 +30,7 @@ interface FileUploadInputProps {
     onChange: (fieldId: string, value: any) => void;
 }
 
-const FileUploadInput: React.FC<FileUploadInputProps> = ({ id, field, studentIndexNumber, isSubmitted = false, gender = 'female', isAdminEditMode = false, aiSettings, value, onChange }) => {
+const FileUploadInput: React.FC<FileUploadInputProps> = ({ id, field, studentIndexNumber, schoolId, isSubmitted = false, gender = 'female', isAdminEditMode = false, aiSettings, value, onChange }) => {
     
     const [isProcessingAI, setIsProcessingAI] = useState(false);
     const [previewModal, setPreviewModal] = useState<{ type: 'image' | 'pdf'; isOpen: boolean; data: string; name: string; }>({ type: 'image', isOpen: false, data: '', name: '' });
@@ -194,7 +195,8 @@ Requirements:
         onChange(field.id, null);
         if (fileInputRef.current) fileInputRef.current.value = '';
         try {
-             const key = `applicationData_${studentIndexNumber}`;
+             const key = schoolId ? `applicationData_${schoolId}_${studentIndexNumber}` : null;
+             if (!key) return;
              const stored = localStorage.getItem(key);
              if (stored) {
                  const data = JSON.parse(stored);
@@ -229,8 +231,7 @@ Requirements:
                 <div className="relative flex-grow">
                     {isProcessingAI && (
                          <div className="absolute inset-0 z-10 bg-logip-white/80 dark:bg-report-dark/80 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-logip-border dark:border-report-border p-6">
-                            <LogoLoader size="md" variant="default" />
-                            <p className="mt-3 text-base font-semibold text-logip-primary">Processing photo with AI...</p>
+                            <p className="text-base font-semibold text-logip-primary">Processing photo with AI...</p>
                             <p className="text-sm text-black dark:text-gray-400">This may take a moment.</p>
                         </div>
                     )}

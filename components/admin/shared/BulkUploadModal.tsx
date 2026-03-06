@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import AdminModal from './AdminModal';
-import LogoLoader from '../../LogoLoader';
 import { FormSettings } from '../pages/ApplicationDashboardSettings';
 import { AdminStudent } from '../pages/StudentsPage';
 import { Admission } from '../pages/SettingsPage';
@@ -197,8 +196,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, form
         if (uploadState === 'processing') {
             return (
                 <div className="flex flex-col items-center justify-center text-center py-12">
-                     <LogoLoader size="lg" variant="default" />
-                    <h3 className="mt-4 text-xl font-semibold text-logip-text-header dark:text-dark-text-primary">Processing Upload...</h3>
+                    <h3 className="text-xl font-semibold text-logip-text-header dark:text-dark-text-primary">Processing Upload...</h3>
                     <p className="text-logip-text-subtle dark:text-dark-text-secondary">Please wait while we validate your data.</p>
                 </div>
             );

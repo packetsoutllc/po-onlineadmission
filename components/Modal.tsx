@@ -7,9 +7,13 @@ interface ModalProps {
   children: React.ReactNode;
   // FIX: Added 3xl, 4xl, 5xl, and 6xl to match required layouts in other components and AdminModal capabilities
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
+  /** When true, do not render the dark backdrop behind the panel. */
+  hideBackdrop?: boolean;
+  /** When true, use a solid white backdrop instead of dark (e.g. for Corrections modal). */
+  backdropWhite?: boolean;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, size = 'md' }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', hideBackdrop = false, backdropWhite = false }) => {
   if (!isOpen) {
     return null;
   }
@@ -36,12 +40,14 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, size = 'md' })
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop - Added backdrop-blur-sm */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-hidden="true"
-      ></div>
+      {/* Backdrop - dark (default), white, or hidden for nested/lightweight modals. */}
+      {!hideBackdrop && (
+        <div
+          className={`absolute inset-0 ${backdropWhite ? 'bg-white dark:bg-gray-900' : 'bg-black/50 backdrop-blur-[2px]'}`}
+          onClick={onClose}
+          aria-hidden="true"
+        ></div>
+      )}
 
       {/* Modal Panel */}
       <div className={`relative w-full ${maxWidthClass} transform transition-all duration-300 ease-in-out animate-scaleIn bg-white dark:bg-[#1C1A27] rounded-xl border border-gray-200/50 dark:border-transparent p-6 sm:p-8 text-center shadow-2xl`}>

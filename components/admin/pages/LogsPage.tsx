@@ -76,15 +76,15 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
 
             let matchesUser = true;
             if (viewMode === 'me') {
-                matchesUser = log.user.name === adminUser.name;
+                matchesUser = (log.user?.name ?? '') === adminUser.name;
             } else if (viewMode === 'applicants') {
-                matchesUser = log.user.type === 'student';
+                matchesUser = log.user?.type === 'student';
             }
             if (!matchesUser) return false;
 
-            const matchesSearch = log.user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                  log.action.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                  (log.details || '').toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = (log.user?.name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                  (log.action ?? '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                  (log.details ?? '').toLowerCase().includes(searchTerm.toLowerCase());
             const matchesEventType = eventTypeFilter === 'all' || log.eventType === eventTypeFilter;
             
             const now = new Date();
@@ -216,7 +216,9 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
                              <tbody>
                                 {paginatedLogs.map(log => {
                                     const eventMeta = EVENT_TYPE_MAP[log.eventType] || EVENT_TYPE_MAP.system_settings;
-                                    const isStudent = log.user.type === 'student';
+                                    const userName = log.user?.name ?? '—';
+                                    const userAvatar = log.user?.avatar;
+                                    const isStudent = log.user?.type === 'student';
                                     return (
                                         <tr key={log.id} className="border-b border-logip-border dark:border-dark-border last:border-b-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                             <td className="p-4">
@@ -228,7 +230,7 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
                                             <td className="p-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="relative">
-                                                        <img src={log.user.avatar || `https://i.pravatar.cc/32?u=${log.user.name}`} alt={log.user.name} className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700" />
+                                                        <img src={userAvatar || `https://i.pravatar.cc/32?u=${encodeURIComponent(userName)}`} alt={userName} className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700" />
                                                         {isStudent && (
                                                             <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 border-2 border-white dark:border-dark-surface rounded-full flex items-center justify-center" title="Student Applicant">
                                                                 <span className="text-[6px] text-white font-bold">S</span>
@@ -236,13 +238,13 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
                                                         )}
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold text-base text-logip-text-header dark:text-dark-text-primary">{log.user.name}</span>
+                                                        <span className="font-bold text-base text-logip-text-header dark:text-dark-text-primary">{userName}</span>
                                                         <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500">{isStudent ? 'Applicant' : 'Administrator'}</span>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="p-4 text-base text-logip-text-body dark:text-dark-text-secondary">
-                                                <span className="font-medium">{log.action} </span>
+                                                <span className="font-medium">{log.action ?? '—'} </span>
                                                 {log.details && <span className="font-bold text-logip-text-header dark:text-dark-text-primary border-b border-dashed border-gray-300 dark:border-gray-600 pb-0.5">{log.details}</span>}
                                             </td>
                                             <td className="p-4 text-base text-logip-text-body dark:text-dark-text-secondary whitespace-nowrap">

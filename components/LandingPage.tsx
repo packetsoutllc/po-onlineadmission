@@ -1,7 +1,10 @@
 import React from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Select } from './FormControls';
+import PacketsOutArrowIcon from './PacketsOutArrowIcon';
+import Icon from './admin/shared/Icons';
 import { initialSchools, initialAdmissions, School, Admission } from './admin/pages/SettingsPage';
+import PacketsOutLogo from './PacketsOutLogo';
 
 interface LandingPageProps {
   toggleTheme: () => void;
@@ -67,9 +70,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
                     className="w-full h-full object-contain p-1"
                   />
                 ) : (
-                  <span className="material-symbols-outlined text-xl text-logip-text-subtle dark:text-dark-text-secondary">
-                    apartment
-                  </span>
+                  <Icon name="apartment" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" />
                 )}
               </div>
               <div className="min-w-0">
@@ -94,9 +95,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
                   Coming soon
                 </span>
               )}
-              <span className="material-symbols-outlined text-xl text-logip-text-subtle group-hover:text-logip-primary dark:text-dark-text-secondary">
-                arrow_forward_ios
-              </span>
+              <Icon name="arrow_forward_ios" className="w-5 h-5 text-logip-text-subtle group-hover:text-logip-primary dark:text-dark-text-secondary" />
             </div>
           </button>
         );
@@ -111,53 +110,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-sky-50 to-indigo-50 dark:from-background-dark dark:via-dark-bg dark:to-report-dark flex flex-col items-center justify-start px-4 pt-8 pb-10">
       <header className="w-full max-w-6xl flex items-center justify-between mb-10">
-        <div className="flex items-center gap-3">
-          <div className="flex items-end gap-0.5">
-            <div className="w-2 h-6 bg-logip-text-header dark:bg-gray-100 rounded-full"></div>
-            <div className="w-2 h-4 bg-logip-text-header dark:bg-gray-100 rounded-full"></div>
-            <svg
-              className="w-5 h-5 text-sky-500"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M3 11L10.5 4H21L13.5 11H3Z"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M13.5 11L21 4V14L13.5 21V11Z"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M3 11L13.5 11"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xl sm:text-2xl font-extrabold text-logip-text-header dark:text-dark-text-primary tracking-tight">
-              Packets Out
-            </p>
-          </div>
-        </div>
+        <PacketsOutLogo
+          size="md"
+          className="text-logip-text-header dark:text-dark-text-primary"
+          textClassName="font-extrabold"
+        />
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-full text-gray-500 dark:text-gray-300 bg-white/70 dark:bg-gray-900/60 backdrop-blur shadow-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-full text-gray-500 dark:text-gray-300 bg-white/70 dark:bg-gray-900/60 backdrop-blur shadow-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center"
           aria-label="Toggle theme"
         >
-          <span className="material-symbols-outlined">
-            {isDarkMode ? 'light_mode' : 'dark_mode'}
-          </span>
+          <Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" />
         </button>
       </header>
 
@@ -169,19 +132,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
           </h1>
           <p className="text-base sm:text-lg text-logip-text-body/80 dark:text-dark-text-secondary max-w-xl mb-6">
             A secure and modern online admission system for schools across Ghana.
-            Simply search for your school, verify your placement, complete the online admission form, and download your admission documents.
+            Simply search for your school, enter your index number to verify your placement, complete the online admission form, and download your admission documents.
           </p>
           <div className="flex flex-col gap-2 text-xs sm:text-sm text-logip-text-subtle dark:text-dark-text-secondary mb-10">
             <span className="inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base text-emerald-500">verified_user</span>
+              <Icon name="verified_user" className="text-base text-emerald-500" />
               Self-Service System
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base text-sky-500">cloud_done</span>
+              <Icon name="cloud_done" className="text-base text-sky-500" />
               Secure data protection
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base text-violet-500">chat</span>
+              <Icon name="chat" className="text-base text-violet-500" />
               Built-in Live chat support
             </span>
           </div>
@@ -198,16 +161,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <div className="relative flex-1">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                <span className="material-symbols-outlined text-base">search</span>
+            <div className="relative flex-1 min-w-0">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                <Icon name="search" className="w-4 h-4 flex-shrink-0" />
               </span>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by school or region"
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-logip-border dark:border-report-border bg-white dark:bg-dark-bg text-logip-text-header dark:text-dark-text-primary placeholder:text-logip-text-subtle/80 dark:placeholder:text-dark-text-secondary/80 focus:outline-none focus:ring-2 focus:ring-logip-primary/70"
+                className="w-full min-w-0 pl-9 pr-3 py-2 text-sm rounded-lg border border-logip-border dark:border-report-border bg-white dark:bg-dark-bg text-logip-text-header dark:text-dark-text-primary placeholder:text-logip-text-subtle/80 dark:placeholder:text-dark-text-secondary/80 focus:outline-none focus:ring-2 focus:ring-logip-primary/70"
               />
             </div>
             <div className="w-full sm:w-48">
@@ -247,16 +210,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
       <footer className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-full pointer-events-none max-lg:hidden">
         <p className="text-xs text-gray-500/80 dark:text-gray-400/60 flex items-center justify-center gap-1.5">
           Powered by
-          <span className="inline-flex items-center gap-0.5">
-            <span className="w-1.5 h-4 bg-current rounded-full opacity-80" />
-            <span className="w-1.5 h-3 bg-current rounded-full opacity-80" />
-            <svg className="w-3.5 h-3.5 text-sky-500" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M3 11L10.5 4H21L13.5 11H3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M13.5 11L21 4V14L13.5 21V11Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3 11L13.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          Packets Out
+          <PacketsOutLogo size="sm" className="ml-1 text-gray-700 dark:text-gray-200" />
         </p>
       </footer>
     </div>

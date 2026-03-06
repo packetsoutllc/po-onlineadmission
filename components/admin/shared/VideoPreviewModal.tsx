@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import LogoLoader from '../../LogoLoader';
 
 interface VideoPreviewModalProps {
   isOpen: boolean;
@@ -328,8 +327,8 @@ const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({ isOpen, onClose, 
 
             <div className="relative w-full bg-black aspect-video flex items-center justify-center group">
                  {isLoading && (
-                     <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                         <LogoLoader size="md" variant="default" />
+                     <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none text-gray-500">
+                         Loading...
                      </div>
                  )}
                  

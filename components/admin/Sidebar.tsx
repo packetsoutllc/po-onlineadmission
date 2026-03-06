@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Conversation } from './pages/MessagesPage';
 import Icon from './shared/Icons';
+import PacketsOutLogo from '../PacketsOutLogo';
 
 interface NavItemProps {
     icon: string;
@@ -12,41 +13,11 @@ interface NavItemProps {
 }
 
 const LogipLogo: React.FC = () => (
-    <div className="flex items-center gap-2.5">
-        <div className="flex items-end gap-0.5">
-            <div className="w-2 h-6 bg-logip-text-header dark:bg-gray-100 rounded-full"></div>
-            <div className="w-2 h-4 bg-logip-text-header dark:bg-gray-100 rounded-full"></div>
-            <svg
-                className="w-5 h-5 text-sky-500"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                    d="M3 11L10.5 4H21L13.5 11H3Z"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-                <path
-                    d="M13.5 11L21 4V14L13.5 21V11Z"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-                <path
-                    d="M3 11L13.5 11"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            </svg>
-        </div>
-        <span className="font-bold text-2xl text-logip-text-header dark:text-gray-100">Packets Out</span>
-    </div>
+    <PacketsOutLogo
+        size="md"
+        className="text-logip-text-header dark:text-gray-100"
+        textClassName="text-2xl"
+    />
 );
 
 const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, notificationCount, color }) => (
@@ -116,16 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onExitAdmi
                 </button>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 flex items-center gap-1 text-left justify-start pl-0">
                     Powered by:
-                    <span className="inline-flex items-center gap-0.5 font-semibold">
-                        <span className="w-1.5 h-4 bg-current rounded-full opacity-80" />
-                        <span className="w-1.5 h-3 bg-current rounded-full opacity-80" />
-                        <svg className="w-3.5 h-3.5 text-sky-500" viewBox="0 0 24 24" fill="none" aria-hidden>
-                            <path d="M3 11L10.5 4H21L13.5 11H3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M13.5 11L21 4V14L13.5 21V11Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M3 11L13.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                    </span>
-                    Packets Out
+                    <PacketsOutLogo size="sm" className="ml-1 text-gray-600 dark:text-gray-200" />
                 </p>
             </div>
         </aside>

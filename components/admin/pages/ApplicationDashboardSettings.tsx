@@ -97,7 +97,7 @@ const ApplicationDashboardSettings: React.FC<{
     selectedAdmission: Admission | null;
 }> = ({ selectedSchool, selectedAdmission }) => {
     const { showToast } = useToast();
-    const storageKey = selectedAdmission ? `formSettings_${selectedAdmission.id}` : null;
+    const storageKey = selectedSchool && selectedAdmission ? `formSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
     const [savedSettings, setSavedSettings] = useLocalStorage<FormSettings>(storageKey || 'nullFormSettingsKey', INITIAL_FORM_SETTINGS);
 
     const [localSettings, setLocalSettings] = useState<FormSettings>(savedSettings);

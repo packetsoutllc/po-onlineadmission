@@ -569,6 +569,7 @@ const AdmissionDocTab: React.FC<AdmissionDocTabProps> = ({ selectedSchool, selec
                     pdfData={layoutEditorState.fileData} 
                     docId={layoutEditorState.template?.id || ''} 
                     storageKey={`docLayout_${selectedSchool.id}_${selectedAdmission.id}_${layoutEditorState.template?.id}`}
+                    schoolId={selectedSchool.id}
                     admissionId={selectedAdmission.id}
                 />
             )}

@@ -24,8 +24,9 @@ import { FormSettings, INITIAL_FORM_SETTINGS } from './admin/pages/ApplicationDa
 import { School, initialSchools, Admission, initialAdmissions } from './admin/pages/SettingsPage';
 import { initialClasses, Class } from './admin/pages/ClassesPage';
 import { allocateHouseForStudent, allocateDormForStudent } from './admin/shared/houseAllocationService';
-import LogoLoader from './LogoLoader';
+import PacketsOutArrowIcon from './PacketsOutArrowIcon';
 import Icon from './admin/shared/Icons';
+import PacketsOutLogo from './PacketsOutLogo';
 
 export type ApplicationStatus = 'not_submitted' | 'submitted';
 export type AppStatus = ApplicationStatus | StudentStatus;
@@ -345,7 +346,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
     }
   }, [messages, activeStudentIndex, initialStudent.name, initialStudent.schoolId, initialStudent.admissionId]);
   
-  const formSettingsKey = `formSettings_${initialStudent.admissionId}`;
+  const formSettingsKey = `formSettings_${initialStudent.schoolId}_${initialStudent.admissionId}`;
   const [formSettings] = useLocalStorage<FormSettings>(formSettingsKey, INITIAL_FORM_SETTINGS);
 
   const applicationDataKey = `applicationData_${initialStudent.schoolId}_${activeStudentIndex}`;
@@ -965,27 +966,47 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
   const lastLoginTime = useMemo(() => { const timestamp = localStorage.getItem(`student_login_timestamp_${initialStudent.schoolId}_${activeStudentIndex}`); if (!timestamp) return null; return new Date(parseInt(timestamp, 10)).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }); }, [activeStudentIndex, initialStudent.schoolId]);
   const displayedAdmissionNumber = useMemo(() => { if (admissionNumber) return admissionNumber; if (realTimeApplicationStatus === 'Admitted') { const counterKey = `admissionSubmissionCounter_${initialStudent.schoolId}`; const currentCount = localStorage.getItem(counterKey) || '0'; return `${liveStudent.programme.substring(0,3).toUpperCase()}-${activeStudentIndex.slice(-3)}/${String(currentCount).padStart(3, '0')}`; } return null; }, [admissionNumber, realTimeApplicationStatus, liveStudent.programme, activeStudentIndex, initialStudent.schoolId]);
   const displayedSubmissionDate = useMemo(() => { if (submissionDate) return submissionDate; if (realTimeApplicationStatus === 'Admitted') return new Date().toISOString(); return null; }, [submissionDate, realTimeApplicationStatus]);
-  const logoutAndBranding = (isSidebar: boolean = false) => (
-    <div className={`mt-auto w-full ${isSidebar ? 'px-3' : ''}`}>
-        <button onClick={() => onReturn()} className={`flex items-center gap-3 py-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50 text-sm text-black dark:text-report-subtle w-full text-left ${isSidebar ? 'pl-0 pr-3' : 'px-3'}`}>
-            <Icon name="power_settings_new" className="w-5 h-5 flex-shrink-0" />
-            <span>{isAdminEditMode ? 'Close Editor' : 'Log out'}</span>
-        </button>
-        <p className={`text-[10px] text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1 text-left justify-start ${isSidebar ? 'pl-0' : 'justify-center'}`}>
-          Powered by:
-          <span className="inline-flex items-center gap-0.5 font-semibold">
-            <span className="w-1.5 h-4 bg-current rounded-full opacity-80" />
-            <span className="w-1.5 h-3 bg-current rounded-full opacity-80" />
-            <svg className="w-3.5 h-3.5 text-sky-500" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M3 11L10.5 4H21L13.5 11H3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M13.5 11L21 4V14L13.5 21V11Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3 11L13.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          Packets Out
-        </p>
-    </div>
+  const footerBranding = (
+    <p className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1 font-normal">
+      Powered by:
+      <PacketsOutLogo size="sm" className="ml-0.5 text-gray-400 dark:text-gray-500" />
+    </p>
   );
+  const footerLogoutButton = (
+    <button
+      onClick={() => onReturn()}
+      className="flex items-center gap-2 py-2 px-4 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50 text-sm font-bold text-black dark:text-report-subtle shrink-0 whitespace-nowrap"
+    >
+      <Icon name="power_settings_new" className="w-5 h-5 flex-shrink-0" />
+      <span>{isAdminEditMode ? 'Close Editor' : 'Log out'}</span>
+    </button>
+  );
+
+  const logoutAndBranding = (isSidebar: boolean = false) => {
+    const branding = (
+      <p className={`text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1 font-normal ${isSidebar ? 'text-left pl-0' : 'text-center'}`}>
+        Powered by:
+        <PacketsOutLogo size="sm" className="ml-0.5 text-gray-400 dark:text-gray-500" />
+      </p>
+    );
+    const logoutButton = (
+      <button
+        onClick={() => onReturn()}
+        className={`flex items-center gap-2 py-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50 text-sm text-black dark:text-report-subtle shrink-0 whitespace-nowrap ${
+          isSidebar ? 'pl-0 pr-3 w-full text-left' : 'px-3 w-full text-left'
+        }`}
+      >
+        <Icon name="power_settings_new" className="w-5 h-5 flex-shrink-0" />
+        <span>{isAdminEditMode ? 'Close Editor' : 'Log out'}</span>
+      </button>
+    );
+    return (
+      <div className={`mt-auto w-full ${isSidebar ? 'px-3' : ''}`}>
+        {logoutButton}
+        <div className={isSidebar ? 'pl-0 mt-2' : 'mt-2 flex justify-center'}>{branding}</div>
+      </div>
+    );
+  };
 
   const CommonModals = (
       <>
@@ -1009,7 +1030,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                   </div>
                   {otpError && <p className="mt-4 text-sm text-red-500 animate-fadeIn">{otpError}</p>}
                   <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">Code expires in <span className="font-bold text-logip-primary">{formatTime(otpTimeLeft)}</span></p>
-                  <div className="mt-8 w-full flex items-center gap-4"><button onClick={() => setIsOtpModalOpen(false)} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">Cancel</button><button onClick={handleVerifyOtp} disabled={isVerifyingOtp || otpArray.join('').length < 6} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">{isVerifyingOtp ? <><LogoLoader size="sm" variant="light" /> Verifying...</> : 'Unlock Now'}</button></div>
+                  <div className="mt-8 w-full flex items-center gap-4"><button onClick={() => setIsOtpModalOpen(false)} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">Cancel</button><button onClick={handleVerifyOtp} disabled={isVerifyingOtp || otpArray.join('').length < 6} type="button" className="w-full py-2 px-4 text-base font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">{isVerifyingOtp ? 'Verifying...' : 'Unlock Now'}</button></div>
               </div>
           </Modal>
           <Modal isOpen={isLimitModalOpen} onClose={() => setIsLimitModalOpen(false)}>
@@ -1053,7 +1074,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                     <div className="flex justify-center w-full px-4 mb-3 animate-slideInUp">
                         <button 
                             onClick={(e) => { e.stopPropagation(); handleRequestUnlock(); }} 
-                            className="pointer-events-auto w-full max-w-md py-3 text-sm font-semibold rounded-2xl text-white bg-blue-600 shadow-2xl transform active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+                            className="pointer-events-auto w-full max-w-md py-3 text-sm font-semibold rounded-2xl text-white bg-blue-600 shadow-2xl transform active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap"
                         >
                             <Icon name="edit_note" className="w-5 h-5" />
                             Edit Application
@@ -1121,7 +1142,6 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{pageTitles.admission_docs.subtitle}</p>
                                 </div>
                             </div>
-                            <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm flex-shrink-0" aria-label="Toggle theme"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
                         </div>
                         <div className="flex items-center justify-between w-full gap-4">
                             <div className="min-w-0 flex-1">
@@ -1129,7 +1149,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                                 <div className="flex flex-row items-center gap-2 mt-1 flex-wrap">{currentStatus.text && <div className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${currentStatus.color}`}>{currentStatus.text}</div>}{liveStudent.isProtocol && <ProtocolIndicator />}</div>
                             </div>
                             <div className="flex flex-col items-end flex-shrink-0">
-                                <img src={avatarUrl} alt={liveStudent.name} className="w-12 h-12 rounded-xl object-cover shadow-sm" />
+                                <div className="flex items-center gap-2">
+                                    <img src={avatarUrl} alt={liveStudent.name} className="w-12 h-12 rounded-xl object-cover shadow-sm" />
+                                    <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm" aria-label="Toggle theme"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
+                                </div>
                                 {lastLoginTime && <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">Last logged in: {lastLoginTime}</span>}
                             </div>
                         </div>
@@ -1141,14 +1164,16 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                                 <SchoolLogo school={school} />
                                 {admission && (<><span className="font-light text-2xl text-gray-300 dark:text-gray-600">|</span><h1 className="text-lg text-gray-500 dark:text-gray-400 truncate">{admission.title}</h1></>)}
                             </div>
-                            <button onClick={toggleTheme} className="p-2 rounded-lg border border-logip-border dark:border-report-border text-logip-text-body dark:text-gray-400 bg-logip-white/50 dark:bg-report-button hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
                         </div>
                         <div className="flex items-center justify-between gap-4">
                             <div className="text-right">
                                 <h2 className="text-lg font-normal text-black dark:text-gray-100">Congratulations!, <span className="font-bold">{liveStudent.name}</span></h2>
                                 <div className="flex flex-row items-center justify-end gap-2 mt-1">{lastLoginTime && <span className="text-xs text-gray-500 dark:text-gray-400">Last logged in: {lastLoginTime}</span>}{currentStatus.text && <div className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${currentStatus.color}`}>{currentStatus.text}</div>}{liveStudent.isProtocol && <ProtocolIndicator />}</div>
                             </div>
-                            <img src={avatarUrl} alt={liveStudent.name} className="w-12 h-12 rounded-full object-cover" />
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <img src={avatarUrl} alt={liveStudent.name} className="w-12 h-12 rounded-full object-cover" />
+                                <button onClick={toggleTheme} className="p-2 rounded-lg border border-logip-border dark:border-report-border text-logip-text-body dark:text-gray-400 bg-logip-white/50 dark:bg-report-button hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm" aria-label="Toggle theme"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
+                            </div>
                         </div>
                     </header>
                     <div className="flex-1 flex overflow-hidden min-h-0 px-4 pt-4 pb-0 sm:p-6 gap-6 pb-24 lg:pb-6">
@@ -1174,7 +1199,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                                 {isApplicationSubmitted && realTimeApplicationStatus !== 'Rejected' && (admissionSettings?.allowStudentEdit !== false) && (
                                     <button
                                         onClick={handleRequestUnlock}
-                                        className="flex-1 py-2.5 px-4 text-sm font-semibold rounded-lg border border-blue-600 text-blue-700 bg-white hover:bg-blue-50 transition-colors"
+                                        className="flex-1 py-2.5 px-4 text-sm font-semibold rounded-lg border border-blue-600 text-blue-700 bg-white hover:bg-blue-50 transition-colors whitespace-nowrap"
                                     >
                                         Edit Application
                                     </button>
@@ -1182,10 +1207,20 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                             </div>
                         </div>
                     </div>
-                    <footer className="hidden lg:flex flex-shrink-0 items-center justify-between px-4 py-3 sm:px-6 border-t border-logip-border dark:border-report-border bg-logip-white dark:bg-report-dark">
-                        {logoutAndBranding()}
-                        {isApplicationSubmitted && realTimeApplicationStatus !== 'Rejected' && (admissionSettings?.allowStudentEdit !== false) && (<button onClick={handleRequestUnlock} className="px-6 py-2 text-base font-normal rounded-lg text-blue-700 dark:text-blue-400 bg-blue-100/80 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors">Edit Application</button>)}
-                    </footer>
+                    <footer className="hidden lg:grid grid-cols-3 flex-shrink-0 items-center px-4 py-3 sm:px-6 border-t border-logip-border dark:border-report-border bg-logip-white dark:bg-report-dark gap-4">
+                        <div className="flex items-center gap-3 min-w-0 justify-start">
+                          {footerLogoutButton}
+                          {isApplicationSubmitted && realTimeApplicationStatus !== 'Rejected' && (admissionSettings?.allowStudentEdit !== false) && (
+                            <button onClick={handleRequestUnlock} className="px-6 py-2 text-base font-normal rounded-lg text-blue-700 dark:text-blue-400 bg-blue-100/80 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors whitespace-nowrap shrink-0">
+                              Edit Application
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex justify-center min-w-0">
+                          {footerBranding}
+                        </div>
+                        <div className="min-w-0" aria-hidden />
+                      </footer>
                 </main>
                 <MobileBottomNav />
                 {aiSettings?.enableAiChat && (
@@ -1224,7 +1259,6 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{pageTitles[currentPage]?.subtitle || 'Welcome'}</p>
                     </div>
                 </div>
-                <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm flex-shrink-0" aria-label="Toggle theme"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
             </div>
             <div className="flex items-center justify-between w-full gap-4">
                 <div className="min-w-0 flex-1">
@@ -1232,7 +1266,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                     <div className="flex flex-row items-center gap-2 mt-1 flex-wrap">{currentStatus.text && <div className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${currentStatus.color}`}>{currentStatus.text}</div>}{liveStudent.isProtocol && <ProtocolIndicator />}</div>
                 </div>
                 <div className="flex flex-col items-end flex-shrink-0">
-                    <img src={avatarUrl} alt={liveStudent.name} className="w-12 h-12 rounded-xl object-cover shadow-sm" />
+                    <div className="flex items-center gap-2">
+                        <img src={avatarUrl} alt={liveStudent.name} className="w-12 h-12 rounded-xl object-cover shadow-sm" />
+                        <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm" aria-label="Toggle theme"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
+                    </div>
                     {lastLoginTime && <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">Last logged in: {lastLoginTime}</span>}
                 </div>
             </div>
@@ -1249,7 +1286,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                     <h2 className="text-lg font-bold text-black dark:text-gray-100 truncate" title={liveStudent.name}>Hello, {(liveStudent.name.length > 24 ? liveStudent.name.slice(0, 24) + '...' : liveStudent.name)}</h2>
                     <div className="mt-1 flex flex-wrap items-center justify-start lg:justify-end gap-2">{lastLoginTime && <span className="text-xs text-gray-500 dark:text-gray-400">Last logged in: {lastLoginTime}</span>}{currentStatus.text && <div className={`px-3 py-1.5 rounded-lg font-semibold text-sm text-center ${currentStatus.color}`}>{currentStatus.text}</div>}{liveStudent.isProtocol && <ProtocolIndicator />}</div>
                 </div>
-                <img src={avatarUrl} alt={liveStudent.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <img src={avatarUrl} alt={liveStudent.name} className="w-16 h-16 rounded-lg object-cover" />
+                    <button onClick={toggleTheme} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm" aria-label="Toggle theme"><Icon name={isDarkMode ? 'light_mode' : 'dark_mode'} className="w-5 h-5" /></button>
+                </div>
             </div>
         </header>
         <div className="flex-1 bg-logip-white dark:bg-report-dark border border-logip-border dark:border-report-border rounded-xl flex flex-col overflow-hidden min-h-0">

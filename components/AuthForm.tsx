@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Modal from './Modal';
+import { Select } from './FormControls';
 import { Student, ApplicationStatus } from './StudentDetails';
 import { setLocalStorageAndNotify, logActivity } from '../utils/storage';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -8,7 +9,6 @@ import { AdminStudent, initialAdminStudents, StudentStatus } from './admin/pages
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
 import VideoPreviewModal from './admin/shared/VideoPreviewModal';
-import LogoLoader from './LogoLoader';
 import Icon from './admin/shared/Icons';
 
 // Default settings
@@ -26,6 +26,8 @@ const defaultAdmissionSettings: AdmissionSettings = {
     activateWhatsappId: false,
     enableProtocolApplication: true,
     allowStudentEdit: true,
+    allowOfficialEditRequests: true,
+    autoApproveOfficialEdits: false,
     serialNumberFormat: 'numeric',
     serialNumberLength: 10,
     pinFormat: 'numeric',
@@ -182,6 +184,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
   
   // State for Profile Preview Popup
   const [previewStudent, setPreviewStudent] = useState<{ student: Student, status: ApplicationStatus | StudentStatus, hasPaid: boolean, isExempt?: boolean, paymentType?: 'initial' | 'doc_access' } | null>(null);
+  const [isOfficialEditOpen, setIsOfficialEditOpen] = useState(false);
+  const [officialEditForm, setOfficialEditForm] = useState({
+      name: '',
+      indexNumber: '',
+      gender: '',
+      aggregate: '',
+      residence: '',
+      programme: '',
+      reason: '',
+  });
+  const [officialEditEvidence, setOfficialEditEvidence] = useState<{ name: string; dataUrl: string } | null>(null);
+  const [correctionSuccessModal, setCorrectionSuccessModal] = useState<{ title: string; message: string } | null>(null);
 
   const [admissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
   const [adminStudents, setAdminStudents] = useLocalStorage<AdminStudent[]>('admin_students', initialAdminStudents);
@@ -738,12 +752,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                     disabled={isLoading}
                     className="w-full flex justify-center items-center gap-2 py-2.5 px-4 text-lg font-bold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
                   >
-                    {isLoading ? (
-                      <>
-                        <LogoLoader size="sm" variant="light" className="mr-2" />
-                        Verifying...
-                      </>
-                    ) : (
+                    {isLoading ? 'Verifying...' : (
                       'Verify and Continue'
                     )}
                   </button>
@@ -813,9 +822,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
       <Modal isOpen={!!previewStudent} onClose={() => setPreviewStudent(null)} size="xl">
         <div className="flex flex-col items-center">
             {/* Top Warning Icon */}
-            <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-5">
-                <Icon name="warning" className="w-10 h-10 text-yellow-500" />
-            </div>
+            {!isOfficialEditOpen && (
+              <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-5">
+                  <Icon name="warning" className="w-10 h-10 text-yellow-500" />
+              </div>
+            )}
             
             {/* Title & Instruction */}
             <h2 id="modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">Applicant Information</h2>
@@ -849,6 +860,35 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                 </div>
             </dl>
 
+            {effectiveSettings.allowOfficialEditRequests && previewStudent && (
+                <div className="mt-4 w-full text-left">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                        If you notice any mistake in your official school records above, you can request a correction for the admission office to review.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const s = previewStudent.student;
+                            setOfficialEditForm({
+                                name: s.name,
+                                indexNumber: s.indexNumber,
+                                gender: s.gender,
+                                aggregate: s.aggregate,
+                                residence: s.residence,
+                                programme: s.programme,
+                                reason: '',
+                            });
+                            setOfficialEditEvidence(null);
+                            setIsOfficialEditOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-logip-primary hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                    >
+                        <Icon name="edit_note" className="w-4 h-4" />
+                        Request correction to Official Records
+                    </button>
+                </div>
+            )}
+
             {/* Bottom Actions */}
             <div className="mt-8 w-full flex items-center gap-4">
                 <button 
@@ -869,12 +909,250 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         </div>
       </Modal>
 
+      {/* Official School Records Edit Request – full backdrop so it’s always visible on top */}
+      <Modal isOpen={isOfficialEditOpen} onClose={() => setIsOfficialEditOpen(false)} size="lg" backdropWhite>
+        {previewStudent && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const s = previewStudent.student;
+              const changes: Record<string, { oldValue: string; newValue: string }> = {};
+              const fields: Array<keyof typeof officialEditForm> = ['name', 'indexNumber', 'gender', 'aggregate', 'residence', 'programme'];
+              fields.forEach((field) => {
+                const oldVal = String((s as any)[field] ?? '');
+                const newVal = String(officialEditForm[field] ?? '');
+                if (newVal.trim() && newVal.trim() !== oldVal.trim()) {
+                  changes[field] = { oldValue: oldVal, newValue: newVal };
+                }
+              });
+
+              if (!Object.keys(changes).length) {
+                window.alert('No changes detected. Please update at least one field before submitting.');
+                return;
+              }
+              if (!officialEditEvidence) {
+                window.alert('Please upload a supporting document (e.g., placement form, ID card) as evidence.');
+                return;
+              }
+
+              const key = `officialEditRequest_${s.schoolId}_${s.indexNumber}`;
+              const request = {
+                schoolId: s.schoolId,
+                admissionId: s.admissionId,
+                indexNumber: s.indexNumber,
+                name: s.name,
+                requestedAt: new Date().toISOString(),
+                status: effectiveSettings.autoApproveOfficialEdits ? 'approved' : 'pending',
+                changes,
+                reason: officialEditForm.reason,
+                evidence: officialEditEvidence,
+              };
+
+              try {
+                setLocalStorageAndNotify(key, request);
+              } catch {
+                localStorage.setItem(key, JSON.stringify(request));
+              }
+
+              // Optional auto‑apply to student record
+              if (effectiveSettings.autoApproveOfficialEdits) {
+                try {
+                  const studentsRaw = localStorage.getItem('admin_students');
+                  const list: AdminStudent[] = studentsRaw ? JSON.parse(studentsRaw) : [];
+                  const idx = list.findIndex(
+                    (st) => st.indexNumber === s.indexNumber && st.schoolId === s.schoolId && st.admissionId === s.admissionId
+                  );
+                  if (idx !== -1) {
+                    const updated = { ...list[idx] };
+                    if (changes.name) updated.name = changes.name.newValue;
+                    if (changes.gender) updated.gender = changes.gender.newValue as any;
+                    if (changes.aggregate) updated.aggregate = changes.aggregate.newValue;
+                    if (changes.residence) updated.residence = changes.residence.newValue as any;
+                    if (changes.programme) updated.programme = changes.programme.newValue;
+                    // For index number, store new value but keep old-based keys in localStorage
+                    if (changes.indexNumber) updated.indexNumber = changes.indexNumber.newValue;
+                    list[idx] = updated;
+                    setLocalStorageAndNotify('admin_students', list);
+                  }
+                } catch {
+                  // fail silently
+                }
+                setCorrectionSuccessModal({ title: 'Correction applied', message: 'Your correction has been applied to your record.' });
+              } else {
+                setCorrectionSuccessModal({ title: 'Request submitted', message: 'Your correction request has been submitted and is awaiting approval.' });
+              }
+
+              setIsOfficialEditOpen(false);
+            }}
+            className="space-y-4 text-left"
+          >
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Corrections to Official School Records Request</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Update the fields that are wrong and upload a clear photo or scan of an official document that proves the correct information.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={officialEditForm.name}
+                  onChange={(e) => setOfficialEditForm((f) => ({ ...f, name: e.target.value.toUpperCase() }))}
+                  className="w-full px-3 py-2 rounded-lg border border-logip-border dark:border-dark-border bg-white dark:bg-dark-bg text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Index Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={officialEditForm.indexNumber}
+                  onChange={(e) => setOfficialEditForm((f) => ({ ...f, indexNumber: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-logip-border dark:border-dark-border bg-white dark:bg-dark-bg text-sm font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Gender <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={officialEditForm.gender}
+                  onChange={(e) => setOfficialEditForm((f) => ({ ...f, gender: e.target.value }))}
+                  placeholder="Select"
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Aggregate <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={officialEditForm.aggregate}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    if (raw.length === 0) {
+                      setOfficialEditForm((f) => ({ ...f, aggregate: '' }));
+                      return;
+                    }
+                    if (raw.length === 1) {
+                      if (raw === '0') {
+                        setOfficialEditForm((f) => ({ ...f, aggregate: '0' }));
+                        return;
+                      }
+                      if (['6', '7', '8', '9'].includes(raw)) {
+                        setOfficialEditForm((f) => ({ ...f, aggregate: '0' + raw }));
+                        return;
+                      }
+                    }
+                    setOfficialEditForm((f) => ({ ...f, aggregate: raw }));
+                  }}
+                  placeholder="e.g. 06 or 60"
+                  className="w-full px-3 py-2 rounded-lg border border-logip-border dark:border-dark-border bg-white dark:bg-dark-bg text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Residence <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={officialEditForm.residence}
+                  onChange={(e) => setOfficialEditForm((f) => ({ ...f, residence: e.target.value }))}
+                  placeholder="Select"
+                >
+                  <option value="">Select</option>
+                  <option value="Boarding">Boarding</option>
+                  <option value="Day">Day</option>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Programme <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={officialEditForm.programme}
+                  onChange={(e) => setOfficialEditForm((f) => ({ ...f, programme: e.target.value }))}
+                  placeholder="Select"
+                >
+                  <option value="">Select</option>
+                  <option value="General Science">General Science</option>
+                  <option value="General Arts">General Arts</option>
+                  <option value="Visual Arts">Visual Arts</option>
+                  <option value="Business">Business</option>
+                  <option value="Home Economics">Home Economics</option>
+                  <option value="Agricultural Science">Agricultural Science</option>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Upload supporting document (eg. Birth Cert, NHIA, Ghana Card, Placement form, Result Slip) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) {
+                    setOfficialEditEvidence(null);
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    setOfficialEditEvidence({ name: file.name, dataUrl: String(reader.result || '') });
+                  };
+                  reader.readAsDataURL(file);
+                }}
+                className="block w-full text-sm text-gray-700 dark:text-gray-300"
+              />
+              {officialEditEvidence && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Selected: {officialEditEvidence.name}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-6 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setIsOfficialEditOpen(false)}
+                className="w-full py-2.5 px-4 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-dark-bg"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="w-full py-2.5 px-4 text-sm font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md"
+              >
+                Submit correction request
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
       <Modal isOpen={isErrorModalOpen} onClose={closeErrorModal}>
         <div className="flex flex-col items-center">
             <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-5"><Icon name="report_problem" className="w-10 h-10 text-red-500" /></div>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{errorTitle}</h2>
             <div className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed">{errorMessage}</div>
             <button onClick={closeErrorModal} className="mt-8 w-full py-2 px-4 text-base font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700">{errorButtonText}</button>
+        </div>
+      </Modal>
+      <Modal isOpen={!!correctionSuccessModal} onClose={() => setCorrectionSuccessModal(null)}>
+        <div className="flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-5"><Icon name="check_circle" className="w-10 h-10 text-emerald-600 dark:text-emerald-400" /></div>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{correctionSuccessModal?.title}</h2>
+            <div className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed text-center">{correctionSuccessModal?.message}</div>
+            <button onClick={() => setCorrectionSuccessModal(null)} className="mt-8 w-full py-2 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover">OK</button>
         </div>
       </Modal>
     </>

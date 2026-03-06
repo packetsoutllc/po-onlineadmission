@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AdminModal from './AdminModal';
-import LogoLoader from '../../LogoLoader';
 import { useToast } from '../shared/ToastContext';
 import { AdminInput, AdminSelect } from './forms';
 
@@ -31,7 +30,8 @@ interface DocumentLayoutEditorProps {
     pdfData: string;
     docId: string;
     storageKey: string;
-    admissionId: string; 
+    schoolId: string;
+    admissionId: string;
 }
 
 const SYSTEM_KEYS = [
@@ -62,7 +62,7 @@ const SYSTEM_KEYS = [
     { id: 'admissionDate', label: 'Admission Date', type: 'text' },
 ];
 
-const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onClose, pdfData, storageKey, admissionId }) => {
+const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onClose, pdfData, storageKey, schoolId, admissionId }) => {
     const { showToast } = useToast();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -87,8 +87,8 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
     });
 
     useEffect(() => {
-        if (admissionId) {
-             const settingsRaw = localStorage.getItem(`formSettings_${admissionId}`);
+        if (schoolId && admissionId) {
+             const settingsRaw = localStorage.getItem(`formSettings_${schoolId}_${admissionId}`);
              if (settingsRaw) {
                  const settings = JSON.parse(settingsRaw);
                  const customFields = settings.fields.map((f: any) => ({
@@ -110,7 +110,7 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                  }
              }
         }
-    }, [admissionId]);
+    }, [schoolId, admissionId]);
 
     useEffect(() => {
         if (isOpen) {
@@ -465,8 +465,8 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                             onMouseDown={() => setSelectedFieldId(null)}
                         >
                             {isLoading && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-20">
-                                    <LogoLoader size="md" variant="default" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-20 text-gray-500">
+                                    Loading...
                                 </div>
                             )}
                             {/* Canvas fills container; container is baseDimensions*zoom so aspect ratio is preserved */}

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Filter, Sparkles, X } from 'lucide-react';
 import SchoolCard from '../components/SchoolCard';
-import LogoLoader from '../components/LogoLoader';
 import { MOCK_SCHOOLS } from '../constants';
 import { getSchoolRecommendations } from '../services/geminiService';
 
@@ -85,7 +84,7 @@ const BrowseSchools: React.FC = () => {
                         ${isAiLoading || !searchTerm ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow'}`}
                 >
                     {isAiLoading ? (
-                        <LogoLoader size="sm" variant="light" className="mr-2" />
+                        <span className="animate-pulse">...</span>
                     ) : (
                         <Sparkles className="w-5 h-5" />
                     )}

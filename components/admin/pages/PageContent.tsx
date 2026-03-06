@@ -1,19 +1,24 @@
-
-import React from 'react';
-import DashboardPage from './DashboardPage';
-import StudentsPage, { AdminStudent } from './StudentsPage';
-import ProgrammesPage, { Programme } from './ProgrammesPage';
-import ClassesPage, { Class } from './ClassesPage';
-import HousesPage from './HousesPage';
-import LogsPage from './LogsPage';
-import UsersPage from './UsersPage';
-import SettingsPage, { School, Admission } from './SettingsPage';
-import RolesAndPermissionsPage from './RolesAndPermissionsPage';
-import MessagesPage, { Conversation } from './MessagesPage';
-import TransactionsPage from './TransactionsPage';
+import React, { lazy, Suspense } from 'react';
+import { AdminStudent } from './StudentsPage';
+import { School, Admission } from './SettingsPage';
 import { Dormitory } from '../shared/dormitoryData';
 import { AdminUser } from '../AdminLayout';
-import UserProfileSettingsTab from './UserProfileSettingsTab';
+import { Class } from './ClassesPage';
+import { Programme } from './ProgrammesPage';
+import { Conversation } from './MessagesPage';
+
+const DashboardPage = lazy(() => import('./DashboardPage'));
+const StudentsPage = lazy(() => import('./StudentsPage').then(m => ({ default: m.default })));
+const ProgrammesPage = lazy(() => import('./ProgrammesPage'));
+const ClassesPage = lazy(() => import('./ClassesPage'));
+const HousesPage = lazy(() => import('./HousesPage'));
+const LogsPage = lazy(() => import('./LogsPage'));
+const UsersPage = lazy(() => import('./UsersPage'));
+const SettingsPage = lazy(() => import('./SettingsPage').then(m => ({ default: m.default })));
+const RolesAndPermissionsPage = lazy(() => import('./RolesAndPermissionsPage'));
+const MessagesPage = lazy(() => import('./MessagesPage').then(m => ({ default: m.default })));
+const TransactionsPage = lazy(() => import('./TransactionsPage'));
+const UserProfileSettingsTab = lazy(() => import('./UserProfileSettingsTab'));
 
 interface PageContentProps {
     activePage: string;
@@ -53,6 +58,11 @@ const PageContent: React.FC<PageContentProps> = ({
     permissions,
     isSuperAdmin
 }) => {
+    const pageFallback = <div className="p-4 sm:p-6 flex items-center justify-center min-h-[200px] text-logip-text-subtle dark:text-dark-text-secondary">Loading...</div>;
+
+    return (
+        <Suspense fallback={pageFallback}>
+    {(() => {
     switch (activePage) {
         case 'Dashboard':
             return <DashboardPage 
@@ -164,6 +174,9 @@ const PageContent: React.FC<PageContentProps> = ({
         default:
             return <div className="p-4">Page not found: {activePage}</div>;
     }
+    })()}
+        </Suspense>
+    );
 };
 
 export default PageContent;

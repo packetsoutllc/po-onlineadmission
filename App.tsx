@@ -7,6 +7,7 @@ import PaymentGateway from './components/PaymentGateway';
 import ApplicantLoginForm from './components/ApplicantLoginForm';
 import ProtocolAdmissionPage from './components/ProtocolAdmissionPage';
 import LandingPage from './components/LandingPage';
+import PacketsOutLogo from './components/PacketsOutLogo';
 import { StudentStatus } from './components/admin/pages/StudentsPage';
 
 type StudentView = 'auth' | 'payment' | 'applicant_login' | 'details' | 'protocol_admission';
@@ -192,17 +193,19 @@ function App() {
               const financialsKey = `financialsSettings_${verifiedStudent?.schoolId}_${verifiedStudent?.admissionId}`;
               const financialsRaw = localStorage.getItem(financialsKey);
               const financials = financialsRaw ? JSON.parse(financialsRaw) : {};
-              
+              // Same card as Admission Document Access modal: white panel, rounded, shadow, border
               authContent = (
-                <PaymentGateway 
+                <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#1C1A27] rounded-xl border border-gray-200/50 dark:border-transparent shadow-2xl overflow-hidden">
+                  <PaymentGateway 
                     student={verifiedStudent!} 
                     onPaymentSuccess={handlePaymentSuccess} 
                     onClose={handleReturnToVerification}
                     isInitialVoucherPayment={activePaymentType === 'initial'}
                     customPrice={activePaymentType === 'doc_access' ? financials.docAccessFeePrice : undefined}
-                    customTitle={activePaymentType === 'doc_access' ? "Document Access Fee" : undefined}
+                    customTitle={activePaymentType === 'doc_access' ? "Admission Document Access" : undefined}
                     customSubtitle={activePaymentType === 'doc_access' ? "One-time payment to unlock your admission documents for printing." : undefined}
-                />
+                  />
+                </div>
               );
               break;
           case 'applicant_login':
@@ -276,11 +279,11 @@ function App() {
         </svg>
       </button>
 
-      <div className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden bg-logip-bg dark:bg-background-dark">
+      <div className="relative min-h-screen w-full flex items-center justify-center p-4 py-8 overflow-y-auto bg-logip-bg dark:bg-background-dark">
         <main className={`relative z-10 w-full ${mainMaxWidthClass}`}>
           <div
             className={`relative w-full ${
-              isAuthView
+              isAuthView || currentView === 'payment'
                 ? ''
                 : `bg-logip-white dark:bg-report-dark rounded-xl border border-logip-border dark:border-report-border ${
                     applyPadding ? 'p-8 sm:p-10' : 'overflow-hidden'
@@ -295,16 +298,7 @@ function App() {
         <footer className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
           <p className="text-xs text-gray-500/80 dark:text-gray-400/60 flex items-center justify-center gap-1.5">
             Powered by
-            <span className="inline-flex items-center gap-0.5">
-              <span className="w-1.5 h-4 bg-current rounded-full opacity-80" />
-              <span className="w-1.5 h-3 bg-current rounded-full opacity-80" />
-              <svg className="w-3.5 h-3.5 text-sky-500" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M3 11L10.5 4H21L13.5 11H3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M13.5 11L21 4V14L13.5 21V11Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M3 11L13.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            Packets Out
+            <PacketsOutLogo size="sm" className="ml-1 text-gray-500/80 dark:text-gray-400/60" />
           </p>
         </footer>
       </div>

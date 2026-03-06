@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { generateText } from '../services/geminiService';
 import { Send, Wand2 } from 'lucide-react';
-import LogoLoader from './LogoLoader';
 import ReactMarkdown from 'react-markdown';
 
 const TextMode: React.FC = () => {
@@ -58,7 +57,7 @@ const TextMode: React.FC = () => {
           >
             {isLoading ? (
               <>
-                <LogoLoader size="sm" variant="light" />
+                <span className="text-sm text-gray-500">Loading...</span>
                 Generating...
               </>
             ) : (

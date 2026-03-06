@@ -9,42 +9,35 @@ import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { School, Admission } from '../pages/SettingsPage';
 import { FormSettings, INITIAL_FORM_SETTINGS } from '../pages/ApplicationDashboardSettings';
 
-// Helper to check for medical report
+/** Only read application data for the given school+index to avoid cross-school data. */
 const getMedicalReport = (indexNumber: string, schoolId?: string) => {
-    const key = schoolId ? `applicationData_${schoolId}_${indexNumber}` : `applicationData_${indexNumber}`;
+    if (!schoolId) return null;
+    const key = `applicationData_${schoolId}_${indexNumber}`;
     try {
         const data = localStorage.getItem(key);
         if (data) {
             const parsed = JSON.parse(data);
-            if (parsed.hasDisability === 'Yes' && parsed.medicalReport) {
-                return parsed.medicalReport;
-            }
+            if (parsed.hasDisability === 'Yes' && parsed.medicalReport) return parsed.medicalReport;
         }
     } catch (e) {}
     return null;
 };
 
-// Re-using avatar logic
+/** Only use application data for the given school+index to avoid cross-school data. */
 const getStudentAvatarUrl = (indexNumber: string, gender: 'Male' | 'Female', schoolId?: string): string => {
-    const keysToTry = [
-        schoolId ? `applicationData_${schoolId}_${indexNumber}` : null,
-        `applicationData_s1_${indexNumber}`,
-        `applicationData_${indexNumber}`,
-        `file_upload_${indexNumber}_Passport-Size-Photograph`
-    ].filter(Boolean);
-
-    for (const key of keysToTry) {
-        try {
-            const raw = localStorage.getItem(key!);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
-                if (parsed.data) return parsed.data;
-            }
-        } catch (e) {}
-    }
-    return `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="${gender === 'Male' ? '#dbeafe' : '#fce7f3'}" /><text x="50" y="55" font-family="Arial" font-size="50" fill="${gender === 'Male' ? '#1d4ed8' : '#be185d'}" text-anchor="middle" dominant-baseline="middle">?</text></svg>`)}`;
+    if (!schoolId) return placeholderAvatar(gender);
+    const key = `applicationData_${schoolId}_${indexNumber}`;
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
+            if (parsed.data) return parsed.data;
+        }
+    } catch (e) {}
+    return placeholderAvatar(gender);
 };
+const placeholderAvatar = (gender: 'Male' | 'Female') => `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="${gender === 'Male' ? '#dbeafe' : '#fce7f3'}" /><text x="50" y="55" font-family="Arial" font-size="50" fill="${gender === 'Male' ? '#1d4ed8' : '#be185d'}" text-anchor="middle" dominant-baseline="middle">?</text></svg>`)}`;
 
 interface StudentPreviewModalProps {
     isOpen: boolean;
@@ -86,7 +79,7 @@ const GuardianCard: React.FC<{
 const StudentPreviewModal: React.FC<StudentPreviewModalProps> = ({ isOpen, onClose, student, selectedSchool }) => {
     const [appData, setAppData] = useState<any>({});
     const [admissions] = useLocalStorage<Admission[]>('admin_admissions', []);
-    const [formSettings] = useLocalStorage<FormSettings>(`formSettings_${student.admissionId}`, INITIAL_FORM_SETTINGS);
+    const [formSettings] = useLocalStorage<FormSettings>(`formSettings_${student.schoolId}_${student.admissionId}`, INITIAL_FORM_SETTINGS);
 
     // States for internal previews
     const [previewImage, setPreviewImage] = useState<{ isOpen: boolean; url: string; title: string }>({

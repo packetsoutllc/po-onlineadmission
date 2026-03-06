@@ -73,6 +73,10 @@ export interface AdmissionSettings {
     activateWhatsappId: boolean;
     enableProtocolApplication: boolean;
     allowStudentEdit: boolean;
+    /** Allow applicants to submit correction requests for Official School Records from the Applicant Information page. */
+    allowOfficialEditRequests: boolean;
+    /** Automatically apply approved Official Records changes without manual review. */
+    autoApproveOfficialEdits: boolean;
     serialNumberFormat: 'numeric' | 'alphabetic' | 'alphanumeric';
     serialNumberLength: number;
     pinFormat: 'numeric' | 'alphabetic' | 'alphanumeric';
@@ -193,6 +197,8 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
         activateWhatsappId: false,
         enableProtocolApplication: true,
         allowStudentEdit: true,
+        allowOfficialEditRequests: true,
+        autoApproveOfficialEdits: false,
         serialNumberFormat: 'numeric',
         serialNumberLength: 10,
         pinFormat: 'numeric',
@@ -348,6 +354,55 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
                                     <p className="text-xs text-logip-text-subtle">Automatically approve new protocol applications without manual review.</p>
                                 </div>
                                 <ToggleSwitch checked={localAdmissionSettings.autoApproveProtocol} onChange={e => setLocalAdmissionSettings(s => ({...s, autoApproveProtocol: e.target.checked}))} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr className="border-logip-border dark:border-dark-border" />
+
+                    {/* Applicant Official Records Edits */}
+                    <div>
+                        <h4 className="text-sm font-bold text-logip-text-header dark:text-dark-text-primary mb-4 uppercase tracking-tight">
+                            Official School Records – Applicant Edits
+                        </h4>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="font-bold text-logip-text-header dark:text-dark-text-primary text-sm">
+                                        Allow applicants to request corrections
+                                    </p>
+                                    <p className="text-xs text-logip-text-subtle">
+                                        Show an edit option on the Applicant Information page so students can submit changes to their official school records with evidence.
+                                    </p>
+                                </div>
+                                <ToggleSwitch
+                                    checked={localAdmissionSettings.allowOfficialEditRequests}
+                                    onChange={e =>
+                                        setLocalAdmissionSettings(s => ({
+                                            ...s,
+                                            allowOfficialEditRequests: e.target.checked,
+                                        }))
+                                    }
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="font-bold text-logip-text-header dark:text-dark-text-primary text-sm">
+                                        Auto‑approve official record edits
+                                    </p>
+                                    <p className="text-xs text-logip-text-subtle">
+                                        When enabled, approved edit requests will immediately update the student record without manual review. Otherwise, they stay pending for admins to confirm.
+                                    </p>
+                                </div>
+                                <ToggleSwitch
+                                    checked={localAdmissionSettings.autoApproveOfficialEdits}
+                                    onChange={e =>
+                                        setLocalAdmissionSettings(s => ({
+                                            ...s,
+                                            autoApproveOfficialEdits: e.target.checked,
+                                        }))
+                                    }
+                                />
                             </div>
                         </div>
                     </div>

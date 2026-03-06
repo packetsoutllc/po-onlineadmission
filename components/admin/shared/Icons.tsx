@@ -64,6 +64,15 @@ const iconMap: Record<string, React.ReactNode> = {
     dark_mode: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
     ),
+    cloud_done: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M19.35 10.04A7.5 7.5 0 0012 4c-3.5 0-6.5 2.5-7.35 6.04A5 5 0 005 19h14a5 5 0 00.35-8.96z"/><path d="M9 12l2 2 4-4"/></svg>
+    ),
+    apartment: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 21v-8h16v8"/><path d="M4 13V7l8-4 8 4v6"/><path d="M9 21v-6h6v6"/><path d="M9 13h6"/></svg>
+    ),
+    arrow_forward_ios: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 18L18 12 6 6"/></svg>
+    ),
     groups: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
     ),
@@ -187,6 +196,9 @@ const iconMap: Record<string, React.ReactNode> = {
     ),
     badge: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4L12 2z"/><circle cx="12" cy="14" r="5"/><path d="M12 17v-3"/></svg>
+    ),
+    refresh: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
     ),
 };
 

@@ -35,6 +35,7 @@ const DynamicFormField: React.FC<DynamicFormFieldProps> = ({ field, value, onCha
                 id={field.id}
                 field={field}
                 studentIndexNumber={student.indexNumber}
+                schoolId={student.schoolId}
                 isSubmitted={disabled}
                 gender={student.gender}
                 isAdminEditMode={isAdminEditMode}

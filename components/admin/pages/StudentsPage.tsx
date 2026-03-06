@@ -17,6 +17,7 @@ import ImagePreviewModal from '../../shared/ImagePreviewModal';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { allocateDormForStudent, allocateHouseForStudent, updateHouseCountOnManualChange } from '../shared/houseAllocationService';
 import { useSortableData } from '../../hooks/useSortableData';
+import { useDebounce } from '../../hooks/useDebounce';
 import SortableHeader from '../shared/SortableHeader';
 import { Dormitory } from '../shared/dormitoryData';
 import { AdmissionSettings } from './SecuritySettingsTab';
@@ -198,27 +199,21 @@ const SimpleToggle: React.FC<{ checked: boolean; onChange: (checked: boolean) =>
     </label>
 );
 
+/** Only use application data for the given school+index to avoid cross-school data. */
 const getStudentAvatarUrl = (indexNumber: string, gender: 'Male' | 'Female', schoolId?: string): string => {
-    // Standardize lookup keys for robust retrieval
-    const keysToTry = [
-        schoolId ? `applicationData_${schoolId}_${indexNumber}` : null,
-        `applicationData_s1_${indexNumber}`,
-        `applicationData_${indexNumber}`,
-        `file_upload_${indexNumber}_Passport-Size-Photograph`
-    ].filter(Boolean);
-
-    for (const key of keysToTry) {
-        try {
-            const raw = localStorage.getItem(key!);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
-                if (parsed.data) return parsed.data;
-            }
-        } catch (e) {}
-    }
-    return `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="${gender === 'Male' ? '#dbeafe' : '#fce7f3'}" /><text x="50" y="55" font-family="Arial" font-size="50" fill="${gender === 'Male' ? '#1d4ed8' : '#be185d'}" text-anchor="middle" dominant-baseline="middle">?</text></svg>`)}`;
+    if (!schoolId) return placeholderAvatar(gender);
+    const key = `applicationData_${schoolId}_${indexNumber}`;
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
+            if (parsed.data) return parsed.data;
+        }
+    } catch (e) {}
+    return placeholderAvatar(gender);
 };
+const placeholderAvatar = (gender: 'Male' | 'Female') => `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="${gender === 'Male' ? '#dbeafe' : '#fce7f3'}" /><text x="50" y="55" font-family="Arial" font-size="50" fill="${gender === 'Male' ? '#1d4ed8' : '#be185d'}" text-anchor="middle" dominant-baseline="middle">?</text></svg>`)}`;
 
 const ExpandedStudentRow: React.FC<{
     student: AdminStudent;
@@ -338,8 +333,12 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
     // PERMANENCE: Scope settings by user email
     const userPrefix = adminUser.email;
     const [searchTerm, setSearchTerm] = useLocalStorage<string>(`${userPrefix}_admin_students_search`, '');
+    const debouncedSearchTerm = useDebounce(searchTerm, 250);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>(`${userPrefix}_admin_students_items_per_page`, 10);
+    const [itemsPerPageRaw, setItemsPerPageRaw] = useLocalStorage<number>(`${userPrefix}_admin_students_items_per_page`, 10);
+    const ITEMS_PER_PAGE_MAX = 100;
+    const itemsPerPage = Math.min(Math.max(1, itemsPerPageRaw), ITEMS_PER_PAGE_MAX);
+    const setItemsPerPage = useCallback((n: number) => setItemsPerPageRaw(Math.min(Math.max(1, n), ITEMS_PER_PAGE_MAX)), []);
     const [showDashboard, setShowDashboard] = useLocalStorage<boolean>(`${userPrefix}_admin_students_show_dashboard`, false);
     
     // Quick Time Filter State
@@ -358,6 +357,11 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
 
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     const [editLogs, setEditLogs] = useState<Record<string, { student: boolean; admin: boolean }>>({});
+    const [officialEditRequests, setOfficialEditRequests] = useState<Record<string, any>>({});
+    const [showPendingOfficialEditsOnly, setShowPendingOfficialEditsOnly] = useState(false);
+    const [officialEditEvidencePreview, setOfficialEditEvidencePreview] = useState<{ student: AdminStudent; request: { evidence?: { name: string; dataUrl: string }; changes?: Record<string, { oldValue: string; newValue: string }>; status: string } } | null>(null);
+    const [evidencePreviewLoaded, setEvidencePreviewLoaded] = useState(false);
+    const [pendingReviewModal, setPendingReviewModal] = useState<{ student: AdminStudent; request: any } | null>(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isQuickTimeFilterOpen, setIsQuickTimeFilterOpen] = useState(false);
     const filterButtonRef = useRef<HTMLButtonElement>(null);
@@ -385,7 +389,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
     const admissionSettingsKey = selectedSchool && selectedAdmission ? `admissionSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
     const [storedAdmissionSettings] = useLocalStorage<AdmissionSettings | null>(admissionSettingsKey, null);
 
-    const formSettingsKey = selectedAdmission ? `formSettings_${selectedAdmission.id}` : null;
+    const formSettingsKey = selectedSchool && selectedAdmission ? `formSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
     const [formSettings] = useLocalStorage<FormSettings>(formSettingsKey, INITIAL_FORM_SETTINGS);
 
     const financialsSettings = useMemo(() => {
@@ -481,6 +485,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
     useEffect(() => {
         const checkLogs = () => {
             const logs: Record<string, { student: boolean; admin: boolean }> = {};
+            const requests: Record<string, any> = {};
             students.forEach(student => {
                 const logRaw = localStorage.getItem(`editHistory_${student.indexNumber}`);
                 if (logRaw) {
@@ -492,17 +497,54 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                         };
                     } catch {}
                 }
+
+                const reqKey = `officialEditRequest_${student.schoolId}_${student.indexNumber}`;
+                const reqRaw = localStorage.getItem(reqKey);
+                if (reqRaw) {
+                    try {
+                        const req = JSON.parse(reqRaw);
+                        requests[student.indexNumber] = req;
+                    } catch {}
+                }
             });
             setEditLogs(logs);
+            setOfficialEditRequests(requests);
         };
         checkLogs();
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key && e.key.startsWith('editHistory_')) checkLogs();
+            if (!e.key) return;
+            if (e.key.startsWith('editHistory_') || e.key.startsWith('officialEditRequest_')) checkLogs();
         };
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
     }, [students]);
-    
+
+    const handleOfficialEditResponse = useCallback((student: AdminStudent, request: any, status: 'approved' | 'rejected') => {
+        const key = `officialEditRequest_${student.schoolId}_${student.indexNumber}`;
+        const updated = { ...request, status };
+        try {
+            setLocalStorageAndNotify(key, updated);
+        } catch {
+            localStorage.setItem(key, JSON.stringify(updated));
+        }
+        if (status === 'approved' && request.changes && typeof request.changes === 'object') {
+            const updates: Partial<AdminStudent> = {};
+            Object.keys(request.changes).forEach((field) => {
+                const newVal = request.changes[field]?.newValue;
+                if (newVal != null && ['name', 'indexNumber', 'gender', 'aggregate', 'residence', 'programme'].includes(field)) {
+                    (updates as any)[field] = newVal;
+                }
+            });
+            if (Object.keys(updates).length) {
+                setStudents((prev) => prev.map((s) => (s.id === student.id ? { ...s, ...updates } : s)));
+            }
+        }
+        setOfficialEditRequests((prev) => ({ ...prev, [student.indexNumber]: updated }));
+        setOfficialEditEvidencePreview(null);
+        setPendingReviewModal(null);
+        showToast(status === 'approved' ? 'Edit request approved and applied.' : 'Edit request rejected.', status === 'approved' ? 'success' : 'info');
+    }, [setStudents, showToast]);
+
     const relevantStudents = useMemo(() => {
         if (!selectedSchool || !selectedAdmission) return [];
         return students.filter(student =>
@@ -579,8 +621,8 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
 
     const filteredStudents = useMemo(() => {
         return relevantStudents.filter(student => {
-            const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                  student.indexNumber.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = student.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || 
+                                  student.indexNumber.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
                                   
             const matchesProgramme = filters.programme === 'all' || student.programme === filters.programme;
             const matchesGender = filters.gender === 'all' || student.gender === filters.gender;
@@ -637,9 +679,15 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                 }
             }
 
-            return matchesSearch && matchesProgramme && matchesGender && matchesClass && matchesHouse && matchesFeeStatus && matchesStatus && matchesEditStatus && matchesAppType && matchesDormitory && matchesResidence && matchesTime;
+            let matchesOfficialEdit = true;
+            if (showPendingOfficialEditsOnly) {
+                const req = officialEditRequests[student.indexNumber];
+                matchesOfficialEdit = !!req;
+            }
+
+            return matchesSearch && matchesProgramme && matchesGender && matchesClass && matchesHouse && matchesFeeStatus && matchesStatus && matchesEditStatus && matchesAppType && matchesDormitory && matchesResidence && matchesTime && matchesOfficialEdit;
         });
-    }, [relevantStudents, searchTerm, filters, editFilters, editLogs, admissionSettings, timeFilter, financialsSettings]);
+    }, [relevantStudents, debouncedSearchTerm, filters, editFilters, editLogs, admissionSettings, timeFilter, financialsSettings, officialEditRequests, showPendingOfficialEditsOnly]);
     
     const processedStudents = useMemo(() => {
         const isSeparated = formSettings?.nameSystem === 'separated';
@@ -1114,13 +1162,24 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                                 <span className="material-symbols-outlined text-xl">photo_library</span>
                             </button>
                         )}
+                        <button
+                            onClick={() => setShowPendingOfficialEditsOnly(v => !v)}
+                            className={`flex items-center justify-center p-2 h-[38px] w-[38px] rounded-lg border ${
+                                showPendingOfficialEditsOnly
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                    : 'bg-gray-50 dark:bg-dark-bg border-logip-border dark:border-dark-border text-logip-text-header dark:text-dark-text-primary hover:bg-gray-100'
+                            } transition-colors`}
+                            title="Show students with pending edit requests"
+                        >
+                            <span className="material-symbols-outlined text-xl">rule_folder</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div className="mt-6 bg-logip-white dark:bg-dark-surface rounded-lg border border-logip-border dark:border-dark-border overflow-hidden">
                 <div className="overflow-x-auto no-scrollbar">
-                    <table className="w-full min-w-[1200px]" id="students-table">
+                    <table className="w-full min-w-[1200px] [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap" id="students-table">
                         <thead className="border-b border-logip-border dark:border-dark-border bg-gray-50 dark:bg-white/5">
                             <tr>
                                 <th className="p-4 w-12 text-left text-sm font-semibold uppercase text-gray-500 no-print">
@@ -1221,7 +1280,26 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                                     {visibleColumnsSet.has('feeStatus') && <td className={`p-4 ${!isSelectable ? 'opacity-50' : ''}`}><FeeStatusPill status={student.feeStatus} /></td>}
                                     {visibleColumnsSet.has('status') && <td className={`p-4 ${!isSelectable ? 'opacity-50' : ''}`}><StatusPill status={student.status} /></td>}
                                     
-                                    {visibleColumnsSet.has('actions') && <td className="p-4 no-print"><div className="flex items-center gap-1">
+                                    {visibleColumnsSet.has('actions') && <td className="p-4 no-print"><div className="flex items-center gap-1 flex-nowrap">
+                                        {showPendingOfficialEditsOnly && officialEditRequests[student.indexNumber] ? (() => {
+                                            const req = officialEditRequests[student.indexNumber];
+                                            const status = req.status || 'pending';
+                                            return (
+                                                <>
+                                                    <ActionButton icon="description" onClick={(e) => { e.stopPropagation(); setEvidencePreviewLoaded(false); setOfficialEditEvidencePreview({ student, request: req }); }} title="View document evidence" colorClass="text-amber-600 hover:text-amber-700 dark:text-amber-400" />
+                                                    {status === 'pending' ? (
+                                                        <button type="button" onClick={(e) => { e.stopPropagation(); setPendingReviewModal({ student, request: req }); }} className="px-2.5 py-1 text-xs font-semibold rounded-md bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40" title="Click to review and Accept or Reject">
+                                                            Pending
+                                                        </button>
+                                                    ) : status === 'approved' ? (
+                                                        <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">Accepted</span>
+                                                    ) : (
+                                                        <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-rose-100 text-rose-800 dark:bg-rose-50/20 dark:text-red-300">Rejected</span>
+                                                    )}
+                                                </>
+                                            );
+                                        })() : (
+                                        <>
                                         <ActionButton 
                                             icon="edit" 
                                             disabled={!isSelectable || !canEditThisStudent} 
@@ -1259,6 +1337,8 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                                         >
                                             <span className="material-symbols-outlined text-xl">{isExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}</span>
                                         </button>
+                                        </>
+                                        )}
                                     </div></td>}
                                 </tr>
                                 {isExpanded && isSelectable && (
@@ -1279,7 +1359,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                           <button
                             type="button"
                             onClick={() => handleOpenModal('bulkDelete')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all duration-200 animate-fadeIn"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all duration-200 animate-fadeIn whitespace-nowrap"
                           >
                             <Icon name="delete" className="w-4 h-4 text-white" />
                             Delete Selected ({selectedStudentIds.length})
@@ -1318,6 +1398,73 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                 />
             )}
             <ImagePreviewModal isOpen={imagePreview.isOpen} onClose={() => setImagePreview({ isOpen: false, url: '', alt: '' })} imageUrl={imagePreview.url} altText={imagePreview.alt} />
+            {pendingReviewModal && (
+                <AdminModal isOpen={true} onClose={() => setPendingReviewModal(null)} title="Review correction request" size="md">
+                    <div className="flex flex-col items-center text-center py-1">
+                        <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-3">
+                            <span className="material-symbols-outlined text-4xl text-amber-600 dark:text-amber-400">schedule</span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-snug">
+                            <strong>{pendingReviewModal.student.name}</strong> has requested corrections to their official school records. View the uploaded evidence and approve or reject the request.
+                        </p>
+                        <div className="mt-4 w-full flex flex-col sm:flex-row gap-3 justify-center">
+                            <button type="button" onClick={() => { setOfficialEditEvidencePreview({ student: pendingReviewModal.student, request: pendingReviewModal.request }); setPendingReviewModal(null); }} className="w-full sm:w-auto py-2 px-4 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                View document
+                            </button>
+                            <button type="button" onClick={() => { handleOfficialEditResponse(pendingReviewModal.student, pendingReviewModal.request, 'rejected'); }} className="w-full sm:w-auto py-2 px-4 text-sm font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700">
+                                Reject
+                            </button>
+                            <button type="button" onClick={() => { handleOfficialEditResponse(pendingReviewModal.student, pendingReviewModal.request, 'approved'); }} className="w-full sm:w-auto py-2 px-4 text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700">
+                                Accept
+                            </button>
+                        </div>
+                    </div>
+                </AdminModal>
+            )}
+            {officialEditEvidencePreview && (
+                <AdminModal isOpen={true} onClose={() => setOfficialEditEvidencePreview(null)} title={`Document uploaded – ${officialEditEvidencePreview.student.name}`} size="lg">
+                    <div className="space-y-3">
+                        {officialEditEvidencePreview.request.evidence?.dataUrl ? (
+                            officialEditEvidencePreview.request.evidence.dataUrl.startsWith('data:image/') ? (
+                                <div className="relative min-h-[200px] flex items-center justify-center">
+                                    {!evidencePreviewLoaded && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                            <span className="text-sm text-gray-500 dark:text-gray-400">Loading image…</span>
+                                        </div>
+                                    )}
+                                    <img
+                                        src={officialEditEvidencePreview.request.evidence.dataUrl}
+                                        alt={officialEditEvidencePreview.request.evidence.name}
+                                        onLoad={() => setEvidencePreviewLoaded(true)}
+                                        className={`max-w-full max-h-[70vh] object-contain mx-auto rounded border border-gray-200 dark:border-gray-600 ${!evidencePreviewLoaded ? 'invisible' : ''}`}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="space-y-2 relative min-h-[200px]">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{officialEditEvidencePreview.request.evidence.name}</p>
+                                    {!evidencePreviewLoaded && (
+                                        <div className="absolute inset-0 top-8 flex items-center justify-center bg-gray-50 dark:bg-gray-800/50 rounded-lg z-10">
+                                            <span className="text-sm text-gray-500 dark:text-gray-400">Loading document…</span>
+                                        </div>
+                                    )}
+                                    <iframe
+                                        src={officialEditEvidencePreview.request.evidence.dataUrl}
+                                        title={officialEditEvidencePreview.request.evidence.name}
+                                        onLoad={() => setEvidencePreviewLoaded(true)}
+                                        className={`w-full h-[70vh] border border-gray-200 dark:border-gray-600 rounded ${!evidencePreviewLoaded ? 'invisible' : ''}`}
+                                    />
+                                    <a href={officialEditEvidencePreview.request.evidence.dataUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Open in new tab</a>
+                                </div>
+                            )
+                        ) : (
+                            <p className="text-sm text-gray-500">No document attached.</p>
+                        )}
+                        <div className="flex justify-end pt-2">
+                            <button type="button" onClick={() => setOfficialEditEvidencePreview(null)} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500">Close</button>
+                        </div>
+                    </div>
+                </AdminModal>
+            )}
             <ColumnSelectionModal isOpen={isDownloadModalOpen} onClose={() => setIsDownloadModalOpen(false)} columns={allExportableFields} visibleColumns={downloadColumns} onVisibleColumnsChange={setDownloadColumns} onConfirm={handleBulkDownload} title="Select Columns to Download" confirmButtonText="Download CSV" />
             <StudentPhotoAlbumModal 
                 isOpen={isPhotoAlbumOpen} 

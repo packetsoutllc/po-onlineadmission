@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
-import LogoLoader from '../LogoLoader';
+import PacketsOutLogo from '../PacketsOutLogo';
 import { AdminUser } from './AdminLayout';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { GlobalAdminSecuritySettings, SecurityLog } from './pages/SecuritySettingsTab';
@@ -14,45 +14,15 @@ const ADMIN_USERS: (AdminUser & { password: string; phoneNumber?: string; school
     { email: 'ec@gameli.com', password: 'password123', roleId: 'role_school_admin', name: 'Gameli Faithson Axame', avatar: `https://i.pravatar.cc/32?u=gameli`, phoneNumber: '0244444444', schoolId: 's1', status: 'active' },
 ];
 
-const PekiLogo: React.FC = () => {
-    return (
-        <div className="flex items-center justify-center gap-2.5 mb-6">
-            <div className="flex items-end gap-0.5">
-                <div className="w-2 h-6 bg-logip-text-header dark:bg-gray-100 rounded-full"></div>
-                <div className="w-2 h-4 bg-logip-text-header dark:bg-gray-100 rounded-full"></div>
-                <svg
-                    className="w-5 h-5 text-sky-500"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        d="M3 11L10.5 4H21L13.5 11H3Z"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                    <path
-                        d="M13.5 11L21 4V14L13.5 21V11Z"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                    <path
-                        d="M3 11L13.5 11"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                </svg>
-            </div>
-            <span className="font-bold text-2xl text-logip-text-header dark:text-gray-100">Packets Out</span>
-        </div>
-    );
-};
+const PekiLogo: React.FC = () => (
+    <div className="flex items-center justify-center mb-6">
+        <PacketsOutLogo
+            size="md"
+            className="text-logip-text-header dark:text-gray-100"
+            textClassName="text-2xl"
+        />
+    </div>
+);
 
 // Inline SVG icons so we don't depend on external icon fonts (prevents seeing raw text like "mail" or "lock")
 const MailIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -324,7 +294,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
             disabled={isLoading}
             className="w-full flex justify-center items-center gap-2 py-2 px-4 text-lg font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transform transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900 focus:ring-violet-500 disabled:opacity-60 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:hover:-translate-y-0.5"
         >
-            {isLoading ? (<><LogoLoader size="sm" variant="light" className="mr-2" /> Signing In...</>) : 'Sign In'}
+            {isLoading ? 'Signing In...' : 'Sign In'}
         </button>
         </div>
     </form>
@@ -362,7 +332,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
                 disabled={isLoading}
                 className="w-full flex justify-center items-center gap-2 py-2 px-4 text-lg font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transform transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
             >
-                {isLoading ? (<><LogoLoader size="sm" variant="light" className="mr-2" /> Verifying...</>) : 'Verify'}
+                {isLoading ? 'Verifying...' : 'Verify'}
             </button>
         </div>
     </form>
@@ -483,7 +453,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
                         disabled={resetState === 'loading'}
                         className="w-full flex justify-center items-center gap-2 py-2 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transition-colors disabled:opacity-60"
                     >
-                        {resetState === 'loading' ? (<><LogoLoader size="sm" variant="light" className="mr-2" /> Sending...</>) : 'Send Reset Link'}
+                        {resetState === 'loading' ? 'Sending...' : 'Send Reset Link'}
                     </button>
                 </div>
             </div>
