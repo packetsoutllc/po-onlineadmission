@@ -267,7 +267,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
     };
 
     return (
-        <div className="relative w-full mx-auto px-3 sm:px-4 animate-scaleIn font-display text-left" style={{ maxWidth: 'min(calc(100vw - 1.5rem), 36rem)' }}>
+        <div className="relative w-full max-w-xl mx-auto px-4 animate-scaleIn font-display text-left">
             <form onSubmit={handleSubmit} className="flex flex-col items-center pt-4 sm:pt-8">
                 {/* Top icon – hide when correction modal is open so it doesn’t show behind */}
                 {!isOfficialEditOpen && (

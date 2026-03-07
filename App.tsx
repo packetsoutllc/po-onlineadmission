@@ -280,7 +280,7 @@ function App() {
             </div>
           </div>
         </main>
-        <footer className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+        <footer className="absolute bottom-4 left-1/2 -translate-x-1/2 z-0">
           <p className="text-xs text-gray-500/80 dark:text-gray-400/60 flex items-center justify-center gap-1.5">
             Powered by
             <PacketsOutLogo size="sm" className="ml-1 text-gray-500/80 dark:text-gray-400/60" />

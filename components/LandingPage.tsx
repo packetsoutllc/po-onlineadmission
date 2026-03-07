@@ -214,6 +214,45 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
         </section>
       </main>
 
+      {/* Horizontal scrolling strip — aligned to page margins */}
+      <section className="w-full max-w-6xl mx-auto px-4 overflow-hidden py-10 sm:py-12 mt-6">
+        <div className="relative overflow-hidden">
+          <div className="flex animate-marquee gap-10 sm:gap-14 items-center whitespace-nowrap w-max">
+            {[
+              { icon: 'verified_user' as const, label: 'Verification' },
+              { icon: 'description' as const, label: 'Admission Forms' },
+              { icon: 'cloud_done' as const, label: 'Secure Storage' },
+              { icon: 'chat' as const, label: 'Live Support' },
+              { icon: 'payments' as const, label: 'Payments' },
+              { icon: 'school' as const, label: 'Schools' },
+              { icon: 'receipt_long' as const, label: 'Documents' },
+              { icon: 'search' as const, label: 'Search' },
+              { icon: 'lock' as const, label: 'Privacy' },
+            ].concat([
+              { icon: 'verified_user' as const, label: 'Verification' },
+              { icon: 'description' as const, label: 'Admission Forms' },
+              { icon: 'cloud_done' as const, label: 'Secure Storage' },
+              { icon: 'chat' as const, label: 'Live Support' },
+              { icon: 'payments' as const, label: 'Payments' },
+              { icon: 'school' as const, label: 'Schools' },
+              { icon: 'receipt_long' as const, label: 'Documents' },
+              { icon: 'search' as const, label: 'Search' },
+              { icon: 'lock' as const, label: 'Privacy' },
+            ]).map((item, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-2.5 text-logip-text-header dark:text-dark-text-primary font-medium text-sm sm:text-base"
+              >
+                <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-logip-border/40 dark:bg-dark-border text-logip-primary dark:text-logip-accent">
+                  <Icon name={item.icon} className="w-5 h-5" />
+                </span>
+                <span>{item.label}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <footer className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-full pointer-events-none max-lg:hidden">
         <p className="text-xs text-gray-500/80 dark:text-gray-400/60 flex items-center justify-center gap-1.5">
           Powered by

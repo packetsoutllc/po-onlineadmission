@@ -85,6 +85,10 @@
                         logoPulse: {
                             '0%, 100%': { opacity: '1', transform: 'scale(1)' },
                             '50%': { opacity: '0.85', transform: 'scale(1.02)' }
+                        },
+                        marquee: {
+                            '0%': { transform: 'translateX(0)' },
+                            '100%': { transform: 'translateX(-50%)' }
                         }
                     },
                     animation: {
@@ -94,6 +98,7 @@
                         'border-spin': 'borderRotate 4s linear infinite',
                         'logo-bar': 'logoBar 0.2s ease-out infinite',
                         'logo-pulse': 'logoPulse 0.25s ease-out infinite',
+                        'marquee': 'marquee 35s linear infinite',
                     },
                 },
             },

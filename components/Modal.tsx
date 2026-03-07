@@ -34,24 +34,23 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', h
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300 ease-in-out animate-fadeIn"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out animate-fadeIn"
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop - dark (default), white, or hidden for nested/lightweight modals. */}
+      {/* Backdrop – blurs background (including logo) for all modals/topups. */}
       {!hideBackdrop && (
         <div
-          className={`absolute inset-0 ${backdropWhite ? 'bg-white dark:bg-gray-900' : 'bg-black/50 backdrop-blur-[2px]'}`}
+          className={`absolute inset-0 backdrop-blur-md ${backdropWhite ? 'bg-white/90 dark:bg-gray-900/90' : 'bg-black/50'}`}
           onClick={onClose}
           aria-hidden="true"
         ></div>
       )}
 
-      {/* Modal Panel – fit viewport on mobile (inline styles so they always apply), constrained from sm */}
+      {/* Modal Panel */}
       <div
-        style={{ maxWidth: 'min(calc(100vw - 1rem), 100%)', maxHeight: 'calc(100vh - 1rem)' }}
-        className={`relative w-full ${maxWidthClass} overflow-y-auto overflow-x-hidden transform transition-all duration-300 ease-in-out animate-scaleIn bg-white dark:bg-[#1C1A27] rounded-xl border border-gray-200/50 dark:border-transparent p-4 sm:p-6 md:p-8 text-center shadow-2xl`}
+        className={`relative w-full ${maxWidthClass} overflow-y-auto overflow-x-hidden transform transition-all duration-300 ease-in-out animate-scaleIn bg-white dark:bg-[#1C1A27] rounded-xl border border-gray-200/50 dark:border-transparent p-8 text-center shadow-2xl`}
       >
         {children}
       </div>

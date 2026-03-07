@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "sync:in": "git pull",
     "sync:out": "git add -A && git commit -m \"chore: sync to GitHub\" --allow-empty && git push origin HEAD",
-    "setup:github": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-github-sync.ps1"
+    "setup:github": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-github-sync.ps1",
+    "insforge": "insforge"
   },
   "dependencies": {
     "@google/genai": "^1.25.0",
@@ -27,6 +28,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@insforge/cli": "^0.1.15",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
