@@ -17,6 +17,8 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { StudentStatus, AdminStudent, initialAdminStudents } from './admin/pages/StudentsPage';
 import { setLocalStorageAndNotify, logActivity } from '../utils/storage';
 import { safeJsonParse } from '../utils/security';
+import { getInsForgeClient } from '../lib/insforgeClient';
+import { upsertSubmissionStatus, upsertApplicationData, upsertCredentials } from '../lib/insforgeData';
 import { setFavicon } from '../utils/favicon';
 import { Dormitory, initialDormitories } from './admin/shared/dormitoryData';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
@@ -840,11 +842,20 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
         const serial = generateCredential(admissionSettings?.serialNumberLength || 10, admissionSettings?.serialNumberFormat);
         const pin = generateCredential(admissionSettings?.pinLength || 5, admissionSettings?.pinFormat);
         setLocalStorageAndNotify(credentialsKey, { serialNumber: serial, pin: pin });
+        const credClient = getInsForgeClient();
+        if (credClient) {
+          upsertCredentials(credClient, initialStudent.schoolId, initialStudent.admissionId, activeStudentIndex, serial, pin).catch(() => {});
+        }
         console.log(`[SYSTEM] Generated credentials for student ${activeStudentIndex}: Serial ${serial}, PIN ${pin}`);
     }
 
     setSubmissionStatus({ submitted: true, date: date.toISOString(), admissionNumber: finalAdmissionNumber });
-    
+    const client = getInsForgeClient();
+    if (client) {
+      upsertSubmissionStatus(client, initialStudent.schoolId, initialStudent.admissionId, activeStudentIndex, true).catch(() => {});
+      upsertApplicationData(client, initialStudent.schoolId, initialStudent.admissionId, activeStudentIndex, applicationData).catch(() => {});
+    }
+
     logActivity(
         { name: initialStudent.name, avatar: '', type: 'student' },
         'submitted application for',

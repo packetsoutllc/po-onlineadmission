@@ -6,6 +6,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { GlobalAdminSecuritySettings } from './pages/SecuritySettingsTab';
 import { logSecurityEvent } from './shared/securityLogService';
 import { safeJsonParse } from '../../utils/security';
+import { getInsForgeClient, isInsForgeConfigured } from '../../lib/insforgeClient';
 
 // Mock user data including roles - now consistent with UsersPage.tsx
 const ADMIN_USERS: (AdminUser & { password: string; phoneNumber?: string; schoolId?: string; admissionId?: string; expiryDate?: string; status?: string; })[] = [
@@ -119,10 +120,34 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
   };
 
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
+    if (isInsForgeConfigured()) {
+      try {
+        const client = getInsForgeClient();
+        if (client?.auth) {
+          const { data, error } = await client.auth.signInWithPassword({ email, password });
+          if (!error && data) {
+            const { data: cur } = await client.auth.getCurrentUser();
+            const meta = (cur as any)?.user_metadata ?? {};
+            const adminUser: AdminUser = {
+              email: (cur as any)?.email ?? email,
+              name: meta.name ?? (cur as any)?.email ?? email,
+              avatar: meta.avatar_url ?? '',
+              roleId: meta.roleId ?? 'role_school_admin',
+            };
+            handleSuccessfulLogin(adminUser);
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (_) {
+        // Fall through to mock login
+      }
+    }
 
     setTimeout(() => {
       // Find user from the potentially updated list in localStorage

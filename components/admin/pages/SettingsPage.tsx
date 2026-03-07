@@ -14,7 +14,7 @@ import AdmissionDocTab from './AdmissionDocTab';
 import UserProfileSettingsTab from './UserProfileSettingsTab';
 import { AdminUser } from '../AdminLayout';
 import ApplicationDashboardSettings from './ApplicationDashboardSettings';
-import { logActivity } from '../../../utils/storage';
+import { logActivity, getPortalSlugSchool, getPortalSlugAdmission, setPortalSlugSchool, setPortalSlugAdmission } from '../../../utils/storage';
 
 // --- TYPE DEFINITIONS & MOCK DATA (CENTRALIZED) ---
 /** Display state on landing: opened (green), closed (red), yet_to_open (grey). When missing, derived from status. */
@@ -244,23 +244,23 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
 
     const hasGlobalAdmissionScope = isSuperAdmin || adminUser.admissionId === 'none' || !adminUser.admissionId;
 
+    const [portalSlugVersion, setPortalSlugVersion] = useState(0);
     const portalUrl = useMemo(() => {
         if (!selectedSchool || !selectedAdmission) return '';
-        
+        void portalSlugVersion; // depend on version so URL updates when admin changes portal slugs
+
         // Custom domain support:
-        // If a customDomain is configured on the admission, use it as the base URL.
-        // Otherwise, fall back to current origin + /schoolSlug/admissionSlug.
         const anyAdmission = admissions.find(a => a.id === selectedAdmission.id);
         const customDomain = (anyAdmission as any)?.customDomain as string | undefined;
         if (customDomain && customDomain.trim()) {
-            const trimmed = customDomain.trim().replace(/\/$/, '');
-            return `${trimmed}`;
+            return customDomain.trim().replace(/\/$/, '');
         }
 
+        const schoolSegment = getPortalSlugSchool(selectedSchool.id) || selectedSchool.slug;
+        const admissionSegment = getPortalSlugAdmission(selectedAdmission.id) || selectedAdmission.slug;
         const url = new URL(window.location.href);
-        const baseOrigin = url.origin;
-        return `${baseOrigin}/${selectedSchool.slug}/${selectedAdmission.slug}`;
-    }, [selectedSchool, selectedAdmission, admissions]);
+        return `${url.origin}/${schoolSegment}/${admissionSegment}`;
+    }, [selectedSchool, selectedAdmission, admissions, portalSlugVersion]);
 
     const handleCopyLink = () => {
         if (!portalUrl) return;
@@ -269,21 +269,24 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
     };
 
     const handleEditPortalLink = () => {
-        if (!selectedAdmission) return;
-        const current = admissions.find(a => a.id === selectedAdmission.id) as any;
-        const existingCustomDomain = current?.customDomain || '';
-        const userInput = window.prompt(
-            'Enter the full custom domain URL where this admission portal will be hosted (e.g., https://admissions.yourschool.edu/2025-intake). Leave blank to use the default Packets Out portal link.',
-            existingCustomDomain
+        if (!selectedSchool || !selectedAdmission) return;
+        const currentSchoolSeg = getPortalSlugSchool(selectedSchool.id) || selectedSchool.slug;
+        const currentAdmissionSeg = getPortalSlugAdmission(selectedAdmission.id) || selectedAdmission.slug;
+        const schoolInput = window.prompt(
+            'Enter the URL path segment for the school (e.g. pesco or peki-senior-high). Applicants will use this in the portal URL.',
+            currentSchoolSeg
         );
-        if (userInput === null) return;
+        if (schoolInput === null) return;
+        const admissionInput = window.prompt(
+            'Enter the URL path segment for the admission type (e.g. 2025 or 2025-admissions).',
+            currentAdmissionSeg
+        );
+        if (admissionInput === null) return;
 
-        const trimmed = userInput.trim();
-        const updatedAdmissions = admissions.map(a =>
-            a.id === selectedAdmission.id ? ({ ...(a as any), customDomain: trimmed } as Admission) : a
-        );
-        setAdmissions(updatedAdmissions);
-        showToast('Public portal link updated.', 'success');
+        setPortalSlugSchool(selectedSchool.id, schoolInput.trim());
+        setPortalSlugAdmission(selectedAdmission.id, admissionInput.trim());
+        setPortalSlugVersion(v => v + 1);
+        showToast('Portal link updated. The new URL will work immediately.', 'success');
     };
 
     const handleOpenModal = (mode: typeof modalState.mode, item: typeof modalState.item) => {

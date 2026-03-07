@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useInsForgeFormSettings } from '../../hooks/useInsForgeSettings';
 import { useToast } from '../shared/ToastContext';
 import { School, Admission } from './SettingsPage';
 import FieldEditorModal from '../shared/FieldEditorModal';
@@ -97,8 +98,18 @@ const ApplicationDashboardSettings: React.FC<{
     selectedAdmission: Admission | null;
 }> = ({ selectedSchool, selectedAdmission }) => {
     const { showToast } = useToast();
-    const storageKey = selectedSchool && selectedAdmission ? `formSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
-    const [savedSettings, setSavedSettings] = useLocalStorage<FormSettings>(storageKey || 'nullFormSettingsKey', INITIAL_FORM_SETTINGS);
+    const [savedSettingsRaw, setSavedSettingsRaw] = useInsForgeFormSettings(selectedSchool, selectedAdmission);
+    const savedSettings: FormSettings = useMemo(() => {
+        if (!savedSettingsRaw || typeof savedSettingsRaw !== 'object') return INITIAL_FORM_SETTINGS;
+        const r = savedSettingsRaw as { nameSystem?: string; fields?: FormFieldConfig[] };
+        return {
+            nameSystem: r.nameSystem === 'separated' ? 'separated' : 'full',
+            fields: Array.isArray(r.fields) ? r.fields : INITIAL_FORM_SETTINGS.fields,
+        };
+    }, [savedSettingsRaw]);
+    const setSavedSettings = (next: FormSettings | ((prev: FormSettings) => FormSettings)) => {
+        setSavedSettingsRaw(typeof next === 'function' ? next(savedSettings) : next);
+    };
 
     const [localSettings, setLocalSettings] = useState<FormSettings>(savedSettings);
     const [isExpanded, setIsExpanded] = useState(false);

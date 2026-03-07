@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { AdminStudent } from './StudentsPage';
+import { useInsForgeStudents } from '../hooks/useInsForgeSettings';
 import { School, Admission } from './SettingsPage';
 import { Dormitory } from '../shared/dormitoryData';
 import { AdminUser } from '../AdminLayout';
@@ -61,6 +62,9 @@ const PageContent: React.FC<PageContentProps> = ({
     getActions,
     isSuperAdmin
 }) => {
+    const [effectiveStudents, setEffectiveStudents, studentsLoading, studentsError] = useInsForgeStudents(
+        selectedSchool, selectedAdmission, students, setStudents
+    );
     const pageFallback = <div className="p-4 sm:p-6 flex items-center justify-center min-h-[200px] text-logip-text-subtle dark:text-dark-text-secondary">Loading...</div>;
 
     return (
@@ -74,7 +78,7 @@ const PageContent: React.FC<PageContentProps> = ({
                 adminUser={adminUser}
                 setActivePage={setActivePage}
                 onEditStudent={onEditStudent}
-                students={students}
+                students={effectiveStudents}
                 classes={classes}
             />;
         case 'Students':
@@ -82,8 +86,8 @@ const PageContent: React.FC<PageContentProps> = ({
                 selectedSchool={selectedSchool} 
                 selectedAdmission={selectedAdmission} 
                 onEditStudent={onEditStudent}
-                students={students}
-                setStudents={setStudents}
+                students={effectiveStudents}
+                setStudents={setEffectiveStudents}
                 dormitories={dormitories}
                 classes={classes}
                 programmes={programmes}
@@ -96,8 +100,8 @@ const PageContent: React.FC<PageContentProps> = ({
             return <TransactionsPage 
                 selectedSchool={selectedSchool} 
                 selectedAdmission={selectedAdmission} 
-                students={students} 
-                setStudents={setStudents}
+                students={effectiveStudents} 
+                setStudents={setEffectiveStudents}
                 permissions={permissions}
                 getActions={getActions}
                 isSuperAdmin={isSuperAdmin}
@@ -112,7 +116,7 @@ const PageContent: React.FC<PageContentProps> = ({
         case 'Programmes':
             return <ProgrammesPage 
                 selectedSchool={selectedSchool} 
-                students={students} 
+                students={effectiveStudents} 
                 programmes={programmes}
                 setProgrammes={setProgrammes}
                 classes={classes}
@@ -124,7 +128,7 @@ const PageContent: React.FC<PageContentProps> = ({
         case 'Classes':
             return <ClassesPage 
                 selectedSchool={selectedSchool} 
-                students={students} 
+                students={effectiveStudents} 
                 classes={classes}
                 setClasses={setClasses}
                 programmes={programmes}
@@ -137,7 +141,7 @@ const PageContent: React.FC<PageContentProps> = ({
             return <HousesPage 
                 selectedSchool={selectedSchool}
                 selectedAdmission={selectedAdmission}
-                students={students} 
+                students={effectiveStudents} 
                 dormitories={dormitories}
                 setDormitories={setDormitories}
                 permissions={permissions}

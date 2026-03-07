@@ -1,10 +1,11 @@
 import React from 'react';
-import { useLocalStorage } from './hooks/useLocalStorage';
 import { Select } from './FormControls';
 import PacketsOutArrowIcon from './PacketsOutArrowIcon';
 import Icon from './admin/shared/Icons';
-import { initialSchools, initialAdmissions, School, Admission, type AdmissionPortalStatus } from './admin/pages/SettingsPage';
+import { School, Admission, type AdmissionPortalStatus } from './admin/pages/SettingsPage';
 import PacketsOutLogo from './PacketsOutLogo';
+import { useSchoolsAndAdmissions } from './hooks/useSchoolsAndAdmissions';
+import { getPortalSlugSchool, getPortalSlugAdmission } from '../utils/storage';
 
 interface LandingPageProps {
   toggleTheme: () => void;
@@ -12,8 +13,7 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) => {
-  const [schools] = useLocalStorage<School[]>('admin_schools', initialSchools);
-  const [admissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
+  const { schools, admissions, loading, error, source } = useSchoolsAndAdmissions();
 
   const activeSchools = schools.filter((s) => s.status === 'Active');
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -111,7 +111,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
 
   const navigateToPortal = (school: School, admission: Admission | null) => {
     if (!admission) return;
-    window.location.href = `/${school.slug}/${admission.slug}`;
+    const schoolSeg = getPortalSlugSchool(school.id) || school.slug;
+    const admissionSeg = getPortalSlugAdmission(admission.id) || admission.slug;
+    window.location.href = `/${schoolSeg}/${admissionSeg}`;
   };
 
   return (
@@ -163,7 +165,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
               Select a School
             </h2>
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300 border border-blue-100 dark:border-blue-500/30">
-              {activeSchools.length} active portals
+              {loading ? '…' : `${activeSchools.length} active portals`}
             </span>
           </div>
 
@@ -196,14 +198,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
             </div>
           </div>
 
+          {error && (
+            <div className="mb-3 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
+              {error} Using local data.
+            </div>
+          )}
           <div className="space-y-3 max-h-[420px] overflow-y-auto no-scrollbar">
-            {!hasFilter && (
+            {loading && (
+              <div className="text-center text-sm text-logip-text-subtle dark:text-dark-text-secondary py-6 px-4">
+                Loading schools…
+              </div>
+            )}
+            {!loading && !hasFilter && (
               <div className="text-center text-sm text-logip-text-subtle dark:text-dark-text-secondary py-10 px-4">
                 Search for your school by entering your school's <span className="font-semibold">name</span> or selecting your school's <span className="font-semibold">region</span>.
               </div>
             )}
 
-            {renderedSchools}
+            {!loading && renderedSchools}
 
             {hasFilter && schoolsWithAdmission.length === 0 && (
               <div className="text-center text-sm text-logip-text-subtle dark:text-dark-text-secondary py-8">

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Modal from './Modal';
 import { Select } from './FormControls';
 import { Student, ApplicationStatus } from './StudentDetails';
-import { setLocalStorageAndNotify, logActivity } from '../utils/storage';
+import { setLocalStorageAndNotify, logActivity, getPortalSlugSchool, getPortalSlugAdmission } from '../utils/storage';
 import { safeJsonParse } from '../utils/security';
 import { setFavicon } from '../utils/favicon';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -13,6 +13,8 @@ import { logSecurityEvent } from './admin/shared/securityLogService';
 import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
 import VideoPreviewModal from './admin/shared/VideoPreviewModal';
 import Icon from './admin/shared/Icons';
+import { isInsForgeConfigured, getInsForgeBaseUrl, getInsForgeClient } from '../lib/insforgeClient';
+import { invokeVerify, fetchFinancialsSettings } from '../lib/insforgeData';
 
 // Default settings
 const defaultAdmissionSettings: AdmissionSettings = {
@@ -206,20 +208,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
     return () => clearInterval(interval);
   }, [activeSchoolsList]);
 
-  // Multi-tenancy isolation: determine context based on slugs; each school's logo is used as favicon
+  // Multi-tenancy isolation: resolve by URL segment (slug or admin-configured portal slug)
   const activeSchool = useMemo(() => {
-      const school = schoolSlug ? schools.find(s => s.slug === schoolSlug) : schools.find(s => s.id === 's1');
+      const school = schoolSlug
+          ? schools.find(s => s.slug === schoolSlug || getPortalSlugSchool(s.id) === schoolSlug)
+          : schools.find(s => s.id === 's1');
       if (school) {
           document.title = 'Packets Out - Online Admission System';
           setFavicon(school.logo ?? null);
       }
-      return school;
+      return school ?? null;
   }, [schools, schoolSlug]);
 
   const activeAdmission = useMemo(() => {
       if (!activeSchool) return null;
-      if (admissionSlug) return admissions.find(a => a.schoolId === activeSchool.id && a.slug === admissionSlug);
-      return admissions.find(a => a.schoolId === activeSchool.id && a.status === 'Active') || admissions.find(a => a.schoolId === activeSchool.id);
+      if (admissionSlug) {
+          return admissions.find(a => a.schoolId === activeSchool.id && (a.slug === admissionSlug || getPortalSlugAdmission(a.id) === admissionSlug)) ?? null;
+      }
+      return admissions.find(a => a.schoolId === activeSchool.id && a.status === 'Active') || admissions.find(a => a.schoolId === activeSchool.id) ?? null;
   }, [admissions, admissionSlug, activeSchool]);
 
 
@@ -310,19 +316,19 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
     return match ? match[1] : null;
   }, [indexHint]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!activeAdmission) return;
-    
+    if (!activeAdmission || !activeSchool) return;
+
     const isNumericInput = /^\d+$/.test(inputValue);
     if (authMethod === 'Index number only' || (authMethod === 'Either index number or full name' && isNumericInput)) {
-        if (requiredEnding && !effectiveSettings.activateWhatsappId) { 
-            if (inputValue.length === 12 && !inputValue.endsWith(requiredEnding)) { 
+        if (requiredEnding && !effectiveSettings.activateWhatsappId) {
+            if (inputValue.length === 12 && !inputValue.endsWith(requiredEnding)) {
                 setErrorTitle('Verification Failed');
                 setErrorMessage(`BECE Index Number must end with '${requiredEnding}'.`);
                 setErrorButtonText('Try again later');
                 setIsErrorModalOpen(true);
-                return; 
+                return;
             }
         }
     }
@@ -340,11 +346,107 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
     const customNotFoundError = effectiveSettings.verificationErrorMessage ? (
         <div className="whitespace-pre-wrap">{effectiveSettings.verificationErrorMessage}</div>
     ) : defaultNotFoundError;
-    
-    setIsLoading(false);
+
     let studentData: Student | null = null;
     const lowercasedInput = inputValue.toLowerCase();
-    
+
+    const tryInsForgeVerify = isInsForgeConfigured() && activeSchool && (authMethod === 'Index number only' || (authMethod === 'Either index number or full name' && isNumericInput));
+    if (tryInsForgeVerify) {
+      try {
+        const result = await invokeVerify(getInsForgeBaseUrl(), activeSchool.slug, activeAdmission.slug, inputValue.trim());
+        if (result.found && result.student) {
+          const st = result.student;
+          const status = (st.status as StudentStatus) ?? 'Placed';
+          const feeStatus = (st.feeStatus === 'Paid' ? 'Paid' : 'Unpaid') as 'Paid' | 'Unpaid';
+          if (status === 'Rejected') {
+            setErrorTitle('Application Rejected!');
+            setErrorMessage(<>We regret to inform you that your application was not successful.</>);
+            setErrorButtonText('Close');
+            setIsErrorModalOpen(true);
+            setIsLoading(false);
+            return;
+          }
+          if (st.isProtocol && status === 'Pending') {
+            setErrorTitle('Protocol Application Submitted');
+            setErrorMessage(<>Your request is currently being reviewed. You will be notified once it has been approved or declined.</>);
+            setErrorButtonText('Try again later');
+            setIsErrorModalOpen(true);
+            setIsLoading(false);
+            return;
+          }
+          studentData = {
+            name: st.name,
+            indexNumber: st.indexNumber,
+            programme: st.programme,
+            gender: st.gender,
+            residence: st.residence,
+            aggregate: st.aggregate,
+            schoolId: st.schoolId,
+            admissionId: st.admissionId,
+            isProtocol: !!st.isProtocol,
+            phoneNumber: st.phoneNumber ?? undefined,
+          };
+          const hasPaidViaGateway = result.paidInitial ?? false;
+          const hasPaidViaAdmin = feeStatus === 'Paid';
+          const isExemptFromInitial = false;
+          const hasPaidInitial = isExemptFromInitial || hasPaidViaGateway || hasPaidViaAdmin;
+          const hasPaidDocAccess = result.paidDocAccess ?? false;
+          const isSubmitted = result.submitted ?? false;
+          let financials: { gatewayStatus?: boolean; docAccessFeeEnabled?: boolean; docAccessFeeTarget?: string } = { gatewayStatus: true, docAccessFeeEnabled: false, docAccessFeeTarget: 'both' };
+          const client = getInsForgeClient();
+          if (client) {
+            try {
+              const raw = await fetchFinancialsSettings(client, studentData.schoolId, studentData.admissionId);
+              financials = { gatewayStatus: !!raw.gatewayStatus, docAccessFeeEnabled: !!raw.docAccessFeeEnabled, docAccessFeeTarget: (raw.docAccessFeeTarget as string) || 'both' };
+            } catch (_) {
+              const financialsKey = `financialsSettings_${studentData.schoolId}_${studentData.admissionId}`;
+              financials = safeJsonParse(localStorage.getItem(financialsKey), financials);
+            }
+          } else {
+            const financialsKey = `financialsSettings_${studentData.schoolId}_${studentData.admissionId}`;
+            financials = safeJsonParse(localStorage.getItem(financialsKey), financials);
+          }
+          const isAdmitted = status === 'Admitted';
+          const isProspective = status === 'Prospective';
+          let docAccessRequired = financials.docAccessFeeEnabled && !hasPaidDocAccess;
+          if (docAccessRequired) {
+            const target = financials.docAccessFeeTarget;
+            if (target === 'admitted' && !isAdmitted) docAccessRequired = false;
+            else if (target === 'prospective' && !isProspective) docAccessRequired = false;
+            else if (target === 'both' && !isAdmitted && !isProspective) docAccessRequired = false;
+          }
+          logActivity({ name: st.name, avatar: '', type: 'student' }, 'successfully verified details and logged in', 'security', `Index: ${st.indexNumber} (${activeAdmission.title})`, st.schoolId);
+          setPreviewStudent({
+            student: studentData,
+            status,
+            hasPaid: hasPaidInitial,
+            isExempt: isExemptFromInitial,
+            paymentType: 'initial',
+          });
+          if (!hasPaidInitial) {
+            setIsLoading(false);
+            onVerificationSuccess(studentData, status, false, false, 'initial');
+            return;
+          }
+          if (docAccessRequired) {
+            setIsLoading(false);
+            onVerificationSuccess(studentData, status, true, isExemptFromInitial, 'doc_access');
+            return;
+          }
+          setIsLoading(false);
+          onVerificationSuccess(studentData, status, true, isExemptFromInitial, 'initial');
+          return;
+        }
+      } catch (_err) {
+        setErrorTitle('Verification Failed');
+        setErrorMessage(<>Network or server error. Using local verification.</>);
+        setErrorButtonText('Try again');
+        setIsErrorModalOpen(true);
+        setIsLoading(false);
+        return;
+      }
+    }
+
     const dynamicStudent = adminStudents.find(s => {
         if (s.schoolId !== activeAdmission.schoolId || s.admissionId !== activeAdmission.id) return false;
         
@@ -382,14 +484,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         }
         
         if (studentForProcessing.status === 'Rejected') {
+            setIsLoading(false);
             setErrorTitle('Application Rejected!');
             setErrorMessage(<>We regret to inform you that your application was not successful.</>);
             setErrorButtonText('Close');
             setIsErrorModalOpen(true);
             return;
         }
-        
+
         if (studentForProcessing.isProtocol && studentForProcessing.status === 'Pending') {
+            setIsLoading(false);
             setErrorTitle('Protocol Application Submitted');
             setErrorMessage(<>Your request is currently being reviewed. You will be notified once it has been approved or declined.</>);
             setErrorButtonText('Try again later');
@@ -470,6 +574,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         }
 
         if (isGlobalStatusOff && !previewStudent) {
+            setIsLoading(false);
             setPreviewStudent({
                 student: studentData,
                 status: studentForProcessing.status,
@@ -481,19 +586,23 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         }
 
         if (!hasPaidInitial) {
+            setIsLoading(false);
             onVerificationSuccess(studentData, studentForProcessing.status, false, false, 'initial');
             return;
         }
-        
+
         if (docAccessRequired) {
+            setIsLoading(false);
             onVerificationSuccess(studentData, studentForProcessing.status, false, false, 'doc_access');
             return;
         }
 
-        onVerificationSuccess(studentData, studentForProcessing.status, true, isExemptFromInitial);
-        return; 
+        setIsLoading(false);
+        onVerificationSuccess(studentData, studentForProcessing.status, true, isExemptFromInitial, 'initial');
+        return;
     }
 
+    setIsLoading(false);
     logActivity(
         { name: 'Unknown Applicant', avatar: '', type: 'student' },
         'failed index verification attempt',

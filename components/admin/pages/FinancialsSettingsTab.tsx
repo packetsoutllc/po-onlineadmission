@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { School, Admission } from './SettingsPage';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useInsForgeFinancialsSettings } from '../../hooks/useInsForgeSettings';
 import { useToast } from '../shared/ToastContext';
 import { AdminInput, AdminSelect, AdminCheckbox } from '../shared/forms';
 import { AdminStudent, initialAdminStudents } from './StudentsPage';
@@ -53,36 +54,40 @@ interface MasterDocAccessSettings {
     [key: string]: { prospective: boolean; admitted: boolean };
 }
 
+const defaultFinancials: FinancialsSettings = {
+    voucherPrice: '50',
+    gatewayStatus: true,
+    requirementPolicy: 'all',
+    targetedStudents: [],
+    exemptedStudents: [],
+    gateways: [
+        { id: 'gw_1', provider: 'paystack', label: 'Paystack (Primary)', publicKey: 'pk_live_...', secretKey: '', enabled: true }
+    ],
+    applicationList: [
+        "Official Admission Letter",
+        "Student Prospectus (Hard & Soft Copy)",
+        "Personal Record Form",
+        "AI-Powered Passport Photo Editing",
+        "SMS Confirmation Alerts"
+    ],
+    docApplicationList: [
+        "Official Admission Letter",
+        "Student Prospectus",
+        "Personal Record Form",
+        "Official Receipt"
+    ],
+    docAccessFeeEnabled: false,
+    docAccessFeePrice: '100',
+    docAccessFeeTarget: 'both'
+};
+
 const FinancialsSettingsTab: React.FC<TabProps> = ({ selectedSchool, selectedAdmission }) => {
     const { showToast } = useToast();
-    const storageKey = selectedSchool && selectedAdmission ? `financialsSettings_${selectedSchool.id}_${selectedAdmission.id}` : '';
-
-    const [settings, setSettings] = useLocalStorage<FinancialsSettings>(storageKey, {
-        voucherPrice: '50',
-        gatewayStatus: true,
-        requirementPolicy: 'all',
-        targetedStudents: [],
-        exemptedStudents: [],
-        gateways: [
-            { id: 'gw_1', provider: 'paystack', label: 'Paystack (Primary)', publicKey: 'pk_live_...', secretKey: '', enabled: true }
-        ],
-        applicationList: [
-            "Official Admission Letter",
-            "Student Prospectus (Hard & Soft Copy)",
-            "Personal Record Form",
-            "AI-Powered Passport Photo Editing",
-            "SMS Confirmation Alerts"
-        ],
-        docApplicationList: [
-            "Official Admission Letter",
-            "Student Prospectus",
-            "Personal Record Form",
-            "Official Receipt"
-        ],
-        docAccessFeeEnabled: false,
-        docAccessFeePrice: '100',
-        docAccessFeeTarget: 'both'
-    });
+    const [settingsRaw, setSettingsRaw, loadingFinancials, errorFinancials] = useInsForgeFinancialsSettings(selectedSchool, selectedAdmission);
+    const settings = (settingsRaw && typeof settingsRaw === 'object' ? settingsRaw : defaultFinancials) as FinancialsSettings;
+    const setSettings = (next: FinancialsSettings | ((prev: FinancialsSettings) => FinancialsSettings)) => {
+        setSettingsRaw(typeof next === 'function' ? next(settings) : next);
+    };
 
     const docAccessKey = selectedSchool && selectedAdmission ? `docAccessSettings_${selectedSchool.id}_${selectedAdmission.id}` : 'nullDocAccess';
     const [docAccess, setDocAccess] = useLocalStorage<MasterDocAccessSettings>(docAccessKey, {

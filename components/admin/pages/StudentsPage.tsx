@@ -17,6 +17,7 @@ import EditLogModal from '../shared/EditLogModal';
 import AdminModal from '../shared/AdminModal';
 import ImagePreviewModal from '../../shared/ImagePreviewModal';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useInsForgeFormSettings, useInsForgeAdmissionSettings, useInsForgeFinancialsSettings } from '../../hooks/useInsForgeSettings';
 import { allocateDormForStudent, allocateHouseForStudent, updateHouseCountOnManualChange } from '../shared/houseAllocationService';
 import { useSortableData } from '../../hooks/useSortableData';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -389,18 +390,24 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         );
     };
 
-    const admissionSettingsKey = selectedSchool && selectedAdmission ? `admissionSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
-    const [storedAdmissionSettings] = useLocalStorage<AdmissionSettings | null>(admissionSettingsKey, null);
+    const [storedAdmissionSettingsRaw] = useInsForgeAdmissionSettings(selectedSchool, selectedAdmission);
+    const storedAdmissionSettings = storedAdmissionSettingsRaw && typeof storedAdmissionSettingsRaw === 'object' ? storedAdmissionSettingsRaw as AdmissionSettings | null : null;
 
-    const formSettingsKey = selectedSchool && selectedAdmission ? `formSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
-    const [formSettings] = useLocalStorage<FormSettings>(formSettingsKey, INITIAL_FORM_SETTINGS);
+    const [formSettingsRaw] = useInsForgeFormSettings(selectedSchool, selectedAdmission);
+    const formSettings = useMemo((): FormSettings => {
+        if (!formSettingsRaw || typeof formSettingsRaw !== 'object') return INITIAL_FORM_SETTINGS;
+        const r = formSettingsRaw as { nameSystem?: string; fields?: FormFieldConfig[] };
+        return {
+            nameSystem: r.nameSystem === 'separated' ? 'separated' : 'full',
+            fields: Array.isArray(r.fields) ? r.fields : INITIAL_FORM_SETTINGS.fields,
+        };
+    }, [formSettingsRaw]);
 
+    const [financialsSettingsRaw] = useInsForgeFinancialsSettings(selectedSchool, selectedAdmission);
     const financialsSettings = useMemo(() => {
-        if (!selectedSchool || !selectedAdmission) return { gatewayStatus: true };
-        const key = `financialsSettings_${selectedSchool.id}_${selectedAdmission.id}`;
-        const raw = localStorage.getItem(key);
-        return safeJsonParse<{ gatewayStatus?: boolean }>(raw, { gatewayStatus: true });
-    }, [selectedSchool, selectedAdmission]);
+        if (!financialsSettingsRaw || typeof financialsSettingsRaw !== 'object') return { gatewayStatus: true };
+        return { gatewayStatus: (financialsSettingsRaw as { gatewayStatus?: boolean }).gatewayStatus ?? true };
+    }, [financialsSettingsRaw]);
 
     const allExportableFields = useMemo(() => {
         if (!formSettings) return [];

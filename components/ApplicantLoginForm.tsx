@@ -9,6 +9,8 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import Icon from './admin/shared/Icons';
 import { logSecurityEvent } from './admin/shared/securityLogService';
 import { safeJsonParse } from '../utils/security';
+import { isInsForgeConfigured, getInsForgeBaseUrl } from '../lib/insforgeClient';
+import { invokeApplicantAuth } from '../lib/insforgeData';
 
 interface ApplicantLoginFormProps {
   student: Student;
@@ -107,10 +109,22 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
     }
   }, [retrieveCredentials, isSubmitted, student.indexNumber]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(''); setInfoMessage(''); setIsLoading(true);
     try {
+        if (isInsForgeConfigured()) {
+          const baseUrl = getInsForgeBaseUrl();
+          const result = await invokeApplicantAuth(baseUrl, student.schoolId, student.admissionId, serialNumber.trim(), pin.trim());
+          if (result.valid && result.indexNumber === student.indexNumber) {
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem(`student_login_timestamp_${student.schoolId}_${student.indexNumber}`, new Date().getTime().toString());
+            }
+            onLoginSuccess();
+            setIsLoading(false);
+            return;
+          }
+        }
         const storedCredentialsRaw = localStorage.getItem(`credentials_${student.schoolId}_${student.indexNumber}`);
         if (!storedCredentialsRaw) {
             setError('Could not find credentials.');
@@ -123,7 +137,6 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
             logSecurityEvent('Invalid Credentials', `Applicant: ${student.indexNumber}`, 'Flagged', undefined, 'Credentials missing or invalid.');
             setIsLoading(false); return;
         }
-        // Case-insensitive comparison
         if (storedCredentials.serialNumber.toUpperCase() === serialNumber.toUpperCase() && 
             storedCredentials.pin.toUpperCase() === pin.toUpperCase()) {
             localStorage.setItem(`student_login_timestamp_${student.schoolId}_${student.indexNumber}`, new Date().getTime().toString());

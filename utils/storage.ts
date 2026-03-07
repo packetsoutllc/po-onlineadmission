@@ -128,6 +128,38 @@ export const sanitizeDownloadFilename = (s: string): string => {
     return s.replace(/[\/*?:<>|"]/g, '').replace(/\\/g, '').trim().replace(/\s+/g, ' ') || 'export';
 };
 
+/** Portal path segment overrides (admin can set custom URL segments so e.g. /pesco/2025 works). */
+const PORTAL_SLUG_SCHOOL_PREFIX = 'portal_slug_school_';
+const PORTAL_SLUG_ADMISSION_PREFIX = 'portal_slug_admission_';
+
+export function getPortalSlugSchool(schoolId: string): string | null {
+    if (typeof window === 'undefined') return null;
+    const raw = window.localStorage.getItem(PORTAL_SLUG_SCHOOL_PREFIX + schoolId);
+    return raw && raw.trim() ? raw.trim() : null;
+}
+
+export function getPortalSlugAdmission(admissionId: string): string | null {
+    if (typeof window === 'undefined') return null;
+    const raw = window.localStorage.getItem(PORTAL_SLUG_ADMISSION_PREFIX + admissionId);
+    return raw && raw.trim() ? raw.trim() : null;
+}
+
+export function setPortalSlugSchool(schoolId: string, segment: string): void {
+    if (typeof window === 'undefined') return;
+    const val = segment.trim() || '';
+    if (val) window.localStorage.setItem(PORTAL_SLUG_SCHOOL_PREFIX + schoolId, val);
+    else window.localStorage.removeItem(PORTAL_SLUG_SCHOOL_PREFIX + schoolId);
+    window.dispatchEvent(new CustomEvent('logip-storage-update', { detail: { key: PORTAL_SLUG_SCHOOL_PREFIX + schoolId } }));
+}
+
+export function setPortalSlugAdmission(admissionId: string, segment: string): void {
+    if (typeof window === 'undefined') return;
+    const val = segment.trim() || '';
+    if (val) window.localStorage.setItem(PORTAL_SLUG_ADMISSION_PREFIX + admissionId, val);
+    else window.localStorage.removeItem(PORTAL_SLUG_ADMISSION_PREFIX + admissionId);
+    window.dispatchEvent(new CustomEvent('logip-storage-update', { detail: { key: PORTAL_SLUG_ADMISSION_PREFIX + admissionId } }));
+}
+
 /** Build download filename: "School Name - Admission Type" (optional suffix and extension). */
 export const downloadFilename = (
     schoolName: string,

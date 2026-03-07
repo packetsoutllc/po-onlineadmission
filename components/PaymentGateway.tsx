@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Student } from './StudentDetails';
 import { setLocalStorageAndNotify } from '../utils/storage';
 import { safeJsonParse } from '../utils/security';
+import { getInsForgeClient } from '../lib/insforgeClient';
+import { upsertPaymentStatus, upsertCredentials } from '../lib/insforgeData';
 import Icon from './admin/shared/Icons';
 import Modal from './Modal';
 import { Select } from './FormControls';
@@ -198,6 +200,10 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                 
                 credentials = { serialNumber, pin };
                 setLocalStorageAndNotify(credentialsKey, credentials);
+                const client = getInsForgeClient();
+                if (client) {
+                  upsertCredentials(client, student.schoolId, student.admissionId, student.indexNumber, serialNumber, pin).catch(() => {});
+                }
             }
 
             // --- REQUIREMENT 3: Conditional SMS Sending ---
@@ -217,10 +223,15 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
             }
 
             // Mark statuses internally
+            const paymentType = isInitialVoucherPayment ? 'initial' : 'doc_access';
             if (isInitialVoucherPayment) {
                 setLocalStorageAndNotify(`paymentStatus_${student.schoolId}_${student.indexNumber}`, { paid: true });
             } else {
                 setLocalStorageAndNotify(`paymentStatus_docAccess_${student.schoolId}_${student.indexNumber}`, { paid: true });
+            }
+            const insforgeClient = getInsForgeClient();
+            if (insforgeClient) {
+              upsertPaymentStatus(insforgeClient, student.schoolId, student.admissionId, student.indexNumber, paymentType, true).catch(() => {});
             }
             
             setLocalStorageAndNotify(`smsNotificationNumber_${student.schoolId}_${student.indexNumber}`, notificationNumber);

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { School, Admission } from './SettingsPage';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useInsForgeAdmissionSettings } from '../../hooks/useInsForgeSettings';
 import { useToast } from '../shared/ToastContext';
 import { AdminInput, AdminSelect, AdminCheckbox, AdminTextarea, AdminFormField } from '../shared/forms';
 import { AdminUser } from '../AdminLayout';
@@ -181,8 +182,11 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
         passwordRequiresSpecialChar: false,
     });
 
-    const admissionSettingsKey = selectedSchool && selectedAdmission ? `admissionSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
-    const [admissionSettings, setAdmissionSettings] = useLocalStorage<AdmissionSettings | null>(admissionSettingsKey, null);
+    const [admissionSettingsRaw, setAdmissionSettingsRaw] = useInsForgeAdmissionSettings(selectedSchool, selectedAdmission);
+    const admissionSettings = admissionSettingsRaw && typeof admissionSettingsRaw === 'object' ? admissionSettingsRaw as AdmissionSettings : null;
+    const setAdmissionSettings = (next: AdmissionSettings | null | ((prev: AdmissionSettings | null) => AdmissionSettings | null)) => {
+        setAdmissionSettingsRaw(typeof next === 'function' ? next(admissionSettings) : next ?? {});
+    };
 
     const [localAdmissionSettings, setLocalAdmissionSettings] = useState<AdmissionSettings>({
         adminOnlyAccess: false,

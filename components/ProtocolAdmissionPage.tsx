@@ -4,6 +4,7 @@ import { FormField, Input, Select } from './FormControls';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { setFavicon } from '../utils/favicon';
 import { safeJsonParse } from '../utils/security';
+import { getPortalSlugSchool, getPortalSlugAdmission } from '../utils/storage';
 import { AdminStudent, initialAdminStudents } from './admin/pages/StudentsPage';
 import { Admission, initialAdmissions, School, initialSchools } from './admin/pages/SettingsPage';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
@@ -53,10 +54,10 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
     const [admissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
     const [schools] = useLocalStorage<School[]>('admin_schools', initialSchools);
 
-    // Determine active school/admission based on slugs, with fallback to defaults
+    // Determine active school/admission by URL segment (slug or admin-configured portal slug)
     const activeSchool = useMemo(() => {
         if (schoolSlug) {
-            const bySlug = schools.find(s => s.slug === schoolSlug);
+            const bySlug = schools.find(s => s.slug === schoolSlug || getPortalSlugSchool(s.id) === schoolSlug);
             if (bySlug) {
                 document.title = 'Packets Out - Online Admission System';
                 setFavicon(bySlug.logo ?? null);
@@ -74,10 +75,9 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
     const activeAdmission = useMemo(() => {
         if (!activeSchool) return null;
         if (admissionSlug) {
-            const bySlug = admissions.find(a => a.schoolId === activeSchool.id && a.slug === admissionSlug);
+            const bySlug = admissions.find(a => a.schoolId === activeSchool.id && (a.slug === admissionSlug || getPortalSlugAdmission(a.id) === admissionSlug));
             if (bySlug) return bySlug;
         }
-        // Fallback to first active admission for that school, or any admission
         return (
             admissions.find(a => a.schoolId === activeSchool.id && a.status === 'Active') ||
             admissions.find(a => a.schoolId === activeSchool.id) ||
