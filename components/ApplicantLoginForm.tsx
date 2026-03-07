@@ -177,7 +177,7 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
                     )}
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100">Applicant Login</h1>
                     <p className="text-base text-gray-500 dark:text-gray-400 mt-4">
-                        Enter the credentials you received after payment.
+                        Enter the Serial and PIN sent as SMS, or retrieve if forgotten.
                     </p>
                 </div>
             </div>

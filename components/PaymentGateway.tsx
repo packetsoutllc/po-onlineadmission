@@ -307,7 +307,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                         {officialEditSettings.allowOfficialEditRequests && (
                             <div className="mt-3">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                    See a mistake in these official details? You can send a correction request with evidence.
+                                    See a mistake in applicant information above? You can send a correction request with evidence.
                                 </p>
                                 <button
                                     type="button"
