@@ -44,7 +44,7 @@ export function useDebouncedCallback<T>(
         (value: T) => {
             latestValueRef.current = value;
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            timeoutRef.current = window.setTimeout(flush, delayMs);
+            timeoutRef.current = setTimeout(flush, delayMs);
         },
         [delayMs, flush]
     );
