@@ -25,7 +25,7 @@ export function useDebouncedCallback<T>(
     callback: (value: T) => void,
     delayMs: number = DEBOUNCE_DELAY_MS
 ): (value: T) => void {
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
     const latestValueRef = useRef<T | null>(null);
 
     const flush = useCallback(() => {

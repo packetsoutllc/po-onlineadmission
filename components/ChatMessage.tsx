@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Message } from '../types';
-import { Bot, User, Volume2, ExternalLink } from 'lucide-react';
+import { Bot, User, Volume2, ExternalLink, Loader2 } from 'lucide-react';
 import { generateSpeech } from '../services/geminiService';
 
 interface ChatMessageProps {
