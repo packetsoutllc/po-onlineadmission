@@ -593,7 +593,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                   {activeSchool?.name}
                 </h1>
               </div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50">
                 Verify your details to
                 <span className="block">start your online admission.</span>
               </h2>

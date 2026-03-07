@@ -137,7 +137,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
             <span className="block whitespace-nowrap">Seamless Online Admission</span>
             <span className="block whitespace-nowrap">for Senior High Schools.</span>
           </h1>
-          <p className="text-base sm:text-lg text-logip-text-body/80 dark:text-dark-text-secondary max-w-xl mb-6">
+          <p className="text-sm sm:text-base text-logip-text-body/80 dark:text-dark-text-secondary max-w-xl mb-6">
             A secure and modern online admission system for schools across Ghana.
             Simply search for your school, enter your index number to verify your placement, complete the online admission form, and download your admission documents.
           </p>
