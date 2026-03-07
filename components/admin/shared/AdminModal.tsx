@@ -6,7 +6,7 @@ interface AdminModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  size?: 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
   forceTheme?: 'dark' | 'light';
 }
 
