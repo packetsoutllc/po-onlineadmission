@@ -307,7 +307,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                         {officialEditSettings.allowOfficialEditRequests && (
                             <div className="mt-3">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                    See a mistake in applicant information above? You can send a correction request with evidence.
+                                    Do you see any mistakes in the applicant information above? You can submit a correction request to have them fixed.
                                 </p>
                                 <button
                                     type="button"
@@ -398,12 +398,19 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                             />
                         </div>
                         <label className="mt-2 flex items-center gap-2 cursor-pointer select-none w-fit group">
-                            <input
-                                type="checkbox"
-                                checked={isSameNumber}
-                                onChange={(e) => handleSameNumberChange(e.target.checked)}
-                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-logip-primary focus:ring-logip-primary/20 cursor-pointer"
-                            />
+                            <div className="relative flex items-center justify-center w-5 h-5">
+                                <input
+                                    type="checkbox"
+                                    checked={isSameNumber}
+                                    onChange={(e) => handleSameNumberChange(e.target.checked)}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-gray-300 dark:border-gray-600 transition-all checked:bg-logip-primary checked:border-logip-primary dark:checked:bg-logip-primary focus:ring-2 focus:ring-logip-primary/30 focus:ring-offset-0"
+                                />
+                                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100 pointer-events-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" stroke="currentColor" strokeWidth="1">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                </span>
+                            </div>
                             <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200">Same as MOMO number</span>
                         </label>
                     </div>
@@ -514,7 +521,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                     >
                         <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Corrections to Official School Records Request</h2>
                         <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                            Update the fields that are wrong and upload a clear photo or scan of an official document that proves the correct information.
+                            Correct any incorrect fields and upload a clear photo or scanned copy of an official document that verifies the correct information.
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">

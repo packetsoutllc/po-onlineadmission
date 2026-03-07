@@ -210,7 +210,26 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
                     />
                   </div>
                 </div>
-                <div className="flex items-center justify-between mb-6"><label htmlFor="remember-credentials" className="flex items-center cursor-pointer select-none"><input id="remember-credentials" name="remember-credentials" type="checkbox" checked={retrieveCredentials} onChange={e => setRetrieveCredentials(e.target.checked)} className="sr-only peer" /><div className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-colors ${retrieveCredentials ? 'bg-indigo-600 border-indigo-600' : 'border-gray-400 dark:border-gray-500'}`}>{retrieveCredentials && <Icon name="check" className="w-3 h-3 text-white" />}</div><span className="ml-2 block text-sm text-gray-900 dark:text-gray-300">Retrieve my credentials</span></label></div>
+                <div className="flex items-center justify-between mb-6">
+                  <label htmlFor="remember-credentials" className="flex items-center gap-2 cursor-pointer select-none">
+                    <div className="relative flex items-center justify-center w-5 h-5">
+                      <input
+                        id="remember-credentials"
+                        name="remember-credentials"
+                        type="checkbox"
+                        checked={retrieveCredentials}
+                        onChange={e => setRetrieveCredentials(e.target.checked)}
+                        className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-gray-300 dark:border-gray-600 transition-all checked:bg-logip-primary checked:border-logip-primary dark:checked:bg-logip-primary focus:ring-2 focus:ring-logip-primary/30 focus:ring-offset-0"
+                      />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" stroke="currentColor" strokeWidth="1">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </span>
+                    </div>
+                    <span className="text-sm text-gray-900 dark:text-gray-300">Retrieve my credentials</span>
+                  </label>
+                </div>
                 {error && <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-200 p-4 rounded-r mb-6 flex items-start space-x-3 animate-fadeIn"><Icon name="error" className="w-5 h-5 mt-0.5" /><p>{error}</p></div>}
                 {infoMessage && <div className="bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-700 dark:text-blue-200 p-4 rounded-r mb-6 flex items-start space-x-3 animate-fadeIn"><Icon name="info" className="w-5 h-5 mt-0.5" /><p>{infoMessage}</p></div>}
                 <div><button type="submit" disabled={isLoading} className="w-full flex justify-center items-center gap-2 py-2 px-4 text-lg font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover transform transition-all duration-300 disabled:opacity-60">{isLoading ? 'Authenticating...' : 'Login to Continue'}</button></div>

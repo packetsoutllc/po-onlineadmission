@@ -973,7 +973,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
           >
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Corrections to Official School Records Request</h2>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-              Update the fields that are wrong and upload a clear photo or scan of an official document that proves the correct information.
+              Correct any incorrect fields and upload a clear photo or scanned copy of an official document that verifies the correct information.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-left">
