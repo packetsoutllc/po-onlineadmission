@@ -1,4 +1,4 @@
-
+import { escapeHtml, sanitizeResourceUrl } from '../../../utils/security';
 import { School } from '../pages/SettingsPage';
 
 export const printTable = (
@@ -24,15 +24,19 @@ export const printTable = (
     const formattedDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-    // Using a more reliable default placeholder for school logo
-    const schoolLogo = school?.logo || 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=200&h=200&auto=format&fit=crop';
-    const schoolName = school?.name || 'School Name';
+    // Using a more reliable default placeholder for school logo (must be safe URL)
+    const rawLogo = school?.logo || 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=200&h=200&auto=format&fit=crop';
+    const schoolLogo = sanitizeResourceUrl(rawLogo);
+    const schoolName = escapeHtml(school?.name || 'School Name');
+    const safeTitle = escapeHtml(title);
+    const safeAdmissionName = escapeHtml(admissionName);
+    const safePreTableContent = preTableContent != null ? escapeHtml(preTableContent) : '';
 
     const documentContent = `
         <!DOCTYPE html>
         <html>
             <head>
-                <title>${title}</title>
+                <title>${safeTitle}</title>
                 <link rel="preconnect" href="https://fonts.googleapis.com">
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -189,11 +193,11 @@ export const printTable = (
                 <div class="print-header">
                     ${schoolLogo ? `<img src="${schoolLogo}" alt="Logo" class="school-logo" />` : ''}
                     <div class="school-name">${schoolName}</div>
-                    <div class="admission-title">${admissionName || title}</div>
+                    <div class="admission-title">${safeAdmissionName || safeTitle}</div>
                     <div class="meta-date">Generated on ${formattedDate} at ${formattedTime}</div>
                 </div>
 
-                ${preTableContent ? `<div class="pre-table-content">${preTableContent}</div>` : ''}
+                ${safePreTableContent ? `<div class="pre-table-content">${safePreTableContent}</div>` : ''}
 
                 ${tableElement.outerHTML}
 

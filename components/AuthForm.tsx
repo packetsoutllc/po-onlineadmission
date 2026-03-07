@@ -3,11 +3,13 @@ import Modal from './Modal';
 import { Select } from './FormControls';
 import { Student, ApplicationStatus } from './StudentDetails';
 import { setLocalStorageAndNotify, logActivity } from '../utils/storage';
+import { safeJsonParse } from '../utils/security';
 import { setFavicon } from '../utils/favicon';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Admission, initialAdmissions, School, initialSchools } from './admin/pages/SettingsPage';
 import { AdminStudent, initialAdminStudents, StudentStatus } from './admin/pages/StudentsPage';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
+import { logSecurityEvent } from './admin/shared/securityLogService';
 import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
 import VideoPreviewModal from './admin/shared/VideoPreviewModal';
 import Icon from './admin/shared/Icons';
@@ -226,8 +228,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
       const key = `notification_${type}_${activeAdmission.schoolId}_${activeAdmission.id}`;
       const raw = localStorage.getItem(key);
       if (raw) {
-          const data = JSON.parse(raw);
-          if (isNotificationActive(data, activeAdmission.id, type, 'auth')) {
+          const data = safeJsonParse(raw, null);
+          if (data && isNotificationActive(data, activeAdmission.id, type, 'auth')) {
               return data;
           }
       }
@@ -370,7 +372,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
             const schoolName = activeSchool?.name || 'the school';
             const admissionTitle = activeAdmission?.title || 'the admission type';
             const smsNumberRaw = localStorage.getItem(`smsNotificationNumber_${studentForProcessing.schoolId}_${studentForProcessing.indexNumber}`);
-            const smsNumber = smsNumberRaw ? JSON.parse(smsNumberRaw) : (studentForProcessing.phoneNumber || "");
+            const smsNumber = safeJsonParse<string>(smsNumberRaw, '') || studentForProcessing.phoneNumber || '';
             
             console.log(`[SIMULATED SMS - AUTO] to ${smsNumber || 'student'}: Your protocol requested for ${schoolName} and ${admissionTitle} has been Approved.`);
         }
@@ -409,15 +411,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         };
 
         const submissionStatusRaw = localStorage.getItem(`submissionStatus_${studentData.schoolId}_${studentData.indexNumber}`);
-        const isSubmitted = submissionStatusRaw ? JSON.parse(submissionStatusRaw).submitted : false;
+        const isSubmitted = safeJsonParse<{ submitted?: boolean }>(submissionStatusRaw, {}).submitted ?? false;
 
         const paymentStatusFromGatewayRaw = localStorage.getItem(`paymentStatus_${studentData.schoolId}_${studentData.indexNumber}`);
-        const hasPaidViaGateway = paymentStatusFromGatewayRaw ? JSON.parse(paymentStatusFromGatewayRaw).paid : false;
+        const hasPaidViaGateway = safeJsonParse<{ paid?: boolean }>(paymentStatusFromGatewayRaw, {}).paid ?? false;
         const hasPaidViaAdmin = studentForProcessing.feeStatus === 'Paid';
         
         const financialsKey = `financialsSettings_${studentData.schoolId}_${studentData.admissionId}`;
         const financialsRaw = localStorage.getItem(financialsKey);
-        const financials = financialsRaw ? JSON.parse(financialsRaw) : { gatewayStatus: true, requirementPolicy: 'all', targetedStudents: [], exemptedStudents: [], docAccessFeeEnabled: false, docAccessFeeTarget: 'both' };
+        const financials = safeJsonParse<{ gatewayStatus?: boolean; requirementPolicy?: string; targetedStudents?: string[]; exemptedStudents?: string[]; docAccessFeeEnabled?: boolean; docAccessFeeTarget?: string }>(financialsRaw, { gatewayStatus: true, requirementPolicy: 'all', targetedStudents: [], exemptedStudents: [], docAccessFeeEnabled: false, docAccessFeeTarget: 'both' });
         
         let initialPaymentRequired = financials.gatewayStatus;
         if (initialPaymentRequired) {
@@ -435,7 +437,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         
         const docUnlockStatusKey = `paymentStatus_docAccess_${studentData.schoolId}_${studentData.indexNumber}`;
         const docAccessPaidRaw = localStorage.getItem(docUnlockStatusKey);
-        const hasPaidDocAccess = docAccessPaidRaw ? JSON.parse(docAccessPaidRaw).paid : false;
+        const hasPaidDocAccess = safeJsonParse<{ paid?: boolean }>(docAccessPaidRaw, {}).paid ?? false;
         
         const isAdmitted = studentForProcessing.status === 'Admitted';
         const isProspective = studentForProcessing.status === 'Prospective';
@@ -499,6 +501,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         `Input: ${inputValue} (Admission: ${activeAdmission?.title || 'Unknown'})`,
         activeSchool?.id
     );
+    logSecurityEvent('Failed Verification', `Applicant: ${inputValue} (${activeAdmission?.title || 'Unknown'})`, 'Flagged', undefined, 'Index/name not found or not in admission.');
 
     setErrorTitle('Verification Failed');
     setErrorMessage(customNotFoundError);
@@ -704,7 +707,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
 
                 {displayedHint && (
                   <div className="mt-3">
-                    <div className="bg-info-bg-light/90 dark:bg-yellow-950/50 border border-info-border-light/80 dark:border-yellow-500/50 rounded-lg px-4 py-3 flex items-start space-x-3 overflow-x-auto no-scrollbar">
+                    <div className="bg-info-bg-light dark:bg-yellow-950/40 border border-info-border-light/60 dark:border-yellow-500/40 rounded-lg px-4 py-3 flex items-start space-x-3 overflow-x-auto no-scrollbar">
                       <Icon name="info" className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
                       <div className="min-w-0 flex-1">
                         {displayedHint.split('\n').map((line, i) => {
@@ -940,7 +943,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
               if (effectiveSettings.autoApproveOfficialEdits) {
                 try {
                   const studentsRaw = localStorage.getItem('admin_students');
-                  const list: AdminStudent[] = studentsRaw ? JSON.parse(studentsRaw) : [];
+                  const list: AdminStudent[] = safeJsonParse<AdminStudent[]>(studentsRaw, []);
                   const idx = list.findIndex(
                     (st) => st.indexNumber === s.indexNumber && st.schoolId === s.schoolId && st.admissionId === s.admissionId
                   );

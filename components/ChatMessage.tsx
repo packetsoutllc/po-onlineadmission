@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Message } from '../types';
 import { Bot, User, Volume2, ExternalLink, Loader2 } from 'lucide-react';
 import { generateSpeech } from '../services/geminiService';
+import { sanitizeResourceUrl } from '../utils/security';
 
 interface ChatMessageProps {
   message: Message;
@@ -79,14 +79,18 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast }) => {
             {/* Attachments */}
             {message.attachments && message.attachments.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
-                {message.attachments.map((att, idx) => (
-                  <img 
-                    key={idx} 
-                    src={att.previewUrl} 
-                    alt="Attachment" 
-                    className="h-32 w-auto rounded-lg border border-neutral-700 object-cover" 
-                  />
-                ))}
+                {message.attachments.map((att, idx) => {
+                  const safeUrl = sanitizeResourceUrl(att.previewUrl);
+                  if (!safeUrl) return null;
+                  return (
+                    <img
+                      key={idx}
+                      src={safeUrl}
+                      alt="Attachment"
+                      className="h-32 w-auto rounded-lg border border-neutral-700 object-cover"
+                    />
+                  );
+                })}
               </div>
             )}
 

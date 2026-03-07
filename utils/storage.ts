@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { safeJsonParse } from './security';
 
 // Custom hook to get the previous value of a state or prop
 export const usePrevious = <T,>(value: T): T | undefined => {
@@ -50,27 +51,24 @@ export const appendToLocalStorageArray = (key: string, newItem: any) => {
 
     try {
         const existingRaw = window.localStorage.getItem(key);
-        const existingArray = existingRaw ? JSON.parse(existingRaw) : [];
-        
-        if (Array.isArray(existingArray)) {
-            existingArray.push(newItem);
-            // Cap logs at 2000 for performance
-            const finalArray = existingArray.length > 2000 ? existingArray.slice(-2000) : existingArray;
-            const valueToStore = JSON.stringify(finalArray);
-            window.localStorage.setItem(key, valueToStore);
-            
-            // Standard StorageEvent for cross-tab, also works for local listeners if properly dispatched
-            window.dispatchEvent(new StorageEvent('storage', { 
-                key, 
-                newValue: valueToStore,
-                storageArea: window.localStorage 
-            }));
-            
-            // Custom event for ultra-reliable local-window synchronization
-            window.dispatchEvent(new CustomEvent('logip-storage-update', { detail: { key, newValue: valueToStore } }));
-        } else {
-             console.warn(`localStorage item with key “${key}” is not an array.`);
-        }
+        const parsed = safeJsonParse<unknown>(existingRaw, []);
+        const existingArray = Array.isArray(parsed) ? parsed : [];
+
+        existingArray.push(newItem);
+        // Cap logs at 2000 for performance
+        const finalArray = existingArray.length > 2000 ? existingArray.slice(-2000) : existingArray;
+        const valueToStore = JSON.stringify(finalArray);
+        window.localStorage.setItem(key, valueToStore);
+
+        // Standard StorageEvent for cross-tab, also works for local listeners if properly dispatched
+        window.dispatchEvent(new StorageEvent('storage', {
+            key,
+            newValue: valueToStore,
+            storageArea: window.localStorage
+        }));
+
+        // Custom event for ultra-reliable local-window synchronization
+        window.dispatchEvent(new CustomEvent('logip-storage-update', { detail: { key, newValue: valueToStore } }));
     } catch (error) {
         console.warn(`Error appending to localStorage key “${key}”:`, error);
     }
@@ -79,10 +77,11 @@ export const appendToLocalStorageArray = (key: string, newItem: any) => {
 export type LogUserType = 'admin' | 'student';
 
 /**
- * Log a system activity
+ * Log a system activity.
+ * For admin users, pass email and roleId so "ME" filter and role label work correctly.
  */
 export const logActivity = (
-    user: { name: string, avatar: string, type?: LogUserType }, 
+    user: { name: string; avatar: string; type?: LogUserType; email?: string; roleId?: string }, 
     action: string, 
     eventType: string, 
     details?: string, 
@@ -121,4 +120,24 @@ export const setLocalStorageAndNotify = (key: string, value: any) => {
     } catch (error) {
         console.warn(`Error setting localStorage key “${key}”:`, error);
     }
+};
+
+/** Sanitize a string for use in download filenames (remove / \\ : * ? " < > | and trim). */
+export const sanitizeDownloadFilename = (s: string): string => {
+    if (typeof s !== 'string') return '';
+    return s.replace(/[\/*?:<>|"]/g, '').replace(/\\/g, '').trim().replace(/\s+/g, ' ') || 'export';
+};
+
+/** Build download filename: "School Name - Admission Type" (optional suffix and extension). */
+export const downloadFilename = (
+    schoolName: string,
+    admissionType: string,
+    extension: string,
+    suffix?: string
+): string => {
+    const school = sanitizeDownloadFilename(schoolName || '');
+    const admission = sanitizeDownloadFilename(admissionType || 'Backup');
+    const base = school && admission ? `${school} - ${admission}` : school || admission;
+    const part = suffix ? `${base}_${suffix}` : base;
+    return extension ? (part.endsWith(extension) ? part : `${part}.${extension.replace(/^\./, '')}`) : part;
 };

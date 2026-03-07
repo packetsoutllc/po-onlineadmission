@@ -2,8 +2,9 @@ import React, { useState, useCallback, useMemo } from 'react';
 import AdminModal from './AdminModal';
 import { FormSettings } from '../pages/ApplicationDashboardSettings';
 import { AdminStudent } from '../pages/StudentsPage';
-import { Admission } from '../pages/SettingsPage';
+import { Admission, School } from '../pages/SettingsPage';
 import { AdminCheckbox } from './forms';
+import { downloadFilename } from '../../../utils/storage';
 
 interface BulkUploadModalProps {
     isOpen: boolean;
@@ -11,11 +12,12 @@ interface BulkUploadModalProps {
     formSettings: FormSettings | null;
     allStudents: AdminStudent[];
     onUploadSuccess: (newStudents: Omit<AdminStudent, 'id'>[]) => void;
+    selectedSchool: School | null;
     selectedAdmission: Admission | null;
 }
 
 
-const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, formSettings, allStudents, onUploadSuccess, selectedAdmission }) => {
+const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, formSettings, allStudents, onUploadSuccess, selectedSchool, selectedAdmission }) => {
     // Component State
     const [step, setStep] = useState(1);
     const [file, setFile] = useState<File | null>(null);
@@ -58,10 +60,26 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, form
         return finalColumns.some(col => selectedColumns.has(col.id));
     }, [finalColumns, selectedColumns, areAllSelected]);
 
-    // Event Handlers
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) setFile(e.target.files[0]); };
+    const MAX_CSV_BYTES = 5 * 1024 * 1024; // 5MB
+    const acceptFile = (f: File | null): boolean => {
+        if (!f) return false;
+        const okType = f.type === 'text/csv' || f.name.toLowerCase().endsWith('.csv');
+        if (!okType) return false;
+        if (f.size > MAX_CSV_BYTES) return false;
+        return true;
+    };
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0];
+        if (f && acceptFile(f)) setFile(f);
+        else if (f) setFile(null); // reject invalid file
+    };
     const handleRemoveFile = () => setFile(null);
-    const onDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => { event.preventDefault(); event.stopPropagation(); if (event.dataTransfer.files && event.dataTransfer.files[0]) setFile(event.dataTransfer.files[0]); }, []);
+    const onDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const f = event.dataTransfer.files?.[0];
+        if (f && acceptFile(f)) setFile(f);
+    }, []);
     const onDragOver = (event: React.DragEvent<HTMLDivElement>) => { event.preventDefault(); event.stopPropagation(); };
     
     const handleCloseAndReset = () => {
@@ -81,7 +99,9 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, form
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "student_upload_template.csv");
+        const schoolName = selectedSchool?.name ?? 'Upload';
+        const admissionType = selectedAdmission?.title ?? 'Students';
+        link.setAttribute("download", downloadFilename(schoolName, admissionType, 'csv', 'upload_template'));
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

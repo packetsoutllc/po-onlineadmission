@@ -8,6 +8,7 @@ import { Role, INITIAL_ROLES } from './RolesAndPermissionsPage';
 import { getHouseColor, initialHouses, House } from '../shared/houseData';
 import DatePicker from '../../DatePicker';
 import Icon from '../shared/Icons';
+import { safeJsonParse } from '../../../utils/security';
 
 const StatCard: React.FC<{
     icon: string;
@@ -42,14 +43,12 @@ const StatCard: React.FC<{
 const getStudentAvatarUrl = (indexNumber: string, gender: 'Male' | 'Female', schoolId?: string): string => {
     if (!schoolId) return placeholderAvatar(gender);
     const key = `applicationData_${schoolId}_${indexNumber}`;
-    try {
-        const raw = localStorage.getItem(key);
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
-            if (parsed.data) return parsed.data;
-        }
-    } catch (e) {}
+    const raw = localStorage.getItem(key);
+    if (raw) {
+        const parsed = safeJsonParse<{ passportPhotograph?: { data?: string }; data?: string }>(raw, {});
+        if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
+        if (parsed.data) return parsed.data;
+    }
     return placeholderAvatar(gender);
 };
 const placeholderAvatar = (gender: 'Male' | 'Female') => `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="${gender === 'Male' ? '#dbeafe' : '#fce7f3'}" /><text x="50" y="55" font-family="Arial" font-size="50" fill="${gender === 'Male' ? '#1d4ed8' : '#be185d'}" text-anchor="middle" dominant-baseline="middle">?</text></svg>`)}`;
@@ -111,7 +110,7 @@ const RecentAdmissionsTable: React.FC<{ students: AdminStudent[], onEditStudent:
                             placeholder="Search name or index..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle focus:outline-none focus:ring-2 focus:ring-logip-primary transition-colors"
+                            className="w-full h-10 bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-xl pl-10 pr-4 py-2 text-sm text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle focus:outline-none focus:ring-2 focus:ring-logip-primary transition-colors"
                         />
                     </div>
                 </div>

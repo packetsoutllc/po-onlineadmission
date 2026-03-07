@@ -3,8 +3,9 @@ import Modal from '../Modal';
 import PacketsOutLogo from '../PacketsOutLogo';
 import { AdminUser } from './AdminLayout';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { GlobalAdminSecuritySettings, SecurityLog } from './pages/SecuritySettingsTab';
-import { appendToLocalStorageArray } from '../../utils/storage';
+import { GlobalAdminSecuritySettings } from './pages/SecuritySettingsTab';
+import { logSecurityEvent } from './shared/securityLogService';
+import { safeJsonParse } from '../../utils/security';
 
 // Mock user data including roles - now consistent with UsersPage.tsx
 const ADMIN_USERS: (AdminUser & { password: string; phoneNumber?: string; schoolId?: string; admissionId?: string; expiryDate?: string; status?: string; })[] = [
@@ -156,7 +157,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
           }
 
           const globalSettingsRaw = localStorage.getItem('globalAdminSecuritySettings');
-          const globalSettings: Partial<GlobalAdminSecuritySettings> = globalSettingsRaw ? JSON.parse(globalSettingsRaw) : { enable2FA: true };
+          const globalSettings: Partial<GlobalAdminSecuritySettings> = safeJsonParse(globalSettingsRaw, { enable2FA: true });
           const is2faRequired = globalSettings.enable2FA ?? true;
           
           if (is2faRequired) {
@@ -178,15 +179,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
           }
       } else {
         setError('Invalid email or password.');
-        const newLog: SecurityLog = {
-            id: `sec_${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            riskType: 'Failed Login',
-            target: `Admin: ${email}`,
-            action: 'Logged Attempt',
-            details: 'Invalid credentials provided.'
-        };
-        appendToLocalStorageArray('admin_security_logs', newLog);
+        logSecurityEvent('Failed Login', `Admin: ${email}`, 'Logged Attempt', undefined, 'Invalid credentials provided.');
       }
       setIsLoading(false);
     }, 1500);
@@ -205,6 +198,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
             }
         } else {
             setError('Invalid verification code.');
+            logSecurityEvent('Invalid 2FA', `Admin: ${loggedInUser?.email ?? 'unknown'}`, 'Flagged', undefined, 'Invalid verification code.');
         }
         setIsLoading(false);
     }, 1000);

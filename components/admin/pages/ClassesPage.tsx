@@ -53,11 +53,12 @@ interface ClassesPageProps {
     setClasses: React.Dispatch<React.SetStateAction<Class[]>>;
     programmes: Programme[];
     permissions: Set<string>;
+    getActions: (permId: string) => { view: boolean; add: boolean; edit: boolean; delete: boolean };
     isSuperAdmin: boolean;
     adminUser: AdminUser;
 }
 
-const ClassesPage: React.FC<ClassesPageProps> = ({ selectedSchool, selectedAdmission, students, classes, setClasses, programmes, permissions, isSuperAdmin, adminUser }) => {
+const ClassesPage: React.FC<ClassesPageProps> = ({ selectedSchool, selectedAdmission, students, classes, setClasses, programmes, permissions, getActions, isSuperAdmin, adminUser }) => {
     const userPrefix = adminUser.email;
     const [searchTerm, setSearchTerm] = useState('');
     const [programmeFilter, setProgrammeFilter] = useState('all');
@@ -184,12 +185,12 @@ const ClassesPage: React.FC<ClassesPageProps> = ({ selectedSchool, selectedAdmis
         );
     }
     
-    const canAdd = isSuperAdmin || permissions.has('btn:cls:add');
-    const canEdit = isSuperAdmin || permissions.has('icon:cls:edit');
-    const canDelete = isSuperAdmin || permissions.has('icon:cls:delete');
-    const canPrint = isSuperAdmin || permissions.has('btn:cls:print');
-    const canAssign = isSuperAdmin || permissions.has('btn:cls:subjects');
-    const canShowDashboardPerm = isSuperAdmin || permissions.has('btn:cls:dash');
+    const canAdd = isSuperAdmin || (permissions.has('btn:cls:add') && getActions('btn:cls:add').add);
+    const canEdit = isSuperAdmin || (permissions.has('icon:cls:edit') && getActions('icon:cls:edit').edit);
+    const canDelete = isSuperAdmin || (permissions.has('icon:cls:delete') && getActions('icon:cls:delete').delete);
+    const canPrint = isSuperAdmin || (permissions.has('btn:cls:print') && getActions('btn:cls:print').view);
+    const canAssign = isSuperAdmin || (permissions.has('btn:cls:subjects') && getActions('btn:cls:subjects').edit);
+    const canShowDashboardPerm = isSuperAdmin || (permissions.has('btn:cls:dash') && getActions('btn:cls:dash').view);
 
     const availableProgrammes = programmes.filter(p => p.schoolId === selectedSchool.id);
 

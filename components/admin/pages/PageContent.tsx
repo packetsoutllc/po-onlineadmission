@@ -3,6 +3,7 @@ import { AdminStudent } from './StudentsPage';
 import { School, Admission } from './SettingsPage';
 import { Dormitory } from '../shared/dormitoryData';
 import { AdminUser } from '../AdminLayout';
+import type { PermissionActions } from './RolesAndPermissionsPage';
 import { Class } from './ClassesPage';
 import { Programme } from './ProgrammesPage';
 import { Conversation } from './MessagesPage';
@@ -46,6 +47,7 @@ interface PageContentProps {
     setAdminUser: React.Dispatch<React.SetStateAction<AdminUser | null>>;
     onExitAdmin: () => void;
     permissions: Set<string>;
+    getActions: (permId: string) => PermissionActions;
     isSuperAdmin: boolean;
 }
 
@@ -56,6 +58,7 @@ const PageContent: React.FC<PageContentProps> = ({
     dormitories, setDormitories, conversations, setConversations,
     adminUser, setAdminUser, onExitAdmin,
     permissions,
+    getActions,
     isSuperAdmin
 }) => {
     const pageFallback = <div className="p-4 sm:p-6 flex items-center justify-center min-h-[200px] text-logip-text-subtle dark:text-dark-text-secondary">Loading...</div>;
@@ -85,6 +88,7 @@ const PageContent: React.FC<PageContentProps> = ({
                 classes={classes}
                 programmes={programmes}
                 permissions={permissions}
+                getActions={getActions}
                 isSuperAdmin={isSuperAdmin}
                 adminUser={adminUser}
             />;
@@ -95,6 +99,7 @@ const PageContent: React.FC<PageContentProps> = ({
                 students={students} 
                 setStudents={setStudents}
                 permissions={permissions}
+                getActions={getActions}
                 isSuperAdmin={isSuperAdmin}
                 adminUser={adminUser}
             />;
@@ -112,6 +117,7 @@ const PageContent: React.FC<PageContentProps> = ({
                 setProgrammes={setProgrammes}
                 classes={classes}
                 permissions={permissions}
+                getActions={getActions}
                 isSuperAdmin={isSuperAdmin}
                 adminUser={adminUser}
             />;
@@ -123,6 +129,7 @@ const PageContent: React.FC<PageContentProps> = ({
                 setClasses={setClasses}
                 programmes={programmes}
                 permissions={permissions}
+                getActions={getActions}
                 isSuperAdmin={isSuperAdmin}
                 adminUser={adminUser}
             />;
@@ -134,6 +141,7 @@ const PageContent: React.FC<PageContentProps> = ({
                 dormitories={dormitories}
                 setDormitories={setDormitories}
                 permissions={permissions}
+                getActions={getActions}
                 isSuperAdmin={isSuperAdmin}
                 adminUser={adminUser}
             />;
@@ -151,7 +159,9 @@ const PageContent: React.FC<PageContentProps> = ({
             return <UsersPage 
                 selectedSchool={selectedSchool} 
                 permissions={permissions}
+                getActions={getActions}
                 isSuperAdmin={isSuperAdmin}
+                adminUser={adminUser}
             />;
         case 'Profile':
             return <div className="p-4 sm:p-6 lg:p-8 h-full"><UserProfileSettingsTab adminUser={adminUser} setAdminUser={setAdminUser} onExitAdmin={onExitAdmin} /></div>;
@@ -169,6 +179,7 @@ const PageContent: React.FC<PageContentProps> = ({
                 setAdminUser={setAdminUser}
                 onExitAdmin={onExitAdmin}
                 permissions={permissions}
+                getActions={getActions}
                 isSuperAdmin={isSuperAdmin}
             />;
         default:

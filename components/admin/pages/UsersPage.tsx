@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Role, INITIAL_ROLES } from './RolesAndPermissionsPage';
+import type { PermissionActions } from './RolesAndPermissionsPage';
 import { School, Admission, initialSchools, initialAdmissions } from './SettingsPage';
 import AdminModal from '../shared/AdminModal';
 import ConfirmationModal from '../shared/ConfirmationModal';
@@ -66,10 +67,12 @@ interface UsersPageProps {
     selectedSchool?: School | null;
     selectedAdmission?: Admission | null;
     permissions: Set<string>;
+    getActions: (permId: string) => PermissionActions;
     isSuperAdmin: boolean;
+    adminUser?: { name: string; avatar?: string; email: string; roleId: string } | null;
 }
 
-const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission, permissions, isSuperAdmin }) => {
+const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission, permissions, getActions, isSuperAdmin, adminUser }) => {
     const { showToast } = useToast();
     const [users, setUsers] = useLocalStorage<User[]>('admin_users', initialUsers);
     const [roles] = useLocalStorage<Role[]>('admin_roles', INITIAL_ROLES);
@@ -78,10 +81,11 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    
-    // Retrieve current logged in user name for logging
-    const adminName = localStorage.getItem('admin_login_name') || 'Administrator';
-    const adminAvatar = localStorage.getItem('admin_login_avatar') || '';
+
+    const adminName = adminUser?.name ?? '';
+    const adminAvatar = adminUser?.avatar ?? '';
+    const adminEmail = adminUser?.email ?? '';
+    const adminRoleId = adminUser?.roleId ?? '';
 
     const [modalState, setModalState] = useState<{
         mode: 'add' | 'edit' | 'delete' | 'suspend' | null;
@@ -128,7 +132,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
             setUsers(users.map(u => u.id === modalState.user!.id ? { ...modalState.user!, ...userData } : u));
             showToast(`User "${userData.username}" updated successfully.`, 'success');
             logActivity(
-                { name: adminName, avatar: adminAvatar },
+                { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
                 'updated user details for',
                 'user_management',
                 userData.username,
@@ -139,7 +143,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
             setUsers([...users, newUser]);
             showToast(`User "${userData.username}" created successfully.`, 'success');
             logActivity(
-                { name: adminName, avatar: adminAvatar },
+                { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
                 'added a new user:',
                 'user_add',
                 userData.username,
@@ -155,7 +159,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
         setUsers(users.filter(u => u.id !== modalState.user!.id));
         showToast(`User "${name}" deleted.`, 'info');
         logActivity(
-            { name: adminName, avatar: adminAvatar },
+            { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
             'deleted user account for',
             'user_management',
             name,
@@ -170,7 +174,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
         setUsers(users.map(u => u.id === modalState.user!.id ? { ...u, status: newStatus } : u));
         showToast(`User "${modalState.user.username}" has been ${newStatus === 'active' ? 'reactivated' : 'suspended'}.`, 'info');
         logActivity(
-            { name: adminName, avatar: adminAvatar },
+            { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
             `${newStatus === 'active' ? 'reactivated' : 'suspended'} user account for`,
             'user_management',
             modalState.user.username,
@@ -182,7 +186,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
     const handlePrint = () => {
         printTable('users-table', 'User List', selectedSchool, undefined, selectedAdmission?.title);
         logActivity(
-            { name: adminName, avatar: adminAvatar },
+            { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
             'printed the user list for',
             'user_management',
             selectedSchool?.name || 'All Schools'
@@ -191,10 +195,10 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
 
     const thClassName = "p-4 text-left text-sm font-semibold text-logip-text-subtle dark:text-dark-text-secondary uppercase tracking-wider";
     
-    const canAdd = isSuperAdmin || permissions.has('btn:user:add');
-    const canEdit = isSuperAdmin || permissions.has('icon:user:edit');
-    const canDelete = isSuperAdmin || permissions.has('icon:user:delete');
-    const canLock = isSuperAdmin || permissions.has('icon:user:lock');
+    const canAdd = isSuperAdmin || (permissions.has('btn:user:add') && getActions('btn:user:add').add);
+    const canEdit = isSuperAdmin || (permissions.has('icon:user:edit') && getActions('icon:user:edit').edit);
+    const canDelete = isSuperAdmin || (permissions.has('icon:user:delete') && getActions('icon:user:delete').delete);
+    const canLock = isSuperAdmin || (permissions.has('icon:user:lock') && getActions('icon:user:lock').edit);
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 text-logip-text-body dark:text-dark-text-primary">

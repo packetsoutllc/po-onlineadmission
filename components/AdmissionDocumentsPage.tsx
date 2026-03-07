@@ -8,7 +8,8 @@ import { FormSettings } from './admin/pages/ApplicationDashboardSettings';
 import { generateFilledPdf } from '../utils/pdfGenerator';
 import { initialClasses } from './admin/pages/ClassesPage';
 import { initialHouses } from './admin/shared/houseData';
-import { logActivity, setLocalStorageAndNotify } from '../utils/storage';
+import { logActivity, setLocalStorageAndNotify, sanitizeDownloadFilename } from '../utils/storage';
+import { safeJsonParse } from '../utils/security';
 import Modal from './Modal';
 import PaymentGateway from './PaymentGateway';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
@@ -34,6 +35,7 @@ interface AdmissionDocumentsPageProps {
     student: Student;
     applicationStatus: ApplicationStatus | StudentStatus;
     admission?: Admission;
+    schoolName?: string;
     formSettings?: FormSettings;
     applicationData?: Record<string, any>;
     showToast: (message: string, type?: 'info' | 'error') => void;
@@ -151,7 +153,7 @@ const RestrictedDocumentItem: React.FC<{ icon: string; name: string; reason?: st
     </div>
 );
 
-const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student, applicationStatus, admission, formSettings, applicationData, showToast }) => {
+const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student, applicationStatus, admission, schoolName, formSettings, applicationData, showToast }) => {
     const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
     const [storageVersion, setStorageVersion] = useState(0);
     const [isPaymentActive, setIsPaymentActive] = useState(false);
@@ -172,13 +174,13 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
     const financialsKey = `financialsSettings_${contextSuffix}`;
     const financialsRaw = localStorage.getItem(financialsKey);
     const financials = useMemo(() => {
-        return financialsRaw ? JSON.parse(financialsRaw) : { 
+        return safeJsonParse(financialsRaw, { 
             docAccessFeeEnabled: false, 
             docAccessFeePrice: '100', 
             docAccessFeeTarget: 'both',
             exemptedStudents: [],
             docApplicationList: ["Admission Letter", "Prospectus", "Personal Record Form"]
-        };
+        });
     }, [financialsRaw]);
 
     const defaultTemplates: Template[] = [
@@ -231,7 +233,7 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
                 try {
                     const storedFileRaw = localStorage.getItem(`${storagePrefix}_${doc.id}`);
                     if (storedFileRaw) {
-                        const storedFile = JSON.parse(storedFileRaw);
+                        const storedFile = safeJsonParse<{ data?: string; name?: string }>(storedFileRaw, {});
                         finalData = storedFile.data;
                         finalName = storedFile.name;
                         size = formatBytes((finalData.length * 3) / 4);
@@ -303,9 +305,9 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
             finalFileName = `${formattedName} - ${baseName}.pdf`;
             const freshAdminRecord = adminStudents.find(s => s.indexNumber === student.indexNumber && s.schoolId === student.schoolId);
             const submissionStatusRaw = localStorage.getItem(`submissionStatus_${student.schoolId}_${student.indexNumber}`);
-            const submissionStatus = submissionStatusRaw ? JSON.parse(submissionStatusRaw) : {};
+            const submissionStatus = safeJsonParse<Record<string, unknown>>(submissionStatusRaw, {});
             const freshAppDataRaw = localStorage.getItem(`applicationData_${student.schoolId}_${student.indexNumber}`);
-            const freshAppData = freshAppDataRaw ? JSON.parse(freshAppDataRaw) : (applicationData || {});
+            const freshAppData = safeJsonParse<Record<string, unknown>>(freshAppDataRaw, applicationData || {});
             const className = freshAdminRecord?.classId ? (initialClasses.find(c => c.id === freshAdminRecord.classId)?.name || 'N/A') : (freshAppData?.studentClass || 'N/A');
             const houseName = freshAdminRecord?.houseId ? (initialHouses.find(h => h.id === freshAdminRecord.houseId)?.name || 'N/A') : (freshAppData?.studentHouseChoice || 'N/A');
             let photoData = freshAppData?.passportPhotograph?.data;
@@ -313,12 +315,12 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
                 try {
                     const legacyKey = `file_upload_${student.indexNumber}_Passport-Size-Photograph`;
                     const legacyItem = localStorage.getItem(legacyKey);
-                    if (legacyItem) photoData = JSON.parse(legacyItem).data;
+                    if (legacyItem) photoData = safeJsonParse<{ data?: string }>(legacyItem, {}).data;
                 } catch(e) {}
             }
             const layoutKey = `docLayout_${student.schoolId}_${student.admissionId}_${docId}`;
             let layoutConfig = [];
-            try { const savedLayout = localStorage.getItem(layoutKey); if (savedLayout) layoutConfig = JSON.parse(savedLayout); } catch(e) {}
+            const savedLayout = localStorage.getItem(layoutKey); if (savedLayout) { const parsed = safeJsonParse<unknown[]>(savedLayout, []); layoutConfig = Array.isArray(parsed) ? parsed : []; }
             if (layoutConfig && layoutConfig.length > 0) {
                  finalData = await generateFilledPdf(templateData, docId, { name: student.name, indexNumber: student.indexNumber, programme: student.programme, className: className, gender: student.gender, residence: student.residence, house: houseName, aggregate: student.aggregate, admissionNumber: submissionStatus.admissionNumber || 'PENDING', photoBase64: photoData, dateOfBirth: freshAppData?.dateOfBirth, enrollmentCode: freshAppData?.enrollmentCode, phoneNumber: freshAppData?.contactNumber, presentAddress: freshAppData?.residentialAddress, nationality: freshAppData?.nationality, hometown: freshAppData?.hometown, religion: freshAppData?.religion, previousSchool: freshAppData?.previousBasicSchool, beceYear: freshAppData?.yearCompleted, parentName: freshAppData?.primaryFullName, parentRelationship: freshAppData?.primaryRelationship, parentContact: freshAppData?.primaryContact, parentWhatsapp: freshAppData?.primaryWhatsapp, parentOccupation: freshAppData?.primaryOccupation, admissionDate: freshAdminRecord?.admissionDate ? new Date(freshAdminRecord.admissionDate).toLocaleDateString() : '', }, layoutConfig);
             }
@@ -347,9 +349,12 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
         }
         const link = document.createElement('a');
         link.href = urlToDownload;
-        const studentName = student.name.toLowerCase().split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
         const baseName = fileName.replace(/\.pdf$/i, '');
-        link.download = `${studentName} - ${baseName}.pdf`;
+        const school = sanitizeDownloadFilename(schoolName || '');
+        const admissionTitle = admission?.title ? sanitizeDownloadFilename(admission.title) : '';
+        link.download = school && admissionTitle
+            ? `${school} - ${admissionTitle} - ${baseName}.pdf`
+            : `${student.name.toLowerCase().split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ')} - ${baseName}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

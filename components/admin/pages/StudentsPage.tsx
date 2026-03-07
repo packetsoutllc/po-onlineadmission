@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { School, Admission, initialSchools, initialAdmissions } from './SettingsPage';
+import type { PermissionActions } from './RolesAndPermissionsPage';
 import AddStudentModal from '../shared/AddStudentModal';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import BulkUploadModal from '../shared/BulkUploadModal';
 import PaginationControls from '../shared/PaginationControls';
 import PrintButton from '../shared/PrintButton';
 import { printTable } from '../shared/PrintService';
-import { setLocalStorageAndNotify, logActivity } from '../../../utils/storage';
+import { setLocalStorageAndNotify, logActivity, downloadFilename } from '../../../utils/storage';
+import { safeJsonParse } from '../../../utils/security';
 import { Class } from './ClassesPage';
 import { initialHouses, getHouseColor, House } from '../shared/houseData';
 import { getHouseCounts } from '../shared/houseAllocationService';
@@ -136,13 +138,13 @@ const ResetDetailsModal: React.FC<{ isOpen: boolean; onClose: () => void; studen
         if (isOpen && student) {
             try {
                 const storedReset = localStorage.getItem(resetLogKey);
-                setResetLog(storedReset ? JSON.parse(storedReset) : {});
+                setResetLog(safeJsonParse<Record<string, unknown>>(storedReset, {}));
             } catch (e) {
                 setResetLog({});
             }
             try {
                 const storedRetrieval = localStorage.getItem(retrievalLogKey);
-                setRetrievalLog(storedRetrieval ? JSON.parse(storedRetrieval) : {});
+                setRetrievalLog(safeJsonParse<Record<string, unknown>>(storedRetrieval, {}));
             } catch (e) {
                 setRetrievalLog({});
             }
@@ -206,7 +208,7 @@ const getStudentAvatarUrl = (indexNumber: string, gender: 'Male' | 'Female', sch
     try {
         const raw = localStorage.getItem(key);
         if (raw) {
-            const parsed = JSON.parse(raw);
+            const parsed = safeJsonParse<{ passportPhotograph?: { data?: string }; data?: string }>(raw, {});
             if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
             if (parsed.data) return parsed.data;
         }
@@ -323,11 +325,12 @@ interface StudentsPageProps {
     classes: Class[];
     programmes: Programme[];
     permissions: Set<string>;
+    getActions: (permId: string) => PermissionActions;
     isSuperAdmin: boolean;
     adminUser: AdminUser;
 }
 
-const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdmission, onEditStudent, students, setStudents, dormitories, classes, programmes, permissions, isSuperAdmin, adminUser }) => {
+const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdmission, onEditStudent, students, setStudents, dormitories, classes, programmes, permissions, getActions, isSuperAdmin, adminUser }) => {
     const { showToast } = useToast();
 
     // PERMANENCE: Scope settings by user email
@@ -378,7 +381,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
     const handlePrint = () => {
         printTable('students-table', 'Student List', selectedSchool, undefined, selectedAdmission?.title);
         logActivity(
-            { name: adminUser.name, avatar: adminUser.avatar || '' },
+            { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
             'printed the',
             'admission_process',
             `Student list for ${selectedAdmission?.title}`,
@@ -396,7 +399,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         if (!selectedSchool || !selectedAdmission) return { gatewayStatus: true };
         const key = `financialsSettings_${selectedSchool.id}_${selectedAdmission.id}`;
         const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : { gatewayStatus: true };
+        return safeJsonParse<{ gatewayStatus?: boolean }>(raw, { gatewayStatus: true });
     }, [selectedSchool, selectedAdmission]);
 
     const allExportableFields = useMemo(() => {
@@ -490,7 +493,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                 const logRaw = localStorage.getItem(`editHistory_${student.indexNumber}`);
                 if (logRaw) {
                     try {
-                        const history: EditLogEntry[] = JSON.parse(logRaw);
+                        const history = safeJsonParse<EditLogEntry[]>(logRaw, []);
                         logs[student.indexNumber] = {
                             student: history.some(entry => entry.editor === 'student'),
                             admin: history.some(entry => entry.editor === 'admin')
@@ -502,7 +505,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                 const reqRaw = localStorage.getItem(reqKey);
                 if (reqRaw) {
                     try {
-                        const req = JSON.parse(reqRaw);
+                        const req = safeJsonParse(reqRaw, null);
                         requests[student.indexNumber] = req;
                     } catch {}
                 }
@@ -572,7 +575,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                 const appDataRaw = localStorage.getItem(`applicationData_${s.schoolId}_${s.indexNumber}`);
                 if (appDataRaw) {
                     try {
-                        const appData = JSON.parse(appDataRaw);
+                        const appData = safeJsonParse<Record<string, unknown>>(appDataRaw, {});
                         if (appData.region && appData.region !== homeRegion) {
                             outsideTotal++;
                             if (s.gender === 'Male') outsideMale++;
@@ -603,7 +606,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         
         const financialsKey = `financialsSettings_${student.schoolId}_${student.admissionId}`;
         const financialsRaw = localStorage.getItem(financialsKey);
-        const financials = financialsRaw ? JSON.parse(financialsRaw) : { gatewayStatus: true, docAccessFeeEnabled: false };
+        const financials = safeJsonParse<{ gatewayStatus?: boolean; docAccessFeeEnabled?: boolean }>(financialsRaw, { gatewayStatus: true, docAccessFeeEnabled: false });
         
         // 1. App Fee Check
         if (financials.gatewayStatus && student.feeStatus !== 'Paid') return false;
@@ -612,7 +615,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         if (financials.docAccessFeeEnabled) {
             const docUnlockStatusKey = `paymentStatus_docAccess_${student.schoolId}_${student.indexNumber}`;
             const docAccessPaidRaw = localStorage.getItem(docUnlockStatusKey);
-            const hasPaidDocAccess = docAccessPaidRaw ? JSON.parse(docAccessPaidRaw).paid : false;
+            const hasPaidDocAccess = safeJsonParse<{ paid?: boolean }>(docAccessPaidRaw, {}).paid ?? false;
             if (!hasPaidDocAccess) return false;
         }
         
@@ -766,7 +769,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
 
             if (wasPending && (isNowPlaced || isNowRejected)) {
                 const smsNumberRaw = localStorage.getItem(`smsNotificationNumber_${studentToUpdate.schoolId}_${studentToUpdate.indexNumber}`);
-                const smsNumber = smsNumberRaw ? JSON.parse(smsNumberRaw) : (studentToUpdate.phoneNumber || "");
+                const smsNumber = safeJsonParse<string>(smsNumberRaw, studentToUpdate.phoneNumber || '') || studentToUpdate.phoneNumber || '';
                 if (isNowPlaced) console.log(`[SIMULATED SMS] to ${smsNumber}: Protocol Approved.`);
                 else if (isNowRejected) console.log(`[SIMULATED SMS] to ${smsNumber}: Protocol Declined.`);
             }
@@ -781,10 +784,10 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         
         if (modalState.mode === 'edit') {
             setStudents(students.map(s => s.id === studentToUpdate.id ? studentToUpdate : s));
-            logActivity({ name: adminUser.name, avatar: adminUser.avatar || '' }, 'updated student record', 'student_update', studentToUpdate.name, selectedSchool?.id);
+            logActivity({ name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId }, 'updated student record', 'student_update', studentToUpdate.name, selectedSchool?.id);
         } else {
             setStudents([studentToUpdate, ...students]);
-            logActivity({ name: adminUser.name, avatar: adminUser.avatar || '' }, 'added a new student', 'admission_process', studentToUpdate.name, selectedSchool?.id);
+            logActivity({ name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId }, 'added a new student', 'admission_process', studentToUpdate.name, selectedSchool?.id);
         }
         handleCloseModal();
     };
@@ -792,7 +795,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
     const handleDeleteStudent = () => {
         if (!modalState.student) return;
         setStudents(students.filter(p => p.id !== modalState.student!.id));
-        logActivity({ name: adminUser.name, avatar: adminUser.avatar || '' }, 'deleted student record', 'student_delete', modalState.student.name, selectedSchool?.id);
+        logActivity({ name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId }, 'deleted student record', 'student_delete', modalState.student.name, selectedSchool?.id);
         handleCloseModal();
     };
 
@@ -813,7 +816,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
 
             try {
                 const stored = localStorage.getItem(resetLogKey);
-                if (stored) resetLog = { ...resetLog, ...JSON.parse(stored) };
+                if (stored) resetLog = { ...resetLog, ...safeJsonParse<Record<string, unknown>>(stored, {}) };
             } catch (e) {}
 
             resetLog.totalResets += 1;
@@ -824,7 +827,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
 
             showToast(`Daily limits (edit & retrieval) reset for ${student.name} on this device.`, 'info');
             logActivity(
-                { name: adminUser.name, avatar: adminUser.avatar || '' },
+                { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
                 'reset daily edit limit',
                 'security',
                 `Reset edit limit for ${student.name}`,
@@ -881,7 +884,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         }));
         setStudents(prev => [...processedNewStudents, ...prev]);
         showToast(`${processedNewStudents.length} students uploaded successfully.`, 'success');
-        logActivity({ name: adminUser.name, avatar: adminUser.avatar || '' }, 'performed bulk upload', 'admission_process', `${processedNewStudents.length} students`, selectedSchool?.id);
+        logActivity({ name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId }, 'performed bulk upload', 'admission_process', `${processedNewStudents.length} students`, selectedSchool?.id);
     };
 
     const handleBulkDownload = (selectedColumnIds: Set<string>) => {
@@ -896,7 +899,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
 
         const rows = sortedStudents.map(student => {
             const studentAppDataRaw = localStorage.getItem(`applicationData_${student.schoolId}_${student.indexNumber}`);
-            const appData = studentAppDataRaw ? JSON.parse(studentAppDataRaw) : {};
+            const appData = safeJsonParse<Record<string, unknown>>(studentAppDataRaw, {});
 
             return allExportableFields
                 .filter(f => selectedColumnIds.has(f.id))
@@ -929,14 +932,16 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `student_export_${selectedAdmission?.slug || 'all'}_${Date.now()}.csv`);
+        const schoolName = selectedSchool?.name ?? 'Export';
+        const admissionType = selectedAdmission?.title ?? 'Students';
+        link.setAttribute("download", downloadFilename(schoolName, admissionType, 'csv', String(Date.now())));
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
         setIsDownloadModalOpen(false);
         showToast('Exporting student data to CSV...', 'info');
-        logActivity({ name: adminUser.name, avatar: adminUser.avatar || '' }, 'exported student data', 'admission_process', `${rows.length} records`, selectedSchool?.id);
+        logActivity({ name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId }, 'exported student data', 'admission_process', `${rows.length} records`, selectedSchool?.id);
     };
 
     if (!selectedSchool || !selectedAdmission) {
@@ -949,16 +954,16 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         );
     }
     
-    const canAdd = isSuperAdmin || permissions.has('btn:std:add');
-    const canBulkUpload = isSuperAdmin || permissions.has('btn:std:bulk_ul');
-    const canBulkDownload = isSuperAdmin || permissions.has('btn:std:bulk_dl');
-    const canShowAlbum = isSuperAdmin || permissions.has('icon:std:album');
-    const canEditGlobal = isSuperAdmin || permissions.has('icon:std:edit');
-    const canDelete = isSuperAdmin || permissions.has('icon:std:delete');
-    const canPrint = isSuperAdmin || permissions.has('btn:std:print');
-    const canShowDashboardPerm = isSuperAdmin || permissions.has('btn:std:dash');
-    const canToggleColsPerm = isSuperAdmin || permissions.has('btn:std:cols');
-    const canFilter = isSuperAdmin || permissions.has('btn:std:filters');
+    const canAdd = isSuperAdmin || (permissions.has('btn:std:add') && getActions('btn:std:add').add);
+    const canBulkUpload = isSuperAdmin || (permissions.has('btn:std:bulk_ul') && getActions('btn:std:bulk_ul').add);
+    const canBulkDownload = isSuperAdmin || (permissions.has('btn:std:bulk_dl') && getActions('btn:std:bulk_dl').view);
+    const canShowAlbum = isSuperAdmin || (permissions.has('icon:std:album') && getActions('icon:std:album').view);
+    const canEditGlobal = isSuperAdmin || (permissions.has('icon:std:edit') && getActions('icon:std:edit').edit);
+    const canDelete = isSuperAdmin || (permissions.has('icon:std:delete') && getActions('icon:std:delete').delete);
+    const canPrint = isSuperAdmin || (permissions.has('btn:std:print') && getActions('btn:std:print').view);
+    const canShowDashboardPerm = isSuperAdmin || (permissions.has('btn:std:dash') && getActions('btn:std:dash').view);
+    const canToggleColsPerm = isSuperAdmin || (permissions.has('btn:std:cols') && getActions('btn:std:cols').view);
+    const canFilter = isSuperAdmin || (permissions.has('btn:std:filters') && getActions('btn:std:filters').view);
 
     const relevantDormitories = useMemo(() => {
         if (!filters.houseId || filters.houseId === 'all') return dormitories;
@@ -1026,13 +1031,13 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                     <div className="flex items-center gap-2 relative w-full sm:w-auto sm:flex-1 max-w-4xl">
                         <div className="relative flex-1">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><Icon name="search" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" /></span>
-                            <input type="text" placeholder="Search by name or index no..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full h-[38px] bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg pl-10 pr-4 py-1.5 text-base text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle focus:outline-none focus:border-logip-primary focus:ring-1 focus:ring-logip-primary/20 transition-colors" />
+                            <input type="text" placeholder="Search by name or index no..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full h-10 bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg pl-10 pr-4 py-2 text-base text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle focus:outline-none focus:border-logip-primary focus:ring-1 focus:ring-logip-primary/20 transition-colors" />
                         </div>
                         
                         <div className="relative" ref={quickTimeFilterButtonRef}>
                             <button 
                                 onClick={() => setIsQuickTimeFilterOpen(!isQuickTimeFilterOpen)} 
-                                className={`p-2 h-[38px] rounded-lg border transition-colors flex items-center justify-center ${isQuickTimeFilterOpen || timeFilter.type !== 'all' ? 'border-logip-primary bg-blue-50 text-logip-primary' : 'border-logip-border dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-logip-text-subtle dark:text-dark-text-secondary'}`}
+                                className={`p-2 h-10 rounded-lg border transition-colors flex items-center justify-center ${isQuickTimeFilterOpen || timeFilter.type !== 'all' ? 'border-logip-primary bg-blue-50 text-logip-primary' : 'border-logip-border dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-logip-text-subtle dark:text-dark-text-secondary'}`}
                             >
                                 <span className="material-symbols-outlined">more_horiz</span>
                             </button>
@@ -1099,7 +1104,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                     <div className="flex items-center gap-2">
                          {canToggleColsPerm && (
                             <div className="relative">
-                                <button ref={columnButtonRef} onClick={() => setIsColumnSelectorOpen(!isColumnSelectorOpen)} className="flex items-center gap-2 h-[38px] px-4 py-1.5 text-sm bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg text-logip-text-header dark:text-dark-text-primary focus:outline-none font-bold">
+                                <button ref={columnButtonRef} onClick={() => setIsColumnSelectorOpen(!isColumnSelectorOpen)} className="flex items-center gap-2 h-10 px-4 py-2 text-sm bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg text-logip-text-header dark:text-dark-text-primary focus:outline-none font-bold">
                                     <span className="material-symbols-outlined text-xl">view_column</span>
                                     Columns
                                 </button>
@@ -1115,7 +1120,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                          )}
                         {canFilter && (
                             <div className="relative">
-                                <button ref={filterButtonRef} onClick={() => setIsFilterOpen(!isFilterOpen)} className="relative flex items-center h-[38px] gap-2 px-4 py-1.5 text-sm bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg text-logip-text-header dark:text-dark-text-primary focus:outline-none font-bold">
+                                <button ref={filterButtonRef} onClick={() => setIsFilterOpen(!isFilterOpen)} className="relative flex items-center h-10 gap-2 px-4 py-2 text-sm bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg text-logip-text-header dark:text-dark-text-primary focus:outline-none font-bold">
                                     <span className="material-symbols-outlined text-xl">filter_list</span>
                                     Filters
                                     {isAnyFilterActive() && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-logip-white dark:border-dark-surface"></div>}
@@ -1156,7 +1161,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                         {canShowAlbum && (
                             <button 
                                 onClick={() => setIsPhotoAlbumOpen(true)} 
-                                className="flex items-center justify-center p-2 h-[38px] w-[38px] rounded-lg bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border text-logip-text-header dark:text-dark-text-primary hover:bg-gray-100 transition-colors" 
+                                className="flex items-center justify-center p-2 h-10 w-10 rounded-lg bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border text-logip-text-header dark:text-dark-text-primary hover:bg-gray-100 transition-colors" 
                                 title="Student Photo Album"
                             >
                                 <span className="material-symbols-outlined text-xl">photo_library</span>
@@ -1164,7 +1169,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                         )}
                         <button
                             onClick={() => setShowPendingOfficialEditsOnly(v => !v)}
-                            className={`flex items-center justify-center p-2 h-[38px] w-[38px] rounded-lg border ${
+                            className={`flex items-center justify-center p-2 h-10 w-10 rounded-lg border ${
                                 showPendingOfficialEditsOnly
                                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                                     : 'bg-gray-50 dark:bg-dark-bg border-logip-border dark:border-dark-border text-logip-text-header dark:text-dark-text-primary hover:bg-gray-100'
@@ -1313,8 +1318,8 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                                             try {
                                                 const stored = localStorage.getItem(resetLogKey);
                                                 if (stored) {
-                                                    const parsed = JSON.parse(stored);
-                                                    hasReset = !!parsed && (parsed.totalResets ?? 0) > 0;
+                                                    const parsed = safeJsonParse<{ totalResets?: number }>(stored, {});
+                                                    hasReset = (parsed?.totalResets ?? 0) > 0;
                                                 }
                                             } catch (e) {}
                                             
@@ -1373,7 +1378,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
             <AddStudentModal isOpen={modalState.mode === 'add' || modalState.mode === 'edit'} onClose={handleCloseModal} onSave={handleSaveStudent} student={modalState.student} selectedSchool={selectedSchool} selectedAdmission={selectedAdmission} allStudents={students} dormitories={dormitories} formSettings={formSettings} classes={classes} programmes={programmes} permissions={permissions} isSuperAdmin={isSuperAdmin} />
             {modalState.mode === 'delete' && <ConfirmationModal isOpen={true} onClose={handleCloseModal} onConfirm={handleDeleteStudent} title="Delete Student">Are you sure you want to delete <strong>{modalState.student?.name}</strong>? This action is irreversible.</ConfirmationModal>}
             {modalState.mode === 'bulkDelete' && <ConfirmationModal isOpen={true} onClose={handleCloseModal} onConfirm={handleBulkDelete} title={`Delete ${selectedStudentIds.length} Students`}>Are you sure you want to delete these {selectedStudentIds.length} students? This action is irreversible.</ConfirmationModal>}
-            {modalState.mode === 'bulk' && <BulkUploadModal isOpen={true} onClose={handleCloseModal} formSettings={formSettings} allStudents={students} onUploadSuccess={handleBulkUploadSuccess} selectedAdmission={selectedAdmission} />}
+            {modalState.mode === 'bulk' && <BulkUploadModal isOpen={true} onClose={handleCloseModal} formSettings={formSettings} allStudents={students} onUploadSuccess={handleBulkUploadSuccess} selectedSchool={selectedSchool} selectedAdmission={selectedAdmission} />}
             {modalState.mode === 'logs' && modalState.student && modalState.logType && <EditLogModal isOpen={true} onClose={handleCloseModal} student={modalState.student} logType={modalState.logType} />}
             {resetConfirmStudent && (
                 <ConfirmationModal

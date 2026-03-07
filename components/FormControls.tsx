@@ -13,7 +13,7 @@ FormField.displayName = 'FormField';
 export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
     <input
         {...props}
-        className="w-full px-3 py-2.5 bg-logip-white dark:bg-report-dark border border-logip-border dark:border-report-border rounded-lg text-base text-black dark:text-gray-100 placeholder-logip-text-subtle focus:outline-none focus:ring-2 focus:ring-logip-primary dark:focus:border-logip-primary transition-shadow duration-200 disabled:bg-gray-100 dark:disabled:bg-gray-800/50 disabled:cursor-not-allowed"
+        className="w-full h-10 px-3 py-2 bg-logip-white dark:bg-report-dark border border-logip-border dark:border-report-border rounded-lg text-base text-black dark:text-gray-100 placeholder-logip-text-subtle focus:outline-none focus:ring-2 focus:ring-logip-primary dark:focus:border-logip-primary transition-shadow duration-200 disabled:bg-gray-100 dark:disabled:bg-gray-800/50 disabled:cursor-not-allowed"
     />
 );
 
@@ -59,7 +59,7 @@ export const Select: React.FC<SelectProps> = ({ children, value, onChange, place
                 type="button"
                 disabled={disabled}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
-                className={`flex w-full items-center justify-between px-2.5 py-1.5 bg-logip-white dark:bg-report-dark border ${isOpen ? 'border-logip-primary ring-1 ring-logip-primary/20' : 'border-logip-border dark:border-report-border'} rounded-lg text-sm font-medium text-left text-black dark:text-gray-100 transition-all duration-200 disabled:bg-gray-100 dark:disabled:bg-gray-800/50 disabled:cursor-not-allowed gap-3 shadow-sm`}
+                className={`flex w-full h-10 items-center justify-between px-2.5 py-0 bg-logip-white dark:bg-report-dark border ${isOpen ? 'border-logip-primary ring-1 ring-logip-primary/20' : 'border-logip-border dark:border-report-border'} rounded-lg text-sm font-medium text-left text-black dark:text-gray-100 transition-all duration-200 disabled:bg-gray-100 dark:disabled:bg-gray-800/50 disabled:cursor-not-allowed gap-3 shadow-sm`}
             >
                 <span className="truncate">{displayValue}</span>
                 <Icon name="expand_more" className={`w-5 h-5 text-logip-text-subtle transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />

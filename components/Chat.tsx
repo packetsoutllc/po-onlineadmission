@@ -8,6 +8,7 @@ import { getHouseColor, initialHouses, House } from './admin/shared/houseData';
 import { StudentStatus } from './admin/pages/StudentsPage';
 import { Dormitory, initialDormitories } from './admin/shared/dormitoryData';
 import { setLocalStorageAndNotify } from '../utils/storage';
+import { safeJsonParse } from '../utils/security';
 import { Conversation, ThreadMessage, initialConversations } from './admin/pages/MessagesPage';
 import { initialSchools, School, initialAdmissions, Admission } from './admin/pages/SettingsPage';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -300,7 +301,7 @@ const Chat: React.FC<ChatProps> = ({
                         ],
                     };
                     handoffConversationIdRef.current = handoffConversation.id;
-                    const existingConvs = JSON.parse(localStorage.getItem('admin_conversations') || '[]');
+                    const existingConvs = safeJsonParse(localStorage.getItem('admin_conversations'), []);
                     setLocalStorageAndNotify('admin_conversations', [...existingConvs, handoffConversation]);
                 }
             }

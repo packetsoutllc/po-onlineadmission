@@ -59,11 +59,12 @@ interface HousesPageProps {
     dormitories: Dormitory[];
     setDormitories: React.Dispatch<React.SetStateAction<Dormitory[]>>;
     permissions: Set<string>;
+    getActions: (permId: string) => { view: boolean; add: boolean; edit: boolean; delete: boolean };
     isSuperAdmin: boolean;
-    adminUser: AdminUser; 
+    adminUser: AdminUser;
 }
 
-const HousesPage: React.FC<HousesPageProps> = ({ selectedSchool, selectedAdmission, students, dormitories, setDormitories, permissions, isSuperAdmin, adminUser }) => {
+const HousesPage: React.FC<HousesPageProps> = ({ selectedSchool, selectedAdmission, students, dormitories, setDormitories, permissions, getActions, isSuperAdmin, adminUser }) => {
     const userPrefix = adminUser.email;
     const { showToast } = useToast();
     const [houses, setHouses] = useState(initialHouses);
@@ -237,12 +238,12 @@ const HousesPage: React.FC<HousesPageProps> = ({ selectedSchool, selectedAdmissi
         return <div className="p-8 text-center text-logip-text-subtle"><span className="material-symbols-outlined text-6xl">source_environment</span><p className="mt-4 text-xl font-semibold">No School Selected</p><p>Please select a school to view its houses.</p></div>;
     }
     
-    const canAdd = isSuperAdmin || permissions.has('btn:house:add');
-    const canEdit = isSuperAdmin || permissions.has('icon:house:edit');
-    const canDelete = isSuperAdmin || permissions.has('icon:house:delete');
-    const canPrint = isSuperAdmin || permissions.has('btn:house:print');
-    const canShowDashboardPerm = isSuperAdmin || permissions.has('btn:house:dash');
-    const canAllocate = isSuperAdmin || permissions.has('icon:house:edit') || permissions.has('icon:std:edit');
+    const canAdd = isSuperAdmin || (permissions.has('btn:house:add') && getActions('btn:house:add').add);
+    const canEdit = isSuperAdmin || (permissions.has('icon:house:edit') && getActions('icon:house:edit').edit);
+    const canDelete = isSuperAdmin || (permissions.has('icon:house:delete') && getActions('icon:house:delete').delete);
+    const canPrint = isSuperAdmin || (permissions.has('btn:house:print') && getActions('btn:house:print').view);
+    const canShowDashboardPerm = isSuperAdmin || (permissions.has('btn:house:dash') && getActions('btn:house:dash').view);
+    const canAllocate = isSuperAdmin || (permissions.has('icon:house:edit') && getActions('icon:house:edit').edit) || (permissions.has('icon:std:edit') && getActions('icon:std:edit').edit);
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">
@@ -318,7 +319,7 @@ const HousesPage: React.FC<HousesPageProps> = ({ selectedSchool, selectedAdmissi
                             placeholder="Search houses..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg pl-10 pr-4 py-2.5 text-base text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle dark:placeholder-dark-text-secondary focus:outline-none focus:ring-2 focus:ring-logip-primary dark:focus:ring-dark-accent-blue transition-colors"
+                            className="w-full h-10 bg-gray-50 dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-lg pl-10 pr-4 py-2 text-base text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle dark:placeholder-dark-text-secondary focus:outline-none focus:ring-2 focus:ring-logip-primary dark:focus:ring-dark-accent-blue transition-colors"
                         />
                     </div>
                     <div className="w-full sm:w-auto flex items-center gap-4">

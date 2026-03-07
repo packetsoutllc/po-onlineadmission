@@ -13,15 +13,16 @@ import { AdminStudent, initialAdminStudents } from './StudentsPage';
 import DatePicker from '../../DatePicker';
 import { appendToLocalStorageArray } from '../../../utils/storage';
 import Icon from '../shared/Icons';
+import { logSecurityEvent, LOGS_STORAGE_KEY } from '../shared/securityLogService';
 
 // --- TYPE DEFINITIONS ---
 
 export interface SecurityLog {
     id: string;
     timestamp: string;
-    riskType: 'Failed Login' | 'Forced Logout' | 'Suspicious Activity';
+    riskType: string;
     target: string;
-    action: 'Logged Attempt' | 'User Sessions Terminated' | 'Flagged';
+    action: string;
     details?: string;
     icon?: string;
 }
@@ -229,7 +230,7 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
     const [isPreviewVideoOpen, setIsPreviewVideoOpen] = useState(false);
     const [isPreviewScrollOpen, setIsPreviewScrollOpen] = useState(false);
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-    const [securityLogs, setSecurityLogs] = useLocalStorage<SecurityLog[]>('admin_security_logs', []);
+    const [securityLogs, setSecurityLogs] = useLocalStorage<SecurityLog[]>(LOGS_STORAGE_KEY, []);
     const [browsingLogs] = useLocalStorage<BrowsingLogEntry[]>('admin_browsing_logs', initialBrowsingLogs);
     const [browsingSearchTerm, setBrowsingSearchTerm] = useState('');
     const [browsingPage, setBrowsingPage] = useState(1);
@@ -255,16 +256,14 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
         if (selectedSchool && selectedAdmission) {
             const timestamp = new Date().getTime().toString();
             localStorage.setItem(`force_logout_timestamp_${selectedSchool.id}_${selectedAdmission.id}`, timestamp);
-            
-            const newLog: SecurityLog = { 
-                id: `sec_${Date.now()}`, 
-                timestamp: new Date().toISOString(), 
-                riskType: 'Failed Login', 
-                target: `${selectedAdmission.title} Users`, 
-                action: 'Logged Attempt', 
-                details: `Admin ${adminUser.name} forced logout for all users.` 
-            };
-            setSecurityLogs(prev => [newLog, ...prev].slice(0, 100));
+
+            logSecurityEvent(
+                'Forced Logout',
+                `${selectedAdmission.title} Users`,
+                'User Sessions Terminated',
+                undefined,
+                `Admin ${adminUser.name} forced logout for all users.`
+            );
             showToast('All active users have been logged out.', 'success');
             setIsLogoutConfirmOpen(false);
         }

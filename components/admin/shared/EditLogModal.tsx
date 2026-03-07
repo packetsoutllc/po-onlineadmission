@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminModal from './AdminModal';
 import { AdminStudent, EditLogEntry } from '../pages/StudentsPage';
+import { safeJsonParse } from '../../../utils/security';
 
 interface EditLogModalProps {
     isOpen: boolean;
@@ -16,7 +17,7 @@ const EditLogModal: React.FC<EditLogModalProps> = ({ isOpen, onClose, student, l
         if (isOpen && student) {
             try {
                 const logRaw = localStorage.getItem(`editHistory_${student.indexNumber}`);
-                const history: EditLogEntry[] = logRaw ? JSON.parse(logRaw) : [];
+                const history: EditLogEntry[] = safeJsonParse<EditLogEntry[]>(logRaw, []);
                 const filteredHistory = history.filter(log => log.editor === logType);
                 const seen = new Set();
                 const uniqueHistory = filteredHistory.filter(entry => {

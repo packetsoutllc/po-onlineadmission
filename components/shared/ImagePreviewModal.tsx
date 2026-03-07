@@ -1,5 +1,6 @@
 import React from 'react';
 import { PDFDocument } from 'pdf-lib';
+import { escapeHtml, safeJsonParse, sanitizeResourceUrl } from '../../utils/security';
 
 interface ImagePreviewModalProps {
     isOpen: boolean;
@@ -40,16 +41,18 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ isOpen, onClose, 
         try {
             const rawSchools = localStorage.getItem('admin_schools');
             if (rawSchools) {
-                const schools = JSON.parse(rawSchools) as Array<{ name: string; logo?: string; status?: string }>;
-                const active = schools.find(s => s.status === 'Active') || schools[0];
-                if (active) {
-                    schoolName = active.name || schoolName;
-                    schoolLogo = active.logo || null;
-                }
+                const schools = safeJsonParse<Array<{ name?: string; logo?: string; status?: string }>>(rawSchools, []);
+                const active = Array.isArray(schools) ? (schools.find((s: { status?: string }) => s.status === 'Active') || schools[0]) : undefined;
+                if (active && active.name) schoolName = String(active.name);
+                if (active?.logo) schoolLogo = sanitizeResourceUrl(active.logo) || null;
             }
-        } catch (e) {
+        } catch {
             // ignore parsing errors and keep defaults
         }
+        const safeSchoolName = escapeHtml(schoolName);
+        const safeAltText = escapeHtml(altText);
+        const safeSchoolLogo = schoolLogo ? sanitizeResourceUrl(schoolLogo) : '';
+        const safeImageUrl = sanitizeResourceUrl(imageUrl);
 
         const now = new Date();
         const formattedDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -59,7 +62,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ isOpen, onClose, 
             <!DOCTYPE html>
             <html>
                 <head>
-                    <title>Print - ${altText}</title>
+                    <title>Print - ${safeAltText}</title>
                     <link rel="preconnect" href="https://fonts.googleapis.com">
                     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -125,13 +128,13 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ isOpen, onClose, 
                 </head>
                 <body>
                     <div class="print-header">
-                        ${schoolLogo ? `<img src="${schoolLogo}" alt="Logo" class="school-logo" />` : ''}
-                        <div class="school-name">${schoolName}</div>
-                        <div class="page-title">${altText}</div>
+                        ${safeSchoolLogo ? `<img src="${safeSchoolLogo}" alt="Logo" class="school-logo" />` : ''}
+                        <div class="school-name">${safeSchoolName}</div>
+                        <div class="page-title">${safeAltText}</div>
                         <div class="meta-date">Generated on ${formattedDate} at ${formattedTime}</div>
                     </div>
                     <div class="image-wrapper">
-                        <img src="${imageUrl}" class="print-image" onload="window.print(); window.close();" />
+                        ${safeImageUrl ? `<img src="${safeImageUrl}" class="print-image" onload="window.print(); window.close();" />` : ''}
                     </div>
                 </body>
             </html>

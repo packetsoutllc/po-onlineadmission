@@ -2,10 +2,22 @@ import React, { useState, useRef } from 'react';
 import { Student, AiSettings } from './StudentDetails';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { usePrevious } from '../utils/storage';
+import { safeJsonParse } from '../utils/security';
 import ImagePreviewModal from './shared/ImagePreviewModal';
 import WebcamCaptureModal from './WebcamCaptureModal';
 import { FormFieldConfig } from './admin/pages/ApplicationDashboardSettings';
 import PDFPreviewModal from './PDFPreviewModal';
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_PDF_TYPE = 'application/pdf';
+
+function isAllowedMime(type: string, accept?: string | null): boolean {
+    if (!type || typeof type !== 'string') return false;
+    const normalized = type.toLowerCase().trim();
+    if (ALLOWED_IMAGE_TYPES.includes(normalized)) return !accept || accept.includes('image');
+    if (normalized === ALLOWED_PDF_TYPE) return !accept || accept.includes('pdf') || accept.includes('application');
+    return false;
+}
 
 const formatBytes = (bytes: number, decimals = 1) => {
     if (bytes === 0) return '0 Bytes';
@@ -149,12 +161,15 @@ Requirements:
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const currentFile = event.target.files[0];
+            if (!isAllowedMime(currentFile.type, field.accept)) {
+                showToast('File type not allowed. Please upload an image (JPEG, PNG, WebP, GIF) or PDF.');
+                return;
+            }
             // Check 5MB hard limit to prevent browser crash before we even start
             if (currentFile.size > 5 * 1024 * 1024) {
                 showToast(`File is too large (${formatBytes(currentFile.size)}). Max limit is 5MB.`);
                 return;
             }
-            
             if (field.maxSizeMB && currentFile.size > field.maxSizeMB * 1024 * 1024) {
                 showToast(`File exceeds the configured limit of ${field.maxSizeMB}MB.`);
                 return;
@@ -195,17 +210,19 @@ Requirements:
         onChange(field.id, null);
         if (fileInputRef.current) fileInputRef.current.value = '';
         try {
-             const key = schoolId ? `applicationData_${schoolId}_${studentIndexNumber}` : null;
-             if (!key) return;
-             const stored = localStorage.getItem(key);
-             if (stored) {
-                 const data = JSON.parse(stored);
-                 if (data[`doc_verified_${field.id}`]) {
-                     delete data[`doc_verified_${field.id}`];
-                     localStorage.setItem(key, JSON.stringify(data));
-                 }
-             }
-        } catch(e) {}
+            const key = schoolId ? `applicationData_${schoolId}_${studentIndexNumber}` : null;
+            if (!key) return;
+            const stored = localStorage.getItem(key);
+            if (stored) {
+                const data = safeJsonParse<Record<string, unknown>>(stored, {});
+                if (data && typeof data === 'object' && data[`doc_verified_${field.id}`]) {
+                    delete data[`doc_verified_${field.id}`];
+                    localStorage.setItem(key, JSON.stringify(data));
+                }
+            }
+        } catch {
+            // ignore
+        }
     };
     
     const handlePreview = () => {

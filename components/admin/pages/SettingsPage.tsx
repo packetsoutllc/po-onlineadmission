@@ -17,6 +17,9 @@ import ApplicationDashboardSettings from './ApplicationDashboardSettings';
 import { logActivity } from '../../../utils/storage';
 
 // --- TYPE DEFINITIONS & MOCK DATA (CENTRALIZED) ---
+/** Display state on landing: opened (green), closed (red), yet_to_open (grey). When missing, derived from status. */
+export type AdmissionPortalStatus = 'opened' | 'closed' | 'yet_to_open';
+
 export interface Admission {
   id: string;
   schoolId: string;
@@ -26,6 +29,8 @@ export interface Admission {
   date: string;
   authMethod: string;
   status: 'Active' | 'Archived';
+  /** Landing page label and color. If missing: Active -> opened, Archived -> closed. */
+  portalStatus?: AdmissionPortalStatus;
   applicantsPlaced: number;
   studentsAdmitted: number;
   indexHint?: string;
@@ -81,7 +86,7 @@ const ActionButton: React.FC<{ icon: string; onClick: (e: React.MouseEvent) => v
 );
 
 const SelectedItemDisplay: React.FC<{
-  item: { id: string, name: string, status?: string, logo?: string, icon?: string } | null;
+  item: { id: string, name: string, status?: string, logo?: string, icon?: string; statusVariant?: AdmissionPortalStatus } | null;
   type: 'school' | 'admission' | 'region';
   isOpen: boolean;
   onClick: () => void;
@@ -95,9 +100,11 @@ const SelectedItemDisplay: React.FC<{
     if (!item && type !== 'region') {
         return <div className="p-3 text-center text-logip-text-subtle dark:text-dark-text-secondary">No {type} selected.</div>;
     }
-    
+    const isAdmissionWithVariant = type === 'admission' && item?.statusVariant;
+    const statusPillClass = isAdmissionWithVariant
+        ? (item!.statusVariant === 'opened' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' : item!.statusVariant === 'closed' ? 'bg-red-500/20 text-red-700 dark:text-red-300' : 'bg-gray-500/20 text-gray-600 dark:text-gray-400')
+        : (item?.status === 'Active' ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400');
     const isActive = item?.status === 'Active';
-    const statusPillClass = isActive ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400';
     const stopPropagation = (fn?: Function) => (e: React.MouseEvent) => {
         if (!fn) return;
         e.stopPropagation();
@@ -123,7 +130,7 @@ const SelectedItemDisplay: React.FC<{
                 )}
                 <div className="flex items-center gap-1">
                     {onCopyLink && <ActionButton icon="link" title="Copy Portal Link" onClick={stopPropagation(onCopyLink)} />}
-                    {onToggleStatus && <ActionButton icon={isActive ? 'archive' : 'unarchive'} title={isActive ? 'Deactivate' : 'Activate'} onClick={stopPropagation(onToggleStatus)} />}
+                    {onToggleStatus && <ActionButton icon="toggle_on" title="Set portal status" onClick={stopPropagation(onToggleStatus)} />}
                     {onAddChild && <ActionButton icon="add" title={type === 'school' ? 'Add School' : 'Add Admission'} onClick={stopPropagation(onAddChild)} />}
                     {onEdit && <ActionButton icon="edit" title="Edit" onClick={stopPropagation(onEdit)} />}
                     {onDelete && <ActionButton icon="delete" title="Delete" onClick={stopPropagation(onDelete)} />}
@@ -171,6 +178,7 @@ interface SettingsPageProps {
   setAdminUser: React.Dispatch<React.SetStateAction<AdminUser | null>>;
   onExitAdmin: () => void;
   permissions: Set<string>;
+  getActions: (permId: string) => { view: boolean; add: boolean; edit: boolean; delete: boolean };
   isSuperAdmin: boolean;
 }
 
@@ -185,7 +193,7 @@ const SETTINGS_TABS_PERMS: Record<string, string> = {
     'User Profile': 'tab:set:prof'
 };
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdmission, setSelectedSchoolId, setSelectedAdmissionId, schools, setSchools, admissions, setAdmissions, adminUser, setAdminUser, onExitAdmin, permissions, isSuperAdmin }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdmission, setSelectedSchoolId, setSelectedAdmissionId, schools, setSchools, admissions, setAdmissions, adminUser, setAdminUser, onExitAdmin, permissions, getActions, isSuperAdmin }) => {
     const { showToast } = useToast();
     
     const availableTabs = useMemo(() => {
@@ -206,6 +214,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
         mode: 'addSchool' | 'editSchool' | 'deleteSchool' | 'addAdmission' | 'editAdmission' | 'deleteAdmission' | null;
         item: School | Admission | { schoolId: string } | null;
     }>({ mode: null, item: null });
+    const [admissionStatusModal, setAdmissionStatusModal] = useState<Admission | null>(null);
     
     const [selectedRegion, setSelectedRegion] = useState<string>('all');
     const [isRegionListOpen, setIsRegionListOpen] = useState(false);
@@ -289,7 +298,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             setSchools(schools.map(s => s.id === updatedSchool.id ? updatedSchool : s));
             showToast(`School "${formData.name}" updated successfully.`, 'success');
             logActivity(
-                { name: adminUser.name, avatar: adminUser.avatar || '' },
+                { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
                 'updated school configuration for',
                 'system_settings',
                 formData.name
@@ -300,7 +309,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             setSelectedSchoolId(newSchool.id);
             showToast(`School "${formData.name}" created successfully.`, 'success');
             logActivity(
-                { name: adminUser.name, avatar: adminUser.avatar || '' },
+                { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
                 'created a new school:',
                 'system_settings',
                 formData.name
@@ -315,7 +324,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             setAdmissions(admissions.map(a => a.id === updatedAdmission.id ? updatedAdmission : a));
             showToast(`Admission "${formData.title}" updated successfully.`, 'success');
             logActivity(
-                { name: adminUser.name, avatar: adminUser.avatar || '' },
+                { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
                 'updated admission type for',
                 'system_settings',
                 `${formData.title} (${selectedSchool?.name})`,
@@ -327,7 +336,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             setSelectedAdmissionId(newAdmission.id);
             showToast(`Admission "${formData.title}" created successfully.`, 'success');
             logActivity(
-                { name: adminUser.name, avatar: adminUser.avatar || '' },
+                { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
                 'created a new admission period:',
                 'system_settings',
                 `${formData.title} for ${selectedSchool?.name}`,
@@ -350,7 +359,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             }
             showToast(`School "${schoolName}" deleted.`, 'success');
             logActivity(
-                { name: adminUser.name, avatar: adminUser.avatar || '' },
+                { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
                 'deleted school:',
                 'system_settings',
                 schoolName
@@ -362,7 +371,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             setAdmissions(admissions.filter(a => a.id !== admissionId));
             showToast(`Admission "${admissionTitle}" deleted.`, 'success');
             logActivity(
-                { name: adminUser.name, avatar: adminUser.avatar || '' },
+                { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
                 'deleted admission type:',
                 'system_settings',
                 `${admissionTitle} (${selectedSchool?.name})`,
@@ -372,21 +381,27 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
         handleCloseModal();
     };
 
-    const handleToggleAdmissionStatus = (admissionToToggle: Admission) => {
-        const newStatus = admissionToToggle.status === 'Active' ? 'Archived' : 'Active';
-        setAdmissions(admissions.map(a => 
-            a.id === admissionToToggle.id 
-            ? { ...a, status: newStatus } 
-            : a
+    const getAdmissionPortalStatus = (a: Admission): AdmissionPortalStatus => a.portalStatus ?? (a.status === 'Active' ? 'opened' : 'closed');
+    const getPortalStatusLabel = (a: Admission): string => {
+        const s = getAdmissionPortalStatus(a);
+        return s === 'opened' ? 'Admission opened' : s === 'closed' ? 'Admission Closed' : 'Admission yet to be opened';
+    };
+
+    const setAdmissionPortalStatus = (admission: Admission, portalStatus: AdmissionPortalStatus) => {
+        const status = portalStatus === 'closed' ? 'Archived' as const : 'Active' as const;
+        setAdmissions(admissions.map(a =>
+            a.id === admission.id ? { ...a, portalStatus, status } : a
         ));
-        showToast(`Admission status changed to ${newStatus}.`, 'success');
+        const labels: Record<AdmissionPortalStatus, string> = { opened: 'Admission opened', closed: 'Admission Closed', yet_to_open: 'Admission yet to be opened' };
+        showToast(`${labels[portalStatus]} set for "${admission.title}".`, 'success');
         logActivity(
-            { name: adminUser.name, avatar: adminUser.avatar || '' },
-            `set admission status to ${newStatus} for`,
+            { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
+            `set admission portal status to ${labels[portalStatus]} for`,
             'system_settings',
-            admissionToToggle.title,
+            admission.title,
             selectedSchool?.id
         );
+        setAdmissionStatusModal(null);
     };
 
     const handleToggleSchoolStatus = (schoolToToggle: School) => {
@@ -398,22 +413,22 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
         ));
         showToast(`School status changed to ${newStatus}.`, 'success');
         logActivity(
-            { name: adminUser.name, avatar: adminUser.avatar || '' },
+            { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
             `set school status to ${newStatus} for`,
             'system_settings',
             schoolToToggle.name
         );
     };
 
-    const canAddSchool = isSuperAdmin || permissions.has('btn:sch:add');
-    const canEditSchool = isSuperAdmin || permissions.has('icon:sch:edit');
-    const canDeleteSchool = isSuperAdmin || permissions.has('icon:sch:delete');
-    const canAddAdmission = isSuperAdmin || permissions.has('btn:adm:add');
-    const canEditAdmission = isSuperAdmin || permissions.has('icon:adm:edit');
-    const canDeleteAdmission = isSuperAdmin || permissions.has('icon:adm:delete');
-    const canArchiveAdmission = isSuperAdmin || permissions.has('icon:adm:archive');
-    const canSeePortalConfig = isSuperAdmin || permissions.has('sec:set:setup');
-    const canSeeAppDashSettings = isSuperAdmin || permissions.has('sec:set:app_dash');
+    const canAddSchool = isSuperAdmin || (permissions.has('btn:sch:add') && getActions('btn:sch:add').add);
+    const canEditSchool = isSuperAdmin || (permissions.has('icon:sch:edit') && getActions('icon:sch:edit').edit);
+    const canDeleteSchool = isSuperAdmin || (permissions.has('icon:sch:delete') && getActions('icon:sch:delete').delete);
+    const canAddAdmission = isSuperAdmin || (permissions.has('btn:adm:add') && getActions('btn:adm:add').add);
+    const canEditAdmission = isSuperAdmin || (permissions.has('icon:adm:edit') && getActions('icon:adm:edit').edit);
+    const canDeleteAdmission = isSuperAdmin || (permissions.has('icon:adm:delete') && getActions('icon:adm:delete').delete);
+    const canArchiveAdmission = isSuperAdmin || (permissions.has('icon:adm:archive') && getActions('icon:adm:archive').edit);
+    const canSeePortalConfig = isSuperAdmin || (permissions.has('sec:set:setup') && getActions('sec:set:setup').view);
+    const canSeeAppDashSettings = isSuperAdmin || (permissions.has('sec:set:app_dash') && getActions('sec:set:app_dash').view);
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 h-full flex flex-col">
@@ -499,25 +514,28 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
                                             <label className="text-base font-semibold text-logip-text-subtle dark:text-dark-text-secondary">Select Admission Type</label>
                                         </div>
                                         <SelectedItemDisplay
-                                            item={selectedAdmission ? {id: selectedAdmission.id, name: selectedAdmission.title, status: selectedAdmission.status} : null}
+                                            item={selectedAdmission ? { id: selectedAdmission.id, name: selectedAdmission.title, status: getPortalStatusLabel(selectedAdmission), statusVariant: getAdmissionPortalStatus(selectedAdmission) } : null}
                                             type="admission"
                                             isOpen={isAdmissionListOpen}
                                             onClick={() => setIsAdmissionListOpen(!isAdmissionListOpen)}
                                             onAddChild={hasGlobalAdmissionScope && canAddAdmission && selectedSchool ? () => handleOpenModal('addAdmission', { schoolId: selectedSchool.id }) : undefined}
                                             onEdit={hasGlobalAdmissionScope && canEditAdmission && selectedAdmission ? () => handleOpenModal('editAdmission', selectedAdmission) : undefined}
                                             onDelete={hasGlobalAdmissionScope && canDeleteAdmission && selectedAdmission ? () => handleOpenModal('deleteAdmission', selectedAdmission) : undefined}
-                                            onToggleStatus={hasGlobalAdmissionScope && canArchiveAdmission && selectedAdmission ? () => handleToggleAdmissionStatus(selectedAdmission) : undefined}
-                                            onCopyLink={handleCopyLink}
+                                            onToggleStatus={hasGlobalAdmissionScope && canArchiveAdmission && selectedAdmission ? () => setAdmissionStatusModal(selectedAdmission) : undefined}
                                             disabled={!hasGlobalAdmissionScope}
                                         />
                                         {isAdmissionListOpen && (
                                             <div className="absolute z-[100] top-full mt-1 w-max bg-logip-white dark:bg-dark-surface border border-logip-border dark:border-dark-border rounded-xl shadow-2xl p-1.5 space-y-1 max-h-60 overflow-y-auto no-scrollbar origin-top">
-                                                {relevantAdmissions.length > 0 ? relevantAdmissions.map(admission => (
-                                                    <div key={admission.id} onClick={() => { setSelectedAdmissionId(admission.id); setIsAdmissionListOpen(false); }} className="p-1.5 flex items-center justify-between rounded-lg hover:bg-logip-primary/10 hover:text-logip-primary transition-colors cursor-pointer">
-                                                        <span className="font-medium text-logip-text-header dark:text-dark-text-primary text-sm">{admission.title}</span>
-                                                        <span className={`px-2 py-0.5 text-xs font-semibold rounded ${admission.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-500/20 dark:text-gray-400'}`}>{admission.status}</span>
-                                                    </div>
-                                                )) : <div className="p-4 text-center text-sm text-logip-text-subtle">No admissions for this school.</div>}
+                                                {relevantAdmissions.length > 0 ? relevantAdmissions.map(admission => {
+                                                    const variant = getAdmissionPortalStatus(admission);
+                                                    const pillClass = variant === 'opened' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300' : variant === 'closed' ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-500/20 dark:text-gray-400';
+                                                    return (
+                                                        <div key={admission.id} onClick={() => { setSelectedAdmissionId(admission.id); setIsAdmissionListOpen(false); }} className="p-1.5 flex items-center justify-between rounded-lg hover:bg-logip-primary/10 hover:text-logip-primary transition-colors cursor-pointer">
+                                                            <span className="font-medium text-logip-text-header dark:text-dark-text-primary text-sm">{admission.title}</span>
+                                                            <span className={`px-2 py-0.5 text-xs font-semibold rounded ${pillClass}`}>{getPortalStatusLabel(admission)}</span>
+                                                        </div>
+                                                    );
+                                                }) : <div className="p-4 text-center text-sm text-logip-text-subtle">No admissions for this school.</div>}
                                             </div>
                                         )}
                                     </div>
@@ -577,7 +595,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
                 {activeTab === 'Financials' && <FinancialsSettingsTab selectedSchool={selectedSchool} selectedAdmission={selectedAdmission} />}
                 {activeTab === 'Admission Doc' && <AdmissionDocTab selectedSchool={selectedSchool} selectedAdmission={selectedAdmission} />}
                 {activeTab === 'AI Features' && <AiFeaturesSettingsTab selectedSchool={selectedSchool} selectedAdmission={selectedAdmission} />}
-                {activeTab === 'Backup' && <BackupSettingsTab allAdmissions={admissions} selectedSchool={selectedSchool} />}
+                {activeTab === 'Backup' && <BackupSettingsTab allAdmissions={admissions} selectedSchool={selectedSchool} selectedAdmission={selectedAdmission} />}
                 {activeTab === 'Security' && <SecuritySettingsTab selectedSchool={selectedSchool} selectedAdmission={selectedAdmission} adminUser={adminUser} />}
                 {activeTab === 'User Profile' && <UserProfileSettingsTab adminUser={adminUser} setAdminUser={setAdminUser} onExitAdmin={onExitAdmin} />}
             </div>
@@ -589,6 +607,33 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
                 <ConfirmationModal isOpen={true} onClose={handleCloseModal} onConfirm={handleDelete} title={`Delete ${modalState.mode.includes('School') ? 'School' : 'Admission'}`}>
                     Are you sure you want to delete <strong>{(modalState.item as School)?.name || (modalState.item as Admission)?.title}</strong>? This action is irreversible.
                 </ConfirmationModal>
+            )}
+            {admissionStatusModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={() => setAdmissionStatusModal(null)}>
+                    <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl border border-logip-border dark:border-dark-border w-full max-w-md overflow-hidden animate-fadeIn" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 border-b border-logip-border dark:border-dark-border">
+                            <h3 className="text-lg font-bold text-logip-text-header dark:text-dark-text-primary">Set portal status</h3>
+                            <p className="text-sm text-logip-text-subtle dark:text-dark-text-secondary mt-1">{admissionStatusModal.title}</p>
+                        </div>
+                        <div className="p-6 space-y-3">
+                            <button onClick={() => setAdmissionPortalStatus(admissionStatusModal, 'opened')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 transition-colors text-left font-semibold">
+                                <span className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center"><span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400">check_circle</span></span>
+                                Admission opened
+                            </button>
+                            <button onClick={() => setAdmissionPortalStatus(admissionStatusModal, 'closed')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/25 transition-colors text-left font-semibold">
+                                <span className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center"><span className="material-symbols-outlined text-red-600 dark:text-red-400">cancel</span></span>
+                                Admission Closed
+                            </button>
+                            <button onClick={() => setAdmissionPortalStatus(admissionStatusModal, 'yet_to_open')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-500/15 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500/25 transition-colors text-left font-semibold">
+                                <span className="w-10 h-10 rounded-full bg-gray-500/20 flex items-center justify-center"><span className="material-symbols-outlined text-gray-600 dark:text-gray-400">schedule</span></span>
+                                Admission yet to be opened
+                            </button>
+                        </div>
+                        <div className="p-4 border-t border-logip-border dark:border-dark-border flex justify-end">
+                            <button onClick={() => setAdmissionStatusModal(null)} className="px-4 py-2 rounded-lg text-logip-text-body dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border transition-colors font-medium">Cancel</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

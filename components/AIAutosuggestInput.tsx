@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { FormField, Input, Textarea } from './FormControls';
+import { safeJsonParse } from '../utils/security';
 
 interface AIAutosuggestInputProps {
     label: string;
@@ -60,7 +61,7 @@ const AIAutosuggestInput: React.FC<AIAutosuggestInputProps> = ({ label, name, va
               setSuggestions([]);
               return;
             }
-            const result = JSON.parse(jsonStr);
+            const result = safeJsonParse<unknown>(jsonStr, null);
 
             if (Array.isArray(result)) {
                 setSuggestions(result);

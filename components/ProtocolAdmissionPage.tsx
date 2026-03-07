@@ -3,6 +3,7 @@ import Modal from './Modal';
 import { FormField, Input, Select } from './FormControls';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { setFavicon } from '../utils/favicon';
+import { safeJsonParse } from '../utils/security';
 import { AdminStudent, initialAdminStudents } from './admin/pages/StudentsPage';
 import { Admission, initialAdmissions, School, initialSchools } from './admin/pages/SettingsPage';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
@@ -91,8 +92,8 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
         const key = `notification_${type}_${ACTIVE_SCHOOL_ID}_${ACTIVE_ADMISSION_ID}`;
         const raw = localStorage.getItem(key);
         if (raw) {
-            const data = JSON.parse(raw);
-            if (isNotificationActive(data, ACTIVE_ADMISSION_ID, type, 'protocol_admission')) return data;
+            const data = safeJsonParse(raw, null);
+            if (data && isNotificationActive(data, ACTIVE_ADMISSION_ID, type, 'protocol_admission')) return data;
         }
         return null;
     };

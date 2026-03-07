@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { SimulatedSite, FormField } from '../types';
 import { Globe, Lock, RotateCw } from 'lucide-react';
+import { escapeHtml } from '../utils/security';
 
 interface SimulatedBrowserProps {
   site: SimulatedSite;
@@ -27,8 +28,8 @@ export const SimulatedBrowser: React.FC<SimulatedBrowserProps> = ({
       const cleanHtml = formRef.current.innerHTML.replace(/data-reactroot=""/g, '');
       // Wrap in a simplified structure for context
       const fullContent = `
-        <h1>${site.name}</h1>
-        <p>${site.description}</p>
+        <h1>${escapeHtml(site.name ?? '')}</h1>
+        <p>${escapeHtml(site.description ?? '')}</p>
         <form id="main-form">
           ${cleanHtml}
         </form>

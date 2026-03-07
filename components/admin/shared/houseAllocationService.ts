@@ -1,6 +1,7 @@
 import { MALE_HOUSES, FEMALE_HOUSES, initialHouses } from './houseData';
 import { AdminStudent } from '../pages/StudentsPage';
 import { Dormitory } from './dormitoryData';
+import { safeJsonParse } from '../../../utils/security';
 
 /**
  * Gets real-time counts from the student list in localStorage.
@@ -11,7 +12,7 @@ export const getHouseCounts = (schoolId: string, admissionId: string): Record<st
         const studentsRaw = localStorage.getItem('admin_students');
         if (!studentsRaw) return {};
         
-        const allStudents: AdminStudent[] = JSON.parse(studentsRaw);
+        const allStudents: AdminStudent[] = safeJsonParse<AdminStudent[]>(studentsRaw, []);
         const counts: Record<string, number> = {};
 
         // Only look at houses belonging to this school
@@ -43,7 +44,7 @@ const getLastAssignedIndices = (schoolId: string, admissionId: string): { male: 
     try {
         const key = `lastAssignedHouseIndices_${schoolId}_${admissionId}`;
         const storedIndices = localStorage.getItem(key);
-        return storedIndices ? JSON.parse(storedIndices) : { male: 0, female: 0 };
+        return safeJsonParse<{ male: number; female: number }>(storedIndices, { male: 0, female: 0 });
     } catch {
         return { male: 0, female: 0 };
     }

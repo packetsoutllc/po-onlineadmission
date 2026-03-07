@@ -1,11 +1,19 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import AdminModal from '../shared/AdminModal';
 import ConfirmationModal from '../shared/ConfirmationModal';
-import { AdminInput, AdminTextarea, AdminCheckbox } from '../shared/forms';
+import { AdminInput, AdminTextarea } from '../shared/forms';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useToast } from '../shared/ToastContext';
 
 export type PermissionCategory = 'pages' | 'tabs' | 'sections' | 'buttons' | 'icons';
+export type ActionType = 'view' | 'add' | 'edit' | 'delete';
+
+export interface PermissionActions {
+    view: boolean;
+    add: boolean;
+    edit: boolean;
+    delete: boolean;
+}
 
 interface Permission {
     id: string;
@@ -21,6 +29,8 @@ export interface Role {
     name: string;
     description: string;
     permissionIds: string[];
+    /** Per-resource actions. If missing, legacy: having id in permissionIds = view only. */
+    permissionActions?: Record<string, PermissionActions>;
 }
 
 const formatRoleName = (name: string) => {
@@ -28,22 +38,65 @@ const formatRoleName = (name: string) => {
     return name.charAt(0).toUpperCase() + name.slice(1);
 };
 
+export const DEFAULT_ACTIONS: PermissionActions = { view: true, add: false, edit: false, delete: false };
+
+/** Resolve effective actions for a permission id for a given role (for use in AdminLayout and pages). */
+export function getActionsForRole(role: Role | undefined, permId: string): PermissionActions {
+    if (!role) return { view: false, add: false, edit: false, delete: false };
+    if (role.id === 'role_super_admin') return { view: true, add: true, edit: true, delete: true };
+    const ids = Array.isArray(role.permissionIds) ? role.permissionIds : [];
+    if (!ids.includes(permId)) return { view: false, add: false, edit: false, delete: false };
+    return role.permissionActions?.[permId] ?? DEFAULT_ACTIONS;
+}
+
+/** Which actions are configurable for this permission id (for UI toggles). */
+const getRelevantActions = (permId: string): ActionType[] => {
+    if (permId.startsWith('page:') || permId.startsWith('tab:') || permId.startsWith('sec:')) return ['view'];
+    const lower = permId.toLowerCase();
+    const out: ActionType[] = ['view'];
+    if (['add', 'bulk_ul', 'generate', 'create'].some(k => lower.includes(k))) out.push('add');
+    if (['edit', 'config', 'save', 'update', 'reset', 'lock', 'subjects', 'allocate', 'archive', 'unarchive', 'regen'].some(k => lower.includes(k))) out.push('edit');
+    if (['delete', 'remove', 'trash', 'clear'].some(k => lower.includes(k))) out.push('delete');
+    return out;
+};
+
+/** Default actions when granting a permission (view + primary action for buttons/icons). */
+const getDefaultActionsForPermission = (permId: string): PermissionActions => {
+    const relevant = getRelevantActions(permId);
+    return {
+        view: relevant.includes('view'),
+        add: relevant.includes('add'),
+        edit: relevant.includes('edit'),
+        delete: relevant.includes('delete'),
+    };
+};
+
 const CategoryTab: React.FC<{ id: string; label: string; icon: string; active: boolean; onClick: () => void; count: number }> = ({ label, icon, active, onClick, count }) => (
     <button 
         onClick={onClick}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
             active 
                 ? 'bg-emerald-600 text-white shadow-md' 
                 : 'text-logip-text-body dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border/50'
         }`}
     >
-        <span className="material-symbols-outlined text-xl">{icon}</span>
+        <span className="material-symbols-outlined text-lg">{icon}</span>
         <span>{label}</span>
-        <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${active ? 'bg-white/20' : 'bg-gray-100 dark:bg-dark-border'}`}>
+        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums ${active ? 'bg-white/20' : 'bg-gray-100 dark:bg-dark-border'}`}>
             {count}
         </span>
     </button>
 );
+
+/** Root-level count per category: pages = no parent; tabs/buttons/icons = direct child of page; sections = direct child of tab. */
+const getRootCountForCategory = (list: Permission[], category: PermissionCategory): number => {
+    if (category === 'pages') return list.filter(p => p.category === 'pages' && !p.parentId).length;
+    if (category === 'tabs') return list.filter(p => p.category === 'tabs' && p.parentId?.startsWith('page:')).length;
+    if (category === 'sections') return list.filter(p => p.category === 'sections' && p.parentId?.startsWith('tab:')).length;
+    if (category === 'buttons') return list.filter(p => p.category === 'buttons' && p.parentId?.startsWith('page:')).length;
+    if (category === 'icons') return list.filter(p => p.category === 'icons' && p.parentId?.startsWith('page:')).length;
+    return 0;
+};
 
 const ALL_PERMISSIONS_LIST: Permission[] = [
     // --- PAGES ---
@@ -56,6 +109,8 @@ const ALL_PERMISSIONS_LIST: Permission[] = [
     { id: 'page:houses', name: 'Houses Page', description: 'Residential management', category: 'pages', resource: 'Houses' },
     { id: 'page:users', name: 'Users Page', description: 'User account management', category: 'pages', resource: 'Users' },
     { id: 'page:settings', name: 'Settings Page', description: 'Portal configuration and profile', category: 'pages', resource: 'Settings' },
+    { id: 'page:roles', name: 'Roles & Permissions Page', description: 'Security profiles and access control', category: 'pages', resource: 'Roles' },
+    { id: 'page:logs', name: 'Logs Page', description: 'Activity and audit logs', category: 'pages', resource: 'Logs' },
 
     // --- TABS ---
     { id: 'tab:set:setup', name: 'Setup Tab', description: 'School & Admission Group mapping', category: 'tabs', resource: 'Settings', parentId: 'page:settings' },
@@ -135,25 +190,30 @@ const ALL_PERMISSIONS_LIST: Permission[] = [
     { id: 'icon:role:delete', name: 'Delete Role', description: 'Delete role profile', category: 'icons', resource: 'Roles', parentId: 'page:roles' },
 ];
 
+const fullActions: PermissionActions = { view: true, add: true, edit: true, delete: true };
+const allPermIds = ALL_PERMISSIONS_LIST.map(p => p.id);
+const superAdminActions: Record<string, PermissionActions> = {};
+allPermIds.forEach(id => { superAdminActions[id] = fullActions; });
+
+/** All permissions except Roles & Permissions and Users (for default "other users" role). */
+const otherUsersPermIds = ALL_PERMISSIONS_LIST.filter(p => p.resource !== 'Roles' && p.resource !== 'Users').map(p => p.id);
+const otherUsersActions: Record<string, PermissionActions> = {};
+otherUsersPermIds.forEach(id => { otherUsersActions[id] = fullActions; });
+
 export const INITIAL_ROLES: Role[] = [
     {
         id: 'role_super_admin',
         name: 'Super Administrator',
         description: 'Unrestricted access to all system features.',
-        permissionIds: ALL_PERMISSIONS_LIST.map(p => p.id),
+        permissionIds: allPermIds,
+        permissionActions: superAdminActions,
     },
     {
         id: 'role_admission_officer',
         name: 'Admission Officer',
-        description: 'Viewing access for records. Restricted from bulk, print, and destructive actions.',
-        permissionIds: [
-            ...ALL_PERMISSIONS_LIST.filter(p => {
-                const isAction = ['add', 'edit', 'delete', 'bulk', 'print', 'regen', 'archive', 'lock', 'reset', 'clear', 'subjects', 'allocate', 'save'].some(t => p.id.includes(t));
-                return !isAction;
-            }).map(p => p.id),
-            'page:settings',
-            'tab:set:setup'
-        ],
+        description: 'All pages except Roles & Permissions and Users; all tabs, sections, buttons, and icons on those pages.',
+        permissionIds: otherUsersPermIds,
+        permissionActions: otherUsersActions,
     },
 ];
 
@@ -168,7 +228,8 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
         if (Array.isArray(value)) {
             return value.map(role => ({
                 ...role,
-                permissionIds: Array.isArray(role.permissionIds) ? role.permissionIds : []
+                permissionIds: Array.isArray(role.permissionIds) ? role.permissionIds : [],
+                permissionActions: role.permissionActions && typeof role.permissionActions === 'object' ? role.permissionActions : undefined,
             }));
         }
         return value;
@@ -180,8 +241,22 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedPermissionIds, setExpandedPermissionIds] = useState<Set<string>>(new Set());
 
+    // Ensure Super Admin always has all permissions in storage (fixes stale data from before new pages were added)
+    useEffect(() => {
+        const superRole = roles.find(r => r.id === 'role_super_admin');
+        if (!superRole || superRole.permissionIds.length >= allPermIds.length) return;
+        setRoles(prev => prev.map(r =>
+            r.id === 'role_super_admin'
+                ? { ...r, permissionIds: allPermIds, permissionActions: superAdminActions }
+                : r
+        ));
+    }, []);
+
     const activeRole = useMemo(() => roles.find(r => r.id === selectedRoleId), [roles, selectedRoleId]);
-    const activePermissionIds = useMemo(() => new Set(activeRole?.permissionIds || []), [activeRole]);
+    const activePermissionIds = useMemo(() => {
+        if (activeRole?.id === 'role_super_admin') return new Set(allPermIds);
+        return new Set(activeRole?.permissionIds || []);
+    }, [activeRole]);
 
     const filteredPermissions = useMemo(() => {
         return ALL_PERMISSIONS_LIST.filter(p => {
@@ -198,56 +273,78 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
         });
     }, [activeCategory, searchTerm]);
 
+    const getActionsForPermission = (permId: string): PermissionActions => {
+        if (!activeRole || activeRole.id === 'role_super_admin') return { view: true, add: true, edit: true, delete: true };
+        if (!activePermissionIds.has(permId)) return { view: false, add: false, edit: false, delete: false };
+        return activeRole.permissionActions?.[permId] ?? DEFAULT_ACTIONS;
+    };
+
     const handleTogglePermission = (permissionId: string) => {
         if (!activeRole || activeRole.id === 'role_super_admin') return;
 
         setRoles(prev => prev.map(r => {
-            if (r.id === selectedRoleId) {
-                const newIds = new Set(r.permissionIds);
-                if (newIds.has(permissionId)) {
-                    newIds.delete(permissionId);
-                    // Cascade uncheck
-                    const uncheckChildren = (pid: string) => {
-                        ALL_PERMISSIONS_LIST.filter(child => child.parentId === pid).forEach(child => {
-                            newIds.delete(child.id);
-                            uncheckChildren(child.id);
-                        });
-                    };
-                    uncheckChildren(permissionId);
-                } else {
-                    newIds.add(permissionId);
-                    // Auto-check parent chain for visibility logic
-                    const checkParent = (pid: string) => {
-                        const parent = ALL_PERMISSIONS_LIST.find(p => p.id === pid);
-                        if (parent && parent.parentId) {
-                            newIds.add(parent.parentId);
-                            checkParent(parent.parentId);
-                        }
-                    };
-                    const target = ALL_PERMISSIONS_LIST.find(p => p.id === permissionId);
-                    if (target?.parentId) {
-                        newIds.add(target.parentId);
-                        checkParent(target.parentId);
+            if (r.id !== selectedRoleId) return r;
+            const newIds = new Set(r.permissionIds);
+            const newActions = { ...r.permissionActions };
+            if (newIds.has(permissionId)) {
+                newIds.delete(permissionId);
+                delete newActions[permissionId];
+                const uncheckChildren = (pid: string) => {
+                    ALL_PERMISSIONS_LIST.filter(child => child.parentId === pid).forEach(child => {
+                        newIds.delete(child.id);
+                        delete newActions[child.id];
+                        uncheckChildren(child.id);
+                    });
+                };
+                uncheckChildren(permissionId);
+            } else {
+                newIds.add(permissionId);
+                newActions[permissionId] = getDefaultActionsForPermission(permissionId);
+                const checkParent = (pid: string) => {
+                    const parent = ALL_PERMISSIONS_LIST.find(p => p.id === pid);
+                    if (parent && parent.parentId) {
+                        newIds.add(parent.parentId);
+                        if (!newActions[parent.parentId]) newActions[parent.parentId] = getDefaultActionsForPermission(parent.parentId);
+                        checkParent(parent.parentId);
                     }
+                };
+                const target = ALL_PERMISSIONS_LIST.find(p => p.id === permissionId);
+                if (target?.parentId) {
+                    newIds.add(target.parentId);
+                    if (!newActions[target.parentId]) newActions[target.parentId] = getDefaultActionsForPermission(target.parentId);
+                    checkParent(target.parentId);
                 }
-                return { ...r, permissionIds: Array.from(newIds) };
             }
-            return r;
+            return { ...r, permissionIds: Array.from(newIds), permissionActions: newActions };
+        }));
+    };
+
+    const handleSetPermissionAction = (permissionId: string, action: ActionType, value: boolean) => {
+        if (!activeRole || activeRole.id === 'role_super_admin') return;
+        setRoles(prev => prev.map(r => {
+            if (r.id !== selectedRoleId) return r;
+            const current = r.permissionActions?.[permissionId] ?? DEFAULT_ACTIONS;
+            const next = { ...current, [action]: value };
+            return { ...r, permissionActions: { ...r.permissionActions, [permissionId]: next } };
         }));
     };
 
     const handleToggleCategory = (category: PermissionCategory, enabled: boolean) => {
         if (!activeRole || activeRole.id === 'role_super_admin') return;
         setRoles(prev => prev.map(r => {
-            if (r.id === selectedRoleId) {
-                const newIds = new Set(r.permissionIds);
-                ALL_PERMISSIONS_LIST.filter(p => p.category === category).forEach(p => {
-                    if (enabled) newIds.add(p.id);
-                    else newIds.delete(p.id);
-                });
-                return { ...r, permissionIds: Array.from(newIds) };
-            }
-            return r;
+            if (r.id !== selectedRoleId) return r;
+            const newIds = new Set(r.permissionIds);
+            const newActions = { ...r.permissionActions };
+            ALL_PERMISSIONS_LIST.filter(p => p.category === category).forEach(p => {
+                if (enabled) {
+                    newIds.add(p.id);
+                    newActions[p.id] = getDefaultActionsForPermission(p.id);
+                } else {
+                    newIds.delete(p.id);
+                    delete newActions[p.id];
+                }
+            });
+            return { ...r, permissionIds: Array.from(newIds), permissionActions: newActions };
         }));
     };
 
@@ -257,70 +354,25 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
         ));
     };
 
-    const handleCreateRole = (data: { id?: string; name: string; description: string; permissions?: { view: boolean; add: boolean; edit: boolean; delete: boolean } }) => {
-        const calculatePermissionIds = (perms: { view: boolean; add: boolean; edit: boolean; delete: boolean }) => {
-            const initialPerms = new Set<string>();
-            
-            const anyChecked = perms.view || perms.add || perms.edit || perms.delete;
-            if (!anyChecked) return [];
-
-            // 1. Navigation baseline: Give access to all navigation containers if any action is enabled
-            ALL_PERMISSIONS_LIST.forEach(p => {
-                if (p.category === 'pages' || p.category === 'tabs' || p.category === 'sections') {
-                    initialPerms.add(p.id);
-                }
-            });
-
-            // Keywords for strict action mapping
-            const VIEW_K = ['cols', 'filters', 'album', 'preview', 'expand', 'print', 'dash'];
-            const ADD_K = ['add', 'bulk_ul', 'generate', 'create'];
-            const EDIT_K = ['edit', 'config', 'save', 'update', 'reset', 'lock', 'subjects', 'allocate', 'archive', 'unarchive'];
-            const DELETE_K = ['delete', 'remove', 'trash', 'clear'];
-
-            if (perms.view) {
-                ALL_PERMISSIONS_LIST.forEach(p => { if (VIEW_K.some(k => p.id.includes(k))) initialPerms.add(p.id); });
-            }
-            if (perms.add) {
-                ALL_PERMISSIONS_LIST.forEach(p => { if (ADD_K.some(k => p.id.includes(k))) initialPerms.add(p.id); });
-            }
-            if (perms.edit) {
-                ALL_PERMISSIONS_LIST.forEach(p => { if (EDIT_K.some(k => p.id.includes(k))) initialPerms.add(p.id); });
-            }
-            if (perms.delete) {
-                ALL_PERMISSIONS_LIST.forEach(p => { if (DELETE_K.some(k => p.id.includes(k))) initialPerms.add(p.id); });
-            }
-
-            return Array.from(initialPerms);
-        };
-
+    const handleCreateRole = (data: { id?: string; name: string; description: string }) => {
         if (modalState.mode === 'edit' && data.id) {
-            setRoles(prev => prev.map(r => {
-                if (r.id === data.id) {
-                    const updatedRole = { ...r, name: formatRoleName(data.name), description: data.description };
-                    if (data.permissions) {
-                        updatedRole.permissionIds = calculatePermissionIds(data.permissions);
-                    }
-                    return updatedRole;
-                }
-                return r;
-            }));
+            setRoles(prev => prev.map(r =>
+                r.id !== data.id ? r : { ...r, name: formatRoleName(data.name), description: data.description }
+            ));
             showToast(`Role "${data.name}" updated.`, 'success');
             setModalState({ mode: null, role: null });
             return;
         }
-
-        const initialPermissionIds = data.permissions ? calculatePermissionIds(data.permissions) : [];
-
         const newRole: Role = {
             id: `role_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             name: formatRoleName(data.name),
             description: data.description,
-            permissionIds: initialPermissionIds
+            permissionIds: [],
+            permissionActions: undefined,
         };
-        
         setRoles(prev => [...prev, newRole]);
         setSelectedRoleId(newRole.id);
-        showToast(`Role "${newRole.name}" created.`, 'success');
+        showToast(`Role "${newRole.name}" created. Assign permissions in the panel.`, 'success');
         setModalState({ mode: null, role: null });
     };
 
@@ -347,50 +399,80 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
     const canEditRole = isSuperAdmin || permissions.has('icon:role:edit');
     const canDeleteRole = isSuperAdmin || permissions.has('icon:role:delete');
 
+    const actionLabels: Record<ActionType, string> = { view: 'View', add: 'Add', edit: 'Edit', delete: 'Delete' };
+    const actionColors: Record<ActionType, string> = {
+        view: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+        add: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+        edit: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+        delete: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    };
+
     const renderPermissionCard = (perm: Permission, isNested: boolean = false) => {
         const isChecked = activePermissionIds.has(perm.id);
         const isSuper = activeRole?.id === 'role_super_admin' || !canEditRole;
         const children = ALL_PERMISSIONS_LIST.filter(p => p.parentId === perm.id);
         const hasChildren = children.length > 0;
         const isExpanded = expandedPermissionIds.has(perm.id);
+        const actions = getActionsForPermission(perm.id);
+        const allActions: ActionType[] = ['view', 'edit', 'add', 'delete'];
 
         return (
-            <div key={perm.id} className={`${isNested ? 'ml-4 mt-2' : ''}`}>
+            <div key={perm.id} className={isNested ? 'ml-4 mt-2' : ''}>
                 <div 
-                    onClick={() => handleTogglePermission(perm.id)}
-                    className={`group relative p-4 rounded-xl border-2 transition-all select-none ${
+                    onClick={() => !isSuper && handleTogglePermission(perm.id)}
+                    className={`group relative p-4 rounded-xl border transition-all select-none ${
                         isChecked
-                            ? 'bg-white dark:bg-dark-surface border-emerald-500 shadow-md'
-                            : 'bg-white dark:bg-dark-surface border-transparent hover:border-emerald-200 opacity-70'
+                            ? 'bg-white dark:bg-dark-surface border-emerald-500/60 shadow-sm ring-1 ring-emerald-500/20'
+                            : 'bg-white/80 dark:bg-dark-surface/80 border-gray-200 dark:border-dark-border hover:border-emerald-300 dark:hover:border-emerald-700/50 opacity-80'
                     } ${isSuper ? 'cursor-default' : 'cursor-pointer'}`}
                 >
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-bold uppercase text-emerald-600 tracking-widest">{perm.resource}</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">{perm.resource}</span>
                                 {hasChildren && (
                                     <button 
                                         onClick={(e) => toggleExpand(e, perm.id)}
                                         className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center"
                                     >
-                                        <span className={`material-symbols-outlined text-sm transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-                                            keyboard_arrow_down
-                                        </span>
+                                        <span className={`material-symbols-outlined text-sm transition-transform ${isExpanded ? 'rotate-180' : ''}`}>keyboard_arrow_down</span>
                                     </button>
                                 )}
                             </div>
-                            <p className="font-bold text-sm text-logip-text-header dark:text-dark-text-primary mt-1">{perm.name}</p>
-                            <p className="text-[11px] text-logip-text-subtle dark:text-dark-text-secondary mt-1">{perm.description}</p>
+                            <p className="font-semibold text-sm text-logip-text-header dark:text-dark-text-primary mt-1">{perm.name}</p>
+                            <p className="text-xs text-logip-text-subtle dark:text-dark-text-secondary mt-0.5">{perm.description}</p>
+                            {isChecked && !isSuper && (
+                                <div className="flex flex-nowrap gap-1 mt-3 overflow-x-auto overflow-y-hidden min-h-[28px]" onClick={e => e.stopPropagation()}>
+                                    {allActions.map(action => (
+                                        <label key={action} className={`inline-flex items-center gap-1.5 px-1.5 py-1 rounded-md text-[9px] font-medium cursor-pointer whitespace-nowrap flex-shrink-0 ${actionColors[action]}`}>
+                                            <span className="relative flex items-center justify-center flex-shrink-0">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={actions[action]}
+                                                    onChange={e => handleSetPermissionAction(perm.id, action, e.target.checked)}
+                                                    className="peer h-4 w-4 cursor-pointer appearance-none rounded border-2 border-gray-300 dark:border-gray-600 transition-all checked:bg-logip-primary checked:border-logip-primary dark:checked:bg-logip-primary focus:ring-2 focus:ring-logip-primary/30 focus:ring-offset-0"
+                                                />
+                                                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100 pointer-events-none">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor" stroke="currentColor" strokeWidth="1">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                            </span>
+                                            {actionLabels[action]}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            isChecked ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-300'
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            isChecked ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-300 dark:border-gray-600'
                         }`}>
-                            {isChecked && <span className="material-symbols-outlined text-[14px]">done</span>}
+                            {isChecked && <span className="material-symbols-outlined text-sm">check</span>}
                         </div>
                     </div>
                 </div>
                 {isExpanded && hasChildren && (
-                    <div className="grid grid-cols-1 gap-2 border-l-2 border-emerald-100 dark:border-emerald-900/30 ml-2 pl-2">
+                    <div className="grid grid-cols-1 gap-2 border-l-2 border-emerald-100 dark:border-emerald-900/30 ml-2 pl-2 mt-2">
                         {children.map(child => renderPermissionCard(child, true))}
                     </div>
                 )}
@@ -402,26 +484,26 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
         <div className="p-4 sm:p-6 lg:p-8 h-full flex flex-col gap-6 animate-fadeIn">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-logip-text-header dark:text-dark-text-primary">Roles & Permissions</h2>
-                    <p className="text-logip-text-subtle dark:text-dark-text-secondary mt-1">Configure access for Admission Officers and Admins.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-logip-text-header dark:text-dark-text-primary tracking-tight">Roles & Permissions</h2>
+                    <p className="text-logip-text-subtle dark:text-dark-text-secondary mt-1.5 text-sm">Configure access so users only see pages, tabs, sections, buttons and icons assigned to them. Assign view, add, edit, or delete per resource.</p>
                 </div>
                 {canAddRole && (
                     <button 
                         onClick={() => setModalState({ mode: 'add', role: null })}
-                        className="flex items-center justify-center gap-2 px-4 py-2 text-base bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md transform active:scale-95"
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
                     >
-                        <span className="material-symbols-outlined">add</span>
+                        <span className="material-symbols-outlined text-xl">add</span>
                         New Role
                     </button>
                 )}
             </div>
 
             <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
-                <aside className="w-full lg:w-80 flex-shrink-0 flex flex-col bg-white dark:bg-dark-surface rounded-xl border border-logip-border dark:border-dark-border overflow-hidden shadow-sm">
-                    <div className="p-4 border-b border-logip-border dark:border-dark-border bg-gray-50 dark:bg-white/5">
-                        <h3 className="font-bold text-logip-text-header dark:text-dark-text-primary uppercase tracking-wider text-xs">Security Profiles</h3>
+                <aside className="w-full lg:w-72 flex-shrink-0 flex flex-col bg-white dark:bg-dark-surface rounded-2xl border border-logip-border dark:border-dark-border overflow-hidden shadow-sm">
+                    <div className="p-4 border-b border-logip-border dark:border-dark-border bg-gradient-to-b from-gray-50 to-white dark:from-white/5 dark:to-transparent">
+                        <h3 className="font-bold text-logip-text-header dark:text-dark-text-primary uppercase tracking-wider text-xs text-gray-500 dark:text-gray-400">Security Profiles</h3>
                     </div>
-                    <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-1">
+                    <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-0.5">
                         {roles.map(role => (
                             <div
                                 key={role.id}
@@ -429,34 +511,23 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
                                 tabIndex={0}
                                 onClick={() => setSelectedRoleId(role.id)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedRoleId(role.id); } }}
-                                className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-all cursor-pointer ${
+                                className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-all cursor-pointer ${
                                     selectedRoleId === role.id 
-                                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-800/30' 
-                                        : 'hover:bg-gray-50 dark:hover:bg-dark-border text-logip-text-body dark:text-dark-text-secondary'
+                                        ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30' 
+                                        : 'hover:bg-gray-50 dark:hover:bg-dark-border/50 text-logip-text-body dark:text-dark-text-secondary'
                                 }`}
                             >
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-2 h-2 rounded-full ${selectedRoleId === role.id ? 'bg-emerald-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                                    <span className="font-semibold text-sm">{role.name}</span>
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${selectedRoleId === role.id ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                                    <span className="font-semibold text-sm truncate">{role.name}</span>
                                 </div>
                                 {role.id !== 'role_super_admin' && selectedRoleId === role.id && (
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-0.5 flex-shrink-0">
                                         {canEditRole && (
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); setModalState({ mode: 'edit', role }); }}
-                                                className="material-symbols-outlined text-lg text-logip-primary hover:text-logip-primary-hover p-1 hover:bg-logip-primary/10 rounded-full transition-colors"
-                                                title="Edit Role metadata"
-                                            >
-                                                edit
-                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); setModalState({ mode: 'edit', role }); }} className="material-symbols-outlined text-lg text-logip-primary hover:bg-logip-primary/10 p-1.5 rounded-lg transition-colors" title="Edit role">edit</button>
                                         )}
                                         {canDeleteRole && (
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); setModalState({ mode: 'delete', role }); }}
-                                                className="material-symbols-outlined text-lg text-red-500 hover:text-red-700 p-1 hover:bg-red-900/20 rounded-full transition-colors"
-                                            >
-                                                delete
-                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); setModalState({ mode: 'delete', role }); }} className="material-symbols-outlined text-lg text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors" title="Delete role">delete</button>
                                         )}
                                     </div>
                                 )}
@@ -465,73 +536,58 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
                     </div>
                 </aside>
 
-                <main className="flex-1 flex flex-col bg-white dark:bg-dark-surface rounded-xl border border-logip-border dark:border-dark-border shadow-sm overflow-hidden">
+                <main className="flex-1 flex flex-col bg-white dark:bg-dark-surface rounded-2xl border border-logip-border dark:border-dark-border shadow-sm overflow-hidden">
                     {activeRole ? (
                         <>
-                            <div className="p-6 border-b border-logip-border dark:border-dark-border bg-gray-50 dark:bg-white/5">
+                            <div className="p-6 border-b border-logip-border dark:border-dark-border bg-gradient-to-b from-gray-50/80 to-white dark:from-white/5 dark:to-transparent">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex-1">
-                                        <input 
-                                            value={activeRole.name}
-                                            disabled={activeRole.id === 'role_super_admin' || !canEditRole}
-                                            onChange={(e) => handleSaveRoleMeta(e.target.value, activeRole.description)}
-                                            className="text-xl font-bold text-logip-text-header dark:text-dark-text-primary bg-transparent border-none focus:ring-0 w-full p-0 disabled:opacity-80"
-                                            placeholder="Role name..."
-                                        />
-                                        <textarea 
-                                            value={activeRole.description}
-                                            disabled={activeRole.id === 'role_super_admin' || !canEditRole}
-                                            onChange={(e) => handleSaveRoleMeta(activeRole.name, e.target.value)}
-                                            className="mt-1 text-sm text-logip-text-subtle dark:text-dark-text-secondary bg-transparent border-none focus:ring-0 w-full p-0 resize-none h-12 no-scrollbar disabled:opacity-80"
-                                            placeholder="Role scope description..."
-                                        />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xl font-bold text-logip-text-header dark:text-dark-text-primary w-full p-0">{activeRole.name}</p>
+                                        <p className="mt-1 text-sm text-logip-text-subtle dark:text-dark-text-secondary w-full min-h-[2.5rem]">{activeRole.description || '—'}</p>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-right hidden sm:block">
-                                            <p className="text-sm font-bold text-logip-text-header dark:text-dark-text-primary">
-                                                {activePermissionIds.size}
-                                            </p>
-                                            <p className="text-[10px] uppercase font-bold text-logip-text-subtle">Privileges Granted</p>
+                                    <div className="flex items-center gap-3 flex-shrink-0">
+                                        <div className="text-right">
+                                            <p className="text-2xl font-bold text-logip-text-header dark:text-dark-text-primary tabular-nums">{activePermissionIds.size}</p>
+                                            <p className="text-[10px] uppercase font-semibold text-logip-text-subtle tracking-wider">Privileges</p>
                                         </div>
-                                        <div className="w-12 h-12 rounded-xl bg-emerald-500 dark:bg-emerald-600 text-white flex items-center justify-center shadow-lg">
+                                        <div className="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md">
                                             <span className="material-symbols-outlined text-3xl">shield</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="px-6 py-4 border-b border-logip-border dark:border-dark-border bg-white dark:bg-dark-surface flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
-                                <div className="flex items-center gap-2">
-                                    <CategoryTab id="pages" label="Pages" icon="auto_stories" active={activeCategory === 'pages'} onClick={() => setActiveCategory('pages')} count={ALL_PERMISSIONS_LIST.filter(p => p.category === 'pages' && !p.parentId).length} />
-                                    <CategoryTab id="tabs" label="Tabs" icon="tab" active={activeCategory === 'tabs'} onClick={() => setActiveCategory('tabs')} count={ALL_PERMISSIONS_LIST.filter(p => p.category === 'tabs' && !p.parentId).length} />
-                                    <CategoryTab id="sections" label="Sections" icon="view_quilt" active={activeCategory === 'sections'} onClick={() => setActiveCategory('sections')} count={ALL_PERMISSIONS_LIST.filter(p => p.category === 'sections' && !p.parentId).length} />
-                                    <CategoryTab id="buttons" label="Buttons" icon="buttons_alt" active={activeCategory === 'buttons'} onClick={() => setActiveCategory('buttons')} count={ALL_PERMISSIONS_LIST.filter(p => p.category === 'buttons' && !p.parentId).length} />
-                                    <CategoryTab id="icons" label="Icons" icon="token" active={activeCategory === 'icons'} onClick={() => setActiveCategory('icons')} count={ALL_PERMISSIONS_LIST.filter(p => p.category === 'icons' && !p.parentId).length} />
+                            <div className="px-4 py-3 border-b border-logip-border dark:border-dark-border flex items-center justify-between gap-4 overflow-x-auto no-scrollbar bg-white dark:bg-dark-surface">
+                                <div className="flex items-center gap-1.5">
+                                    <CategoryTab id="pages" label="Pages" icon="auto_stories" active={activeCategory === 'pages'} onClick={() => setActiveCategory('pages')} count={getRootCountForCategory(ALL_PERMISSIONS_LIST, 'pages')} />
+                                    <CategoryTab id="tabs" label="Tabs" icon="tab" active={activeCategory === 'tabs'} onClick={() => setActiveCategory('tabs')} count={getRootCountForCategory(ALL_PERMISSIONS_LIST, 'tabs')} />
+                                    <CategoryTab id="sections" label="Sections" icon="view_quilt" active={activeCategory === 'sections'} onClick={() => setActiveCategory('sections')} count={getRootCountForCategory(ALL_PERMISSIONS_LIST, 'sections')} />
+                                    <CategoryTab id="buttons" label="Buttons" icon="buttons_alt" active={activeCategory === 'buttons'} onClick={() => setActiveCategory('buttons')} count={getRootCountForCategory(ALL_PERMISSIONS_LIST, 'buttons')} />
+                                    <CategoryTab id="icons" label="Icons" icon="token" active={activeCategory === 'icons'} onClick={() => setActiveCategory('icons')} count={getRootCountForCategory(ALL_PERMISSIONS_LIST, 'icons')} />
                                 </div>
+                                {activeRole.id !== 'role_super_admin' && canEditRole && (
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <button onClick={() => handleToggleCategory(activeCategory, true)} className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">Enable all</button>
+                                        <span className="text-gray-300 dark:text-gray-600">|</span>
+                                        <button onClick={() => handleToggleCategory(activeCategory, false)} className="font-semibold text-red-500 hover:underline">Disable all</button>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-black/10 no-scrollbar">
-                                <div className="mb-6 flex items-center justify-between">
-                                    <h4 className="font-bold text-logip-text-header dark:text-dark-text-primary flex items-center gap-2">
-                                        {activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Permissions
-                                    </h4>
-                                    {activeRole.id !== 'role_super_admin' && canEditRole && (
-                                        <div className="flex items-center gap-4">
-                                            <button onClick={() => handleToggleCategory(activeCategory, true)} className="text-xs font-bold text-emerald-600 hover:underline">Enable All</button>
-                                            <button onClick={() => handleToggleCategory(activeCategory, false)} className="text-xs font-bold text-red-500 hover:underline">Disable All</button>
-                                        </div>
-                                    )}
-                                </div>
-
+                            <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50 dark:bg-black/10 no-scrollbar">
+                                <h4 className="mb-4 font-semibold text-logip-text-header dark:text-dark-text-primary text-sm uppercase tracking-wider">
+                                    {activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} — assign access and actions (View / Add / Edit / Delete)
+                                </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {filteredPermissions.map(perm => renderPermissionCard(perm))}
                                 </div>
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-12 text-logip-text-subtle">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-12 text-logip-text-subtle dark:text-dark-text-secondary">
                             <span className="material-symbols-outlined text-6xl opacity-30">admin_panel_settings</span>
-                            <h3 className="mt-4 text-xl font-bold">Select Role to Manage Access</h3>
+                            <h3 className="mt-4 text-xl font-bold text-logip-text-header dark:text-dark-text-primary">Select a role to manage access</h3>
+                            <p className="mt-2 text-sm">Users only see pages, tabs, sections, buttons and icons assigned to their role.</p>
                         </div>
                     )}
                 </main>
@@ -559,47 +615,27 @@ const RolesAndPermissionsPage: React.FC<RolesAndPermissionsPageProps> = ({ permi
 const RoleFormModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (data: { id?: string; name: string; description: string; permissions?: { view: boolean; add: boolean; edit: boolean; delete: boolean } }) => void;
+    onSave: (data: { id?: string; name: string; description: string }) => void;
     role: Role | null;
     mode: 'add' | 'edit';
 }> = ({ isOpen, onClose, onSave, role, mode }) => {
     const [name, setName] = useState(role?.name || '');
     const [description, setDescription] = useState(role?.description || '');
 
-    const initialPermissions = useMemo(() => {
-        if (!role || mode === 'add') {
-            return { view: false, add: false, edit: false, delete: false };
-        }
-        const ids = role.permissionIds || [];
-        
-        // Accurate derivation logic based on functional keywords
-        return {
-            view: ids.some(id => ['cols', 'filters', 'album', 'preview', 'expand', 'print', 'dash'].some(k => id.includes(k))),
-            add: ids.some(id => ['add', 'bulk_ul', 'generate', 'create'].some(k => id.includes(k))),
-            edit: ids.some(id => ['edit', 'config', 'save', 'update', 'reset', 'lock', 'subjects', 'allocate', 'archive', 'unarchive'].some(k => id.includes(k))),
-            delete: ids.some(id => ['delete', 'remove', 'trash', 'clear'].some(k => id.includes(k)))
-        };
-    }, [role, mode]);
-
-    const [permissions, setPermissions] = useState(initialPermissions);
-
     useEffect(() => {
         if (isOpen) {
             setName(role?.name || '');
             setDescription(role?.description || '');
-            setPermissions(initialPermissions);
         }
-    }, [isOpen, role, initialPermissions]);
-
-    const isAnyPermissionChecked = useMemo(() => Object.values(permissions).some(v => v), [permissions]);
+    }, [isOpen, role?.name, role?.description]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) return;
         if (mode === 'edit' && role) {
-            onSave({ id: role.id, name, description, permissions });
+            onSave({ id: role.id, name, description });
         } else {
-            onSave({ name, description, permissions });
+            onSave({ name, description });
         }
     };
 
@@ -613,27 +649,6 @@ const RoleFormModal: React.FC<{
                 <div>
                     <label className="block text-sm font-semibold mb-1.5 dark:text-gray-200">Description</label>
                     <AdminTextarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Briefly define the purpose of this role..." />
-                </div>
-
-                <div className="pt-2 border-t border-logip-border dark:border-dark-border">
-                    <label className="block text-sm font-bold mb-4 uppercase tracking-wider text-emerald-600 dark:text-emerald-400">INITIAL ACCESS RIGHTS</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="flex items-center p-3 rounded-lg border border-logip-border dark:border-dark-border bg-gray-50 dark:bg-dark-bg/50">
-                            <AdminCheckbox label="View" checked={permissions.view} onChange={e => setPermissions(p => ({ ...p, view: e.target.checked }))} />
-                        </div>
-                        <div className="flex items-center p-3 rounded-lg border border-logip-border dark:border-dark-border bg-gray-50 dark:bg-dark-bg/50">
-                            <AdminCheckbox label="Add / Create" checked={permissions.add} onChange={e => setPermissions(p => ({ ...p, add: e.target.checked }))} />
-                        </div>
-                        <div className="flex items-center p-3 rounded-lg border border-logip-border dark:border-dark-border bg-gray-50 dark:bg-dark-bg/50">
-                            <AdminCheckbox label="Edit / Update" checked={permissions.edit} onChange={e => setPermissions(p => ({ ...p, edit: e.target.checked }))} />
-                        </div>
-                        <div className="flex items-center p-3 rounded-lg border border-logip-border dark:border-dark-border bg-gray-50 dark:bg-dark-bg/50">
-                            <AdminCheckbox label="Delete / Remove" checked={permissions.delete} onChange={e => setPermissions(p => ({ ...p, delete: e.target.checked }))} />
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-logip-text-subtle dark:text-gray-500 mt-3 italic">
-                        * Note: Baseline view access is implicitly granted when any action right is selected.
-                    </p>
                 </div>
 
                 <div className="pt-4 flex justify-end gap-4">

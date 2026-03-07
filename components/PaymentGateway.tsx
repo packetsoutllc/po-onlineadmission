@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Student } from './StudentDetails';
 import { setLocalStorageAndNotify } from '../utils/storage';
+import { safeJsonParse } from '../utils/security';
 import Icon from './admin/shared/Icons';
 import Modal from './Modal';
 import { Select } from './FormControls';
@@ -61,12 +62,12 @@ function getMainApplicationNumber(student: Student): string {
         const key = `applicationData_${student.schoolId}_${student.indexNumber}`;
         const raw = localStorage.getItem(key);
         if (raw) {
-            const data = JSON.parse(raw);
+            const data = safeJsonParse<{ contactNumber?: string }>(raw, {});
             if (data.contactNumber && norm(data.contactNumber).length >= 10) return norm(data.contactNumber);
         }
         const smsKey = `smsNotificationNumber_${student.schoolId}_${student.indexNumber}`;
         const smsRaw = localStorage.getItem(smsKey);
-        if (smsRaw) return norm(JSON.parse(smsRaw));
+        if (smsRaw) return norm(safeJsonParse<string>(smsRaw, ''));
     } catch (_) {}
     return '';
 }
@@ -111,7 +112,12 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
             ],
             applicationList: ["Admission Documents", "AI Editing", "SMS Notifications"]
         };
-        return JSON.parse(raw);
+        return safeJsonParse(raw, {
+            voucherPrice: '50',
+            gatewayStatus: true,
+            gateways: [{ id: 'gw_1', label: 'Paystack (Primary)', enabled: true }],
+            applicationList: ["Admission Documents", "AI Editing", "SMS Notifications"]
+        });
     }, [student.schoolId, student.admissionId]);
 
     const activeGateways = useMemo(() => {
@@ -126,7 +132,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
         try {
             const raw = localStorage.getItem(key);
             if (!raw) return { allowOfficialEditRequests: true, autoApproveOfficialEdits: false };
-            const parsed = JSON.parse(raw);
+            const parsed = safeJsonParse<{ allowOfficialEditRequests?: boolean; autoApproveOfficialEdits?: boolean }>(raw, {});
             return {
                 allowOfficialEditRequests: parsed.allowOfficialEditRequests !== false,
                 autoApproveOfficialEdits: !!parsed.autoApproveOfficialEdits,
@@ -179,12 +185,13 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
             
             let credentials = null;
             if (existingCredentialsRaw) {
-                credentials = JSON.parse(existingCredentialsRaw);
-            } else {
+                credentials = safeJsonParse<{ serialNumber?: string; pin?: string }>(existingCredentialsRaw, null);
+            }
+            if (!credentials || !credentials.serialNumber || !credentials.pin) {
                 // Generation logic for ANY successful payment if missing
                 const admissionSettingsKey = `admissionSettings_${student.schoolId}_${student.admissionId}`;
                 const settingsRaw = localStorage.getItem(admissionSettingsKey);
-                const settings: Partial<AdmissionSettings> = settingsRaw ? JSON.parse(settingsRaw) : {};
+                const settings: Partial<AdmissionSettings> = safeJsonParse<Partial<AdmissionSettings>>(settingsRaw, {});
 
                 const serialNumber = generateCredential(settings.serialNumberLength || 10, settings.serialNumberFormat);
                 const pin = generateCredential(settings.pinLength || 5, settings.pinFormat);
@@ -220,7 +227,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
             
             // Sync status with AdminStudent list
             const studentsRaw = localStorage.getItem('admin_students');
-            let studentsList: AdminStudent[] = studentsRaw ? JSON.parse(studentsRaw) : [];
+            let studentsList: AdminStudent[] = safeJsonParse<AdminStudent[]>(studentsRaw, []);
             
             const studentIndex = studentsList.findIndex(s => s.indexNumber === student.indexNumber && s.schoolId === student.schoolId);
             
@@ -478,7 +485,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                             if (officialEditSettings.autoApproveOfficialEdits) {
                                 try {
                                     const studentsRaw = localStorage.getItem('admin_students');
-                                    const list: AdminStudent[] = studentsRaw ? JSON.parse(studentsRaw) : [];
+                                    const list: AdminStudent[] = safeJsonParse<AdminStudent[]>(studentsRaw, []);
                                     const idx = list.findIndex(
                                         (st) => st.indexNumber === s.indexNumber && st.schoolId === s.schoolId && st.admissionId === s.admissionId
                                     );

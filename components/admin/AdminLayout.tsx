@@ -8,12 +8,13 @@ import StudentDetails, { Student, ApplicationStatus } from '../StudentDetails';
 import { AdminStudent, initialAdminStudents, StudentStatus } from './pages/StudentsPage';
 import { ToastProvider, useToast } from './shared/ToastContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { INITIAL_ROLES, Role } from './pages/RolesAndPermissionsPage';
+import { INITIAL_ROLES, Role, getActionsForRole, PermissionActions } from './pages/RolesAndPermissionsPage';
 import { initialClasses, Class } from './pages/ClassesPage';
 import { initialProgrammes, Programme } from './pages/ProgrammesPage';
 import { Dormitory, initialDormitories } from './shared/dormitoryData';
 import { Conversation, initialConversations } from './pages/MessagesPage';
 import { logActivity } from '../../utils/storage';
+import { safeJsonParse } from '../../utils/security';
 
 export interface AdminUser {
     email: string;
@@ -98,19 +99,20 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
     // --- ACTIVITY LOGGING: Navigation ---
     useEffect(() => {
         logActivity(
-            { name: adminUser.name, avatar: adminUser.avatar || '', type: 'admin' },
+            { name: adminUser.name, avatar: adminUser.avatar || '', type: 'admin', email: adminUser.email, roleId: adminUser.roleId },
             'navigated to',
             'navigation',
             `${activePage} Page`,
             adminUser.schoolId
         );
-    }, [activePage, adminUser.name, adminUser.avatar, adminUser.schoolId]);
+    }, [activePage, adminUser.name, adminUser.avatar, adminUser.email, adminUser.roleId, adminUser.schoolId]);
 
+    const currentRole = useMemo(() => allRoles.find(r => r.id === adminUser.roleId), [adminUser.roleId, allRoles]);
     const permissions: Set<string> = useMemo(() => {
-        const role = allRoles.find(r => r.id === adminUser.roleId);
-        const pIds = Array.isArray(role?.permissionIds) ? role.permissionIds : [];
+        const pIds = Array.isArray(currentRole?.permissionIds) ? currentRole.permissionIds : [];
         return new Set(pIds);
-    }, [adminUser.roleId, allRoles]);
+    }, [currentRole]);
+    const getActions = useCallback((permId: string): PermissionActions => getActionsForRole(currentRole, permId), [currentRole]);
 
     const visiblePageIds = useMemo(() => {
         return Object.keys(PAGE_PERMISSIONS_MAP).filter(id => 
@@ -128,7 +130,7 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === 'admin_users') {
                 try {
-                    const users = JSON.parse(e.newValue || '[]');
+                    const users = safeJsonParse<AdminUser[]>(e.newValue, []);
                     const me = users.find((u: any) => u.email === adminUser.email);
                     if (me && me.roleId !== adminUser.roleId) {
                         setAdminUser(prev => prev ? ({ ...prev, roleId: me.roleId }) : null);
@@ -266,6 +268,7 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
                             setAdminUser={setAdminUser} 
                             onExitAdmin={onExitAdmin} 
                             permissions={permissions}
+                            getActions={getActions}
                             isSuperAdmin={isSuperAdmin}
                         />
                     </div>

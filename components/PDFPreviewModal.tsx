@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { isSafeResourceUrl } from '../utils/security';
 
 interface PDFPreviewModalProps {
     isOpen: boolean;
@@ -14,24 +15,26 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({ isOpen, onClose, pdfD
     useEffect(() => {
         let url = '';
         const generateUrl = async () => {
-             try {
-                // If it's already a http/blob url, use it. If data uri, convert.
+            if (!isSafeResourceUrl(pdfData)) {
+                console.warn('PDFPreviewModal: unsafe pdfData URL scheme');
+                return;
+            }
+            try {
+                // If it's already a http/blob url, use it. If data uri, use directly or convert to blob.
                 if (pdfData.startsWith('http') || pdfData.startsWith('blob')) {
                     setBlobUrl(pdfData);
                     return;
                 }
-                
                 const res = await fetch(pdfData);
                 const blob = await res.blob();
                 url = URL.createObjectURL(blob);
                 setBlobUrl(url);
             } catch (e) {
                 console.error("Failed to create blob url", e);
-                // Fallback to data URI if blob creation fails
-                setBlobUrl(pdfData);
+                if (pdfData.startsWith('data:')) setBlobUrl(pdfData);
             }
         };
-        
+
         if (isOpen && pdfData) {
             generateUrl();
         }

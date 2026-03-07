@@ -6,6 +6,8 @@ import { printTable } from './PrintService';
 import ImagePreviewModal from '../../shared/ImagePreviewModal';
 import { initialClasses } from '../pages/ClassesPage';
 import Icon from './Icons';
+import { safeJsonParse } from '../../../utils/security';
+import { downloadFilename } from '../../../utils/storage';
 
 interface MemberListModalProps {
     isOpen: boolean;
@@ -27,7 +29,7 @@ const getStudentAvatarUrl = (indexNumber: string, gender: 'Male' | 'Female', sch
     try {
         const raw = localStorage.getItem(key);
         if (raw) {
-            const parsed = JSON.parse(raw);
+            const parsed = safeJsonParse<{ passportPhotograph?: { data?: string }; data?: string }>(raw, {});
             if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
             if (parsed.data) return parsed.data;
         }
@@ -113,7 +115,11 @@ const MemberListModal: React.FC<MemberListModalProps> = ({ isOpen, onClose, titl
         const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
-        const fileName = `${title.replace(/\s+/g, '_')}_export.csv`;
+        const schoolName = selectedSchool?.name ?? '';
+        const admissionType = listMeta ?? title;
+        const fileName = schoolName && admissionType
+            ? downloadFilename(schoolName, admissionType, 'csv', 'export')
+            : `${title.replace(/\s+/g, '_')}_export.csv`;
         link.setAttribute("href", encodedUri);
         link.setAttribute("download", fileName);
         document.body.appendChild(link);

@@ -16,6 +16,7 @@ import SortableHeader from '../shared/SortableHeader';
 import { AdmissionSettings } from './SecuritySettingsTab';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { AdminUser } from '../AdminLayout';
+import { safeJsonParse } from '../../../utils/security';
 
 // --- TYPE DEFINITIONS ---
 export interface Transaction {
@@ -223,11 +224,12 @@ interface TransactionsPageProps {
     students: AdminStudent[];
     setStudents: React.Dispatch<React.SetStateAction<AdminStudent[]>>;
     permissions: Set<string>;
+    getActions: (permId: string) => { view: boolean; add: boolean; edit: boolean; delete: boolean };
     isSuperAdmin: boolean;
-    adminUser: AdminUser; // Added adminUser prop
+    adminUser: AdminUser;
 }
 
-const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, selectedAdmission, students, setStudents, permissions, isSuperAdmin, adminUser }) => {
+const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, selectedAdmission, students, setStudents, permissions, getActions, isSuperAdmin, adminUser }) => {
     const userPrefix = adminUser.email;
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -246,7 +248,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
         if (!selectedSchool || !selectedAdmission) return { docAccessFeeEnabled: false };
         const key = `financialsSettings_${selectedSchool.id}_${selectedAdmission.id}`;
         const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : { docAccessFeeEnabled: false };
+        return safeJsonParse(raw, { docAccessFeeEnabled: false });
     }, [selectedSchool, selectedAdmission]);
 
     // FIX: Added explicit return type Transaction[] to useMemo to fix inference errors.
@@ -254,11 +256,11 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
         if (!selectedSchool || !selectedAdmission) return [];
         const financialsKey = `financialsSettings_${selectedSchool.id}_${selectedAdmission.id}`;
         const financialsRaw = localStorage.getItem(financialsKey);
-        const financials = financialsRaw ? JSON.parse(financialsRaw) : { gatewayStatus: true, requirementPolicy: 'all', targetedStudents: [], exemptedStudents: [] };
+        const financials = safeJsonParse(financialsRaw, { gatewayStatus: true, requirementPolicy: 'all', targetedStudents: [], exemptedStudents: [] });
         
         return students.map(student => {
             const credentialsRaw = localStorage.getItem(`credentials_${selectedSchool.id}_${student.indexNumber}`);
-            const credentials = credentialsRaw ? JSON.parse(credentialsRaw) : { serialNumber: null, pin: null };
+            const credentials = safeJsonParse(credentialsRaw, { serialNumber: null, pin: null });
             
             // App Fee Status logic
             let paymentRequired = financials.gatewayStatus;
@@ -274,7 +276,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
             // Doc Fee Status logic
             const docUnlockStatusKey = `paymentStatus_docAccess_${selectedSchool.id}_${student.indexNumber}`;
             const docAccessPaidRaw = localStorage.getItem(docUnlockStatusKey);
-            const isDocPaid = docAccessPaidRaw ? JSON.parse(docAccessPaidRaw).paid : false;
+            const isDocPaid = safeJsonParse<{ paid?: boolean }>(docAccessPaidRaw, {}).paid ?? false;
 
             // FIX: Explicitly typed return object to match Transaction interface.
             return {
@@ -349,7 +351,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
                     const credentialsKey = `credentials_${selectedSchool?.id}_${s.indexNumber}`;
                     const admissionSettingsKey = `admissionSettings_${s.schoolId}_${s.admissionId}`;
                     const settingsRaw = localStorage.getItem(admissionSettingsKey);
-                    const settings: Partial<AdmissionSettings> = settingsRaw ? JSON.parse(settingsRaw) : {};
+                    const settings: Partial<AdmissionSettings> = safeJsonParse(settingsRaw, {});
                     const serialNumber = updatedData.serialNumber?.toUpperCase() || generateCredential(settings.serialNumberLength || 10, settings.serialNumberFormat);
                     const pin = updatedData.pin?.toUpperCase() || generateCredential(settings.pinLength || 5, settings.pinFormat);
                     
@@ -377,7 +379,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
         if (serialNumber !== undefined || pin !== undefined) {
              const credentialsKey = `credentials_${selectedSchool?.id}_${modalState.transaction.indexNumber}`;
              const credentialsRaw = localStorage.getItem(credentialsKey);
-             const credentials = credentialsRaw ? JSON.parse(credentialsRaw) : {};
+             const credentials = safeJsonParse(credentialsRaw, {});
              localStorage.setItem(credentialsKey, JSON.stringify({
                  serialNumber: serialNumber !== undefined ? serialNumber.toUpperCase() : credentials.serialNumber,
                  pin: pin !== undefined ? pin.toUpperCase() : credentials.pin
@@ -407,7 +409,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
         if (!student) return;
         const admissionSettingsKey = `admissionSettings_${student.schoolId}_${student.admissionId}`;
         const settingsRaw = localStorage.getItem(admissionSettingsKey);
-        const settings: Partial<AdmissionSettings> = settingsRaw ? JSON.parse(settingsRaw) : {};
+        const settings: Partial<AdmissionSettings> = safeJsonParse(settingsRaw, {});
         const newSerialNumber = generateCredential(settings.serialNumberLength || 10, settings.serialNumberFormat);
         const newPin = generateCredential(settings.pinLength || 5, settings.pinFormat);
         localStorage.setItem(`credentials_${selectedSchool.id}_${modalState.transaction.indexNumber}`, JSON.stringify({ serialNumber: newSerialNumber, pin: newPin }));
@@ -430,9 +432,9 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
         );
     }
     
-    const canEdit = isSuperAdmin || permissions.has('icon:tx:edit');
-    const canRegen = isSuperAdmin || permissions.has('icon:tx:regen');
-    const canDelete = isSuperAdmin || permissions.has('icon:tx:delete');
+    const canEdit = isSuperAdmin || (permissions.has('icon:tx:edit') && getActions('icon:tx:edit').edit);
+    const canRegen = isSuperAdmin || (permissions.has('icon:tx:regen') && getActions('icon:tx:regen').edit);
+    const canDelete = isSuperAdmin || (permissions.has('icon:tx:delete') && getActions('icon:tx:delete').delete);
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">
@@ -603,7 +605,7 @@ const EditTransactionForm: React.FC<{
     const handleGenerateMissing = () => {
         const admissionSettingsKey = `admissionSettings_${admission.schoolId}_${admission.id}`;
         const settingsRaw = localStorage.getItem(admissionSettingsKey);
-        const settings: Partial<AdmissionSettings> = settingsRaw ? JSON.parse(settingsRaw) : {};
+        const settings: Partial<AdmissionSettings> = safeJsonParse(settingsRaw, {});
         
         if (!serialNumber) setSerialNumber(generateCredential(settings.serialNumberLength || 10, settings.serialNumberFormat).toUpperCase());
         if (!pin) setPin(generateCredential(settings.pinLength || 5, settings.pinFormat).toUpperCase());

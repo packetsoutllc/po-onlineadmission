@@ -7,6 +7,8 @@ import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
 import VideoPreviewModal from './admin/shared/VideoPreviewModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import Icon from './admin/shared/Icons';
+import { logSecurityEvent } from './admin/shared/securityLogService';
+import { safeJsonParse } from '../utils/security';
 
 interface ApplicantLoginFormProps {
   student: Student;
@@ -29,8 +31,8 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
       const key = `notification_${type}_${student.schoolId}_${student.admissionId}`;
       const raw = localStorage.getItem(key);
       if (raw) {
-          const data = JSON.parse(raw);
-          if (isNotificationActive(data, student.admissionId, type, 'applicant_login')) return data;
+          const data = safeJsonParse(raw, null);
+          if (data && isNotificationActive(data, student.admissionId, type, 'applicant_login')) return data;
       }
       return null;
   };
@@ -58,7 +60,7 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
   const contactInfo = useMemo(() => {
     try {
         const admissionsRaw = localStorage.getItem('admin_admissions');
-        const admissions: Admission[] = admissionsRaw ? JSON.parse(admissionsRaw) : [];
+        const admissions: Admission[] = safeJsonParse<Admission[]>(admissionsRaw, []);
         const activeAdmission = admissions.find(a => a.id === student.admissionId);
         return { school: activeAdmission?.headOfSchoolNumber || '0244889791', it: activeAdmission?.headOfItNumber || '0243339546' };
     } catch (e) { return { school: '0244889791', it: '0243339546' }; }
@@ -67,7 +69,7 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
   const isSubmitted = useMemo(() => {
     try {
       const statusRaw = localStorage.getItem(`submissionStatus_${student.schoolId}_${student.indexNumber}`);
-      if (statusRaw) return JSON.parse(statusRaw).submitted === true;
+      if (statusRaw) return safeJsonParse<{ submitted?: boolean }>(statusRaw, {}).submitted === true;
     } catch (e) {}
     return false;
   }, [student.schoolId, student.indexNumber]);
@@ -78,7 +80,7 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
         try {
           const storedCredentialsRaw = localStorage.getItem(`credentials_${student.schoolId}_${student.indexNumber}`);
           if (storedCredentialsRaw) {
-            const storedCredentials = JSON.parse(storedCredentialsRaw);
+            const storedCredentials = safeJsonParse<{ serialNumber?: string; pin?: string }>(storedCredentialsRaw, {});
             setSerialNumber((storedCredentials.serialNumber || '').toUpperCase());
             setPin((storedCredentials.pin || '').toUpperCase());
           } else {
@@ -90,12 +92,12 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
         const todayStr = new Date().toISOString().split('T')[0];
         const logKey = `credential_retrieval_log_${student.schoolId}_${student.indexNumber}`;
         let retrievalLog = { date: '', count: 0 };
-        try { const storedLog = localStorage.getItem(logKey); if (storedLog) retrievalLog = JSON.parse(storedLog); } catch (e) {}
+        const storedLog = localStorage.getItem(logKey); if (storedLog) { const parsed = safeJsonParse<{ date?: string; count?: number }>(storedLog, {}); retrievalLog = { date: parsed?.date ?? '', count: typeof parsed?.count === 'number' ? parsed.count : 0 }; }
         if (retrievalLog.date === todayStr && retrievalLog.count >= 1) { setIsLimitModalOpen(true); setRetrieveCredentials(false); return; }
         setSerialNumber(''); setPin('');
         try {
           const smsNumberRaw = localStorage.getItem(`smsNotificationNumber_${student.schoolId}_${student.indexNumber}`);
-          const smsNumber = smsNumberRaw ? JSON.parse(smsNumberRaw) : null;
+          const smsNumber = safeJsonParse<string | null>(smsNumberRaw, null) || null;
           if (smsNumber) setInfoMessage(`Credentials have been resent via SMS to ${smsNumber}.`);
           else setInfoMessage('Application is submitted. Credentials sent via SMS.');
           localStorage.setItem(logKey, JSON.stringify({ date: todayStr, count: 1 }));
@@ -110,16 +112,30 @@ const ApplicantLoginForm: React.FC<ApplicantLoginFormProps> = ({ student, onLogi
     setError(''); setInfoMessage(''); setIsLoading(true);
     try {
         const storedCredentialsRaw = localStorage.getItem(`credentials_${student.schoolId}_${student.indexNumber}`);
-        if (!storedCredentialsRaw) { setError('Could not find credentials.'); setIsLoading(false); return; }
-        const storedCredentials = JSON.parse(storedCredentialsRaw);
-        
+        if (!storedCredentialsRaw) {
+            setError('Could not find credentials.');
+            logSecurityEvent('Invalid Credentials', `Applicant: ${student.indexNumber}`, 'Flagged', undefined, 'Could not find credentials.');
+            setIsLoading(false); return;
+        }
+        const storedCredentials = safeJsonParse<{ serialNumber?: string; pin?: string }>(storedCredentialsRaw, {});
+        if (!storedCredentials?.serialNumber || !storedCredentials?.pin) {
+            setError('Could not find credentials.');
+            logSecurityEvent('Invalid Credentials', `Applicant: ${student.indexNumber}`, 'Flagged', undefined, 'Credentials missing or invalid.');
+            setIsLoading(false); return;
+        }
         // Case-insensitive comparison
         if (storedCredentials.serialNumber.toUpperCase() === serialNumber.toUpperCase() && 
             storedCredentials.pin.toUpperCase() === pin.toUpperCase()) {
             localStorage.setItem(`student_login_timestamp_${student.schoolId}_${student.indexNumber}`, new Date().getTime().toString());
             onLoginSuccess();
-        } else setError('Invalid Serial Number or PIN.');
-    } catch (err) { setError('Unexpected error occurred.'); } finally { setIsLoading(false); }
+        } else {
+            setError('Invalid Serial Number or PIN.');
+            logSecurityEvent('Invalid Credentials', `Applicant: ${student.indexNumber}`, 'Flagged', undefined, 'Invalid Serial Number or PIN.');
+        }
+    } catch (err) {
+        setError('Unexpected error occurred.');
+        logSecurityEvent('Suspicious Activity', `Applicant: ${student.indexNumber}`, 'Flagged', undefined, 'Unexpected error during login.');
+    } finally { setIsLoading(false); }
   };
 
   return (

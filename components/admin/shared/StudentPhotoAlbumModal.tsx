@@ -10,6 +10,7 @@ import PDFPreviewModal from '../../PDFPreviewModal';
 import { printTable } from './PrintService';
 import { School, Admission } from '../pages/SettingsPage';
 import { AdminSelect } from './forms';
+import { safeJsonParse } from '../../../utils/security';
 
 interface StudentPhotoAlbumModalProps {
     isOpen: boolean;
@@ -30,7 +31,7 @@ const getStudentAvatarUrl = (indexNumber: string, gender: 'Male' | 'Female', sch
     try {
         const raw = localStorage.getItem(key);
         if (raw) {
-            const parsed = JSON.parse(raw);
+            const parsed = safeJsonParse<{ passportPhotograph?: { data?: string }; data?: string }>(raw, {});
             if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
             if (parsed.data) return parsed.data;
         }
@@ -45,7 +46,7 @@ const getMedicalReport = (indexNumber: string, schoolId?: string) => {
     try {
         const data = localStorage.getItem(key);
         if (data) {
-            const parsed = JSON.parse(data);
+            const parsed = safeJsonParse<{ hasDisability?: string; medicalReport?: unknown }>(data, {});
             if (parsed.hasDisability === 'Yes' && parsed.medicalReport) return parsed.medicalReport;
         }
     } catch (e) {}

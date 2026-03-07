@@ -2,10 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { Admission, School } from './SettingsPage';
 import { useToast } from '../shared/ToastContext';
 import ConfirmationModal from '../shared/ConfirmationModal';
+import { downloadFilename } from '../../../utils/storage';
 
 interface BackupSettingsTabProps {
     allAdmissions: Admission[];
-    selectedSchool?: School | null; // Add prop for selected school
+    selectedSchool?: School | null;
+    selectedAdmission?: Admission | null;
 }
 
 const generateMockBackups = () => {
@@ -23,7 +25,7 @@ const generateMockBackups = () => {
     return backups;
 };
 
-const BackupSettingsTab: React.FC<BackupSettingsTabProps> = ({ allAdmissions, selectedSchool }) => {
+const BackupSettingsTab: React.FC<BackupSettingsTabProps> = ({ allAdmissions, selectedSchool, selectedAdmission }) => {
     const { showToast } = useToast();
     const [fileToRestore, setFileToRestore] = useState<File | null>(null);
     const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
@@ -80,8 +82,10 @@ const BackupSettingsTab: React.FC<BackupSettingsTabProps> = ({ allAdmissions, se
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const scopePrefix = selectedSchool ? selectedSchool.slug : 'global';
-        a.download = `logip-backup-${scopePrefix}-${backup.timestamp.toISOString().replace(/:/g, '-')}.json`;
+        const schoolName = selectedSchool?.name ?? 'All Schools';
+        const admissionType = selectedAdmission?.title ?? 'Backup';
+        const timestampSuffix = backup.timestamp.toISOString().slice(0, 19).replace(/[-:T]/g, '');
+        a.download = downloadFilename(schoolName, admissionType, 'json', timestampSuffix);
         a.click();
         URL.revokeObjectURL(url);
         

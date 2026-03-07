@@ -9,6 +9,7 @@ import { School } from './SettingsPage';
 import { useToast } from '../shared/ToastContext';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import Icon from '../shared/Icons';
+import { INITIAL_ROLES, Role } from './RolesAndPermissionsPage';
 
 // --- TYPE DEFINITIONS ---
 type LogEventType = 'user_management' | 'student_update' | 'system_settings' | 'admission_process' | 'student_delete' | 'user_add' | 'security' | 'navigation' | 'document_access';
@@ -20,6 +21,8 @@ interface LogEntry {
         name: string;
         avatar: string;
         type?: 'admin' | 'student';
+        email?: string;
+        roleId?: string;
     };
     action: string;
     eventType: LogEventType;
@@ -55,7 +58,8 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
     const { showToast } = useToast();
     const userPrefix = adminUser.email;
     const isSuperAdmin = adminUser.roleId === 'role_super_admin';
-    
+    const [roles] = useLocalStorage<Role[]>('admin_roles', INITIAL_ROLES);
+
     // Switch to new storage key for activity logs to match schema update
     const [logs, setLogs] = useLocalStorage<LogEntry[]>('logip_activity_logs', []);
     const [searchTerm, setSearchTerm] = useState('');
@@ -76,7 +80,12 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
 
             let matchesUser = true;
             if (viewMode === 'me') {
-                matchesUser = (log.user?.name ?? '') === adminUser.name;
+                const logUser = log.user as LogEntry['user'] & { email?: string };
+                const logName = (log.user?.name ?? '').trim().toLowerCase();
+                const currentName = (adminUser.name ?? '').trim().toLowerCase();
+                const emailMatch = logUser?.email && adminUser.email && logUser.email.toLowerCase() === adminUser.email.toLowerCase();
+                const nameMatch = logName && currentName && logName === currentName;
+                matchesUser = !!emailMatch || !!nameMatch;
             } else if (viewMode === 'applicants') {
                 matchesUser = log.user?.type === 'student';
             }
@@ -219,6 +228,10 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
                                     const userName = log.user?.name ?? '—';
                                     const userAvatar = log.user?.avatar;
                                     const isStudent = log.user?.type === 'student';
+                                    const logUser = log.user as LogEntry['user'];
+                                    const roleLabel = isStudent
+                                        ? 'Applicant'
+                                        : (logUser?.roleId ? (roles.find(r => r.id === logUser.roleId)?.name ?? 'Administrator') : (viewMode === 'me' ? (roles.find(r => r.id === adminUser.roleId)?.name ?? 'Administrator') : 'Administrator'));
                                     return (
                                         <tr key={log.id} className="border-b border-logip-border dark:border-dark-border last:border-b-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                             <td className="p-4">
@@ -239,7 +252,7 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <span className="font-bold text-base text-logip-text-header dark:text-dark-text-primary">{userName}</span>
-                                                        <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500">{isStudent ? 'Applicant' : 'Administrator'}</span>
+                                                        <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500">{roleLabel}</span>
                                                     </div>
                                                 </div>
                                             </td>

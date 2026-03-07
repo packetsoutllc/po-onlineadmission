@@ -3,7 +3,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { Select } from './FormControls';
 import PacketsOutArrowIcon from './PacketsOutArrowIcon';
 import Icon from './admin/shared/Icons';
-import { initialSchools, initialAdmissions, School, Admission } from './admin/pages/SettingsPage';
+import { initialSchools, initialAdmissions, School, Admission, type AdmissionPortalStatus } from './admin/pages/SettingsPage';
 import PacketsOutLogo from './PacketsOutLogo';
 
 interface LandingPageProps {
@@ -47,55 +47,62 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
   const hasFilter =
     searchTerm.trim().length > 0 || regionFilter !== 'All regions';
 
+  const schoolsWithAdmission = React.useMemo(
+    () =>
+      filteredSchools.filter((school) =>
+        admissions.some((a) => a.schoolId === school.id && a.status === 'Active')
+      ),
+    [filteredSchools, admissions]
+  );
+
+  const getPortalStatus = (a: Admission): AdmissionPortalStatus => {
+    if (a.portalStatus) return a.portalStatus;
+    return a.status === 'Active' ? 'opened' : 'closed';
+  };
+
+  const portalStatusConfig: Record<'opened' | 'closed' | 'yet_to_open', { label: string; className: string }> = {
+    opened: { label: 'Admission opened', className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' },
+    closed: { label: 'Admission Closed', className: 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300 border-red-200 dark:border-red-500/30' },
+    yet_to_open: { label: 'Admission yet to be opened', className: 'bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border-gray-300 dark:border-gray-500/30' },
+  };
+
   const renderedSchools = hasFilter
-    ? filteredSchools.map((school) => {
+    ? schoolsWithAdmission.map((school) => {
         const schoolAdmissions = admissions.filter(
           (a) => a.schoolId === school.id && a.status === 'Active'
         );
         const primaryAdmission = schoolAdmissions[0] || null;
+        const status = primaryAdmission ? getPortalStatus(primaryAdmission) : 'closed';
+        const config = portalStatusConfig[status];
+        const canNavigate = status === 'opened';
 
         return (
           <button
             key={school.id}
-            onClick={() => navigateToPortal(school, primaryAdmission)}
-            className="w-full text-left group flex items-center justify-between gap-3 px-3 py-3 rounded-xl border border-logip-border/70 dark:border-report-border hover:border-logip-primary hover:bg-blue-50/60 dark:hover:border-logip-primary dark:hover:bg-blue-500/10 transition-all"
-            disabled={!primaryAdmission}
+            onClick={() => canNavigate && primaryAdmission && navigateToPortal(school, primaryAdmission)}
+            className={`w-full text-left group flex items-center gap-3 px-3 py-3 rounded-xl border border-logip-border/70 dark:border-report-border transition-all ${canNavigate ? 'hover:border-logip-primary hover:bg-blue-50/60 dark:hover:border-logip-primary dark:hover:bg-blue-500/10 cursor-pointer' : 'cursor-default opacity-90'}`}
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-logip-border/40 dark:bg-dark-border flex items-center justify-center overflow-hidden flex-shrink-0">
-                {school.logo ? (
-                  <img
-                    src={school.logo}
-                    alt={school.name}
-                    className="w-full h-full object-contain p-1"
-                  />
-                ) : (
-                  <Icon name="apartment" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-sm sm:text-base text-logip-text-header dark:text-dark-text-primary truncate">
-                  {school.name}
-                </p>
-                <p className="text-[11px] text-logip-text-subtle/90 dark:text-dark-text-secondary truncate">
-                  {school.homeRegion || 'Region not set'}
-                </p>
-                <p className="text-[11px] text-logip-text-subtle/90 dark:text-dark-text-secondary truncate">
-                  {primaryAdmission ? primaryAdmission.title : 'No active admission'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {primaryAdmission ? (
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                  Open portal
-                </span>
+            <div className="w-10 h-10 rounded-lg bg-logip-border/40 dark:bg-dark-border flex items-center justify-center overflow-hidden flex-shrink-0">
+              {school.logo ? (
+                <img
+                  src={school.logo}
+                  alt={school.name}
+                  className="w-full h-full object-contain p-1"
+                />
               ) : (
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                  Coming soon
-                </span>
+                <Icon name="apartment" className="w-5 h-5 text-logip-text-subtle dark:text-dark-text-secondary" />
               )}
-              <Icon name="arrow_forward_ios" className="w-5 h-5 text-logip-text-subtle group-hover:text-logip-primary dark:text-dark-text-secondary" />
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+              <p className="font-semibold text-sm sm:text-base text-logip-text-header dark:text-dark-text-primary break-words">
+                {school.name}
+              </p>
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="text-[11px] text-logip-text-subtle/90 dark:text-dark-text-secondary truncate">{primaryAdmission ? primaryAdmission.title : 'No active admission'}</span>
+                <span className={`flex-shrink-0 px-2 py-1 rounded-md text-[10px] font-semibold border whitespace-nowrap ${config.className} border-current`}>
+                  {config.label}
+                </span>
+              </div>
             </div>
           </button>
         );
@@ -170,7 +177,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by school or region"
-                className="w-full min-w-0 pl-9 pr-3 py-2 text-sm rounded-lg border border-logip-border dark:border-report-border bg-white dark:bg-dark-bg text-logip-text-header dark:text-dark-text-primary placeholder:text-logip-text-subtle/80 dark:placeholder:text-dark-text-secondary/80 focus:outline-none focus:ring-2 focus:ring-logip-primary/70"
+                className="w-full h-10 min-w-0 pl-9 pr-3 py-2 text-sm rounded-lg border border-logip-border dark:border-report-border bg-white dark:bg-dark-bg text-logip-text-header dark:text-dark-text-primary placeholder:text-logip-text-subtle/80 dark:placeholder:text-dark-text-secondary/80 focus:outline-none focus:ring-2 focus:ring-logip-primary/70"
               />
             </div>
             <div className="w-full sm:w-48">
@@ -198,7 +205,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ toggleTheme, isDarkMode }) =>
 
             {renderedSchools}
 
-            {hasFilter && filteredSchools.length === 0 && (
+            {hasFilter && schoolsWithAdmission.length === 0 && (
               <div className="text-center text-sm text-logip-text-subtle dark:text-dark-text-secondary py-8">
                 No schools match your filters. Try clearing the search or region.
               </div>

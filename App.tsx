@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { setFavicon } from './utils/favicon';
+import { sanitizeSlug, safeJsonParse } from './utils/security';
 import AuthForm from './components/AuthForm';
 import StudentDetails, { ApplicationStatus, Student } from './components/StudentDetails';
 import AdminLayout, { AdminUser } from './components/admin/AdminLayout';
@@ -16,8 +17,8 @@ type StudentView = 'auth' | 'payment' | 'applicant_login' | 'details' | 'protoco
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (localStorage.theme === 'dark') return true;
-    if (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches) return true;
-    return false;
+    if (localStorage.theme === 'light') return false;
+    return false; // default to light when no preference stored
   });
 
   // Derive routing context from the URL
@@ -27,8 +28,8 @@ function App() {
   const pathSegments = rawPath.split('/').filter(Boolean);
   const isAdminLoginRoute = rawPath === '/login/admin' || rawPath === '/login/admin/';
   const isLandingRoute = pathSegments.length === 0 && !isAdminLoginRoute;
-  const schoolSlugFromPath = !isAdminLoginRoute && pathSegments.length >= 1 ? pathSegments[0] : undefined;
-  const admissionSlugFromPath = !isAdminLoginRoute && pathSegments.length >= 2 ? pathSegments[1] : undefined;
+  const schoolSlugFromPath = !isAdminLoginRoute && pathSegments.length >= 1 ? sanitizeSlug(pathSegments[0]) || undefined : undefined;
+  const admissionSlugFromPath = !isAdminLoginRoute && pathSegments.length >= 2 ? sanitizeSlug(pathSegments[1]) || undefined : undefined;
 
   const [currentView, setCurrentView] = useState<StudentView>('auth');
   const [verifiedStudent, setVerifiedStudent] = useState<Student | null>(null);
@@ -176,7 +177,7 @@ function App() {
           case 'payment':
               const financialsKey = `financialsSettings_${verifiedStudent?.schoolId}_${verifiedStudent?.admissionId}`;
               const financialsRaw = localStorage.getItem(financialsKey);
-              const financials = financialsRaw ? JSON.parse(financialsRaw) : {};
+              const financials = safeJsonParse<Record<string, unknown>>(financialsRaw, {});
               // Same card as Admission Document Access modal: white panel, rounded, shadow, border
               authContent = (
                 <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#1C1A27] rounded-xl border border-gray-200/50 dark:border-transparent shadow-2xl overflow-hidden">

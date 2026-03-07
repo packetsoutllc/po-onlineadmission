@@ -8,6 +8,7 @@ import { initialHouses } from './houseData';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { School, Admission } from '../pages/SettingsPage';
 import { FormSettings, INITIAL_FORM_SETTINGS } from '../pages/ApplicationDashboardSettings';
+import { safeJsonParse } from '../../../utils/security';
 
 /** Only read application data for the given school+index to avoid cross-school data. */
 const getMedicalReport = (indexNumber: string, schoolId?: string) => {
@@ -16,7 +17,7 @@ const getMedicalReport = (indexNumber: string, schoolId?: string) => {
     try {
         const data = localStorage.getItem(key);
         if (data) {
-            const parsed = JSON.parse(data);
+            const parsed = safeJsonParse<{ hasDisability?: string; medicalReport?: unknown }>(data, {});
             if (parsed.hasDisability === 'Yes' && parsed.medicalReport) return parsed.medicalReport;
         }
     } catch (e) {}
@@ -30,7 +31,7 @@ const getStudentAvatarUrl = (indexNumber: string, gender: 'Male' | 'Female', sch
     try {
         const raw = localStorage.getItem(key);
         if (raw) {
-            const parsed = JSON.parse(raw);
+            const parsed = safeJsonParse<{ passportPhotograph?: { data?: string }; data?: string }>(raw, {});
             if (parsed.passportPhotograph?.data) return parsed.passportPhotograph.data;
             if (parsed.data) return parsed.data;
         }
@@ -94,7 +95,7 @@ const StudentPreviewModal: React.FC<StudentPreviewModalProps> = ({ isOpen, onClo
             const mainAppDataKey = `applicationData_${student.schoolId}_${student.indexNumber}`;
             try {
                 const raw = localStorage.getItem(mainAppDataKey);
-                if (raw) setAppData(JSON.parse(raw));
+                if (raw) setAppData(safeJsonParse(raw, {}));
             } catch(e) {}
         }
     }, [isOpen, student]);

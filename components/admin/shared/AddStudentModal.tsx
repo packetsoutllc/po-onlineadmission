@@ -11,6 +11,7 @@ import { AdmissionSettings } from '../pages/SecuritySettingsTab';
 import { FormSettings } from '../pages/ApplicationDashboardSettings';
 import DynamicFormField from '../../DynamicFormField';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { safeJsonParse } from '../../../utils/security';
 import { Student, AiSettings } from '../../StudentDetails';
 import { PersonalInfoFormData } from '../../PersonalInfoForm';
 import { AcademicInfoFormData } from '../../AcademicInfoForm';
@@ -87,17 +88,17 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSa
             const settingsKey = selectedSchool && selectedAdmission ? `admissionSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
             if (settingsKey) {
                 const settingsRaw = localStorage.getItem(settingsKey);
-                setAdmissionSettings(settingsRaw ? JSON.parse(settingsRaw) : { enableRoomManagement: true });
+                setAdmissionSettings(safeJsonParse(settingsRaw, { enableRoomManagement: true }));
             }
 
             const aiSettingsKey = selectedSchool && selectedAdmission ? `aiFeaturesSettings_${selectedSchool.id}_${selectedAdmission.id}` : null;
             if (aiSettingsKey) {
                 const aiRaw = localStorage.getItem(aiSettingsKey);
-                if (aiRaw) setAiSettings(JSON.parse(aiRaw));
+                if (aiRaw) setAiSettings(safeJsonParse(aiRaw, null));
             }
             
             const studentAppDataKey = student ? `applicationData_${student.schoolId}_${student.indexNumber}` : null;
-            const studentAppData = studentAppDataKey ? JSON.parse(localStorage.getItem(studentAppDataKey) || '{}') : {};
+            const studentAppData = studentAppDataKey ? safeJsonParse(localStorage.getItem(studentAppDataKey), {}) : {};
     
             let initialData = getInitialState(student, selectedSchool, selectedAdmission, formSettings, studentAppData);
             
@@ -247,7 +248,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSa
             let existingAppData = {};
             try {
                 const raw = localStorage.getItem(targetKey);
-                if (raw) existingAppData = JSON.parse(raw);
+                if (raw) existingAppData = safeJsonParse(raw, {});
             } catch(e) {}
             const finalAppData = { ...existingAppData, ...applicationDataToSave };
             localStorage.setItem(targetKey, JSON.stringify(finalAppData));

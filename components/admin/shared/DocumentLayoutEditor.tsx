@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import AdminModal from './AdminModal';
 import { useToast } from '../shared/ToastContext';
 import { AdminInput, AdminSelect } from './forms';
+import { isSafeResourceUrl, safeJsonParse } from '../../../utils/security';
 
 declare global {
     var pdfjsLib: any;
@@ -90,8 +91,8 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
         if (schoolId && admissionId) {
              const settingsRaw = localStorage.getItem(`formSettings_${schoolId}_${admissionId}`);
              if (settingsRaw) {
-                 const settings = JSON.parse(settingsRaw);
-                 const customFields = settings.fields.map((f: any) => ({
+                 const settings = safeJsonParse<{ fields?: Array<{ id: string; label: string; type: string }> }>(settingsRaw, {});
+                 const customFields = (settings.fields || []).map((f: { id: string; label: string; type: string }) => ({
                      id: f.id,
                      label: f.label,
                      type: f.type === 'photo' ? 'image' : 'text'
@@ -117,11 +118,8 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
             const savedLayoutRaw = localStorage.getItem(storageKey);
             let initialFields: LayoutField[] = [];
             if (savedLayoutRaw) {
-                try {
-                    initialFields = JSON.parse(savedLayoutRaw);
-                } catch (e) {
-                    console.error("Error loading layout", e);
-                }
+                const parsed = safeJsonParse<LayoutField[]>(savedLayoutRaw, []);
+                initialFields = Array.isArray(parsed) ? parsed : [];
             } 
             const mappedAvailable = availableKeys.map((k, i) => {
                 const existing = initialFields.find(f => f.id === k.id);
@@ -520,9 +518,10 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                                 type="button"
                                 onClick={() => {
                                     if (!pdfData) return;
+                                    const src = pdfData.startsWith('data:') ? pdfData : `data:application/pdf;base64,${pdfData}`;
+                                    if (!isSafeResourceUrl(src)) return;
                                     const printWindow = window.open('', '_blank');
                                     if (!printWindow) return;
-                                    const src = pdfData.startsWith('data:') ? pdfData : `data:application/pdf;base64,${pdfData}`;
                                     printWindow.document.write(`
                                         <html>
                                           <head>
@@ -533,7 +532,7 @@ const DocumentLayoutEditor: React.FC<DocumentLayoutEditorProps> = ({ isOpen, onC
                                             </style>
                                           </head>
                                           <body>
-                                            <iframe src="${src}" onload="this.contentWindow?.print();"></iframe>
+                                            <iframe src="${src.replace(/"/g, '&quot;')}" onload="this.contentWindow?.print();"></iframe>
                                           </body>
                                         </html>
                                     `);

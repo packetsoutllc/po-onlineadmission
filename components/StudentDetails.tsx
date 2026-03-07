@@ -16,6 +16,7 @@ import { getHouseColor, initialHouses, House } from './admin/shared/houseData';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { StudentStatus, AdminStudent, initialAdminStudents } from './admin/pages/StudentsPage';
 import { setLocalStorageAndNotify, logActivity } from '../utils/storage';
+import { safeJsonParse } from '../utils/security';
 import { setFavicon } from '../utils/favicon';
 import { Dormitory, initialDormitories } from './admin/shared/dormitoryData';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
@@ -367,7 +368,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
         if (smsNumberRaw) {
             try {
                 let smsNumber = smsNumberRaw;
-                try { smsNumber = JSON.parse(smsNumberRaw); } catch(e) {}
+                smsNumber = safeJsonParse<string>(smsNumberRaw, '') || smsNumber;
                 if (smsNumber) handleApplicationDataChange(prev => ({ ...prev, contactNumber: smsNumber }));
             } catch(e) {}
         }
@@ -511,7 +512,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
       const key = `notification_${type}_${initialStudent.schoolId}_${initialStudent.admissionId}`;
       const raw = localStorage.getItem(key);
       if (raw) {
-          const data = JSON.parse(raw);
+          const data = safeJsonParse(raw, null);
           if (isNotificationActive(data, initialStudent.admissionId, type, page, isAdminEditMode)) return data;
       }
       return null;
@@ -609,7 +610,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
         const aiStorageKey = `aiFeaturesSettings_${initialStudent.schoolId}_${initialStudent.admissionId}`;
         const aiSettingsRaw = localStorage.getItem(aiStorageKey);
         if (aiSettingsRaw) {
-            setAiSettings(JSON.parse(aiSettingsRaw));
+            setAiSettings(safeJsonParse(aiSettingsRaw, null));
         } else {
             const currentSchoolName = schools.find(s => s.id === initialStudent.schoolId)?.name || 'School';
             setAiSettings({
@@ -868,7 +869,11 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
     const todayStr = new Date().toISOString().split('T')[0];
     const logKey = `edit_app_limit_${initialStudent.schoolId}_${activeStudentIndex}`;
     let limitLog = { date: '', count: 0 };
-    try { const stored = localStorage.getItem(logKey); if (stored) limitLog = JSON.parse(stored); } catch(e) {}
+    const stored = localStorage.getItem(logKey);
+    if (stored) {
+      const parsed = safeJsonParse<{ date?: string; count?: number }>(stored, {});
+      limitLog = { date: parsed?.date ?? '', count: typeof parsed?.count === 'number' ? parsed.count : 0 };
+    }
     if (limitLog.date === todayStr && limitLog.count >= 2) { setIsLimitModalOpen(true); return; }
     setIsConfirmUnlockModalOpen(true);
   };
@@ -881,7 +886,11 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
       const todayStr = new Date().toISOString().split('T')[0];
       const logKey = `edit_app_limit_${initialStudent.schoolId}_${activeStudentIndex}`;
       let limitLog = { date: todayStr, count: 0 };
-      try { const stored = localStorage.getItem(logKey); if (stored) { const parsed = JSON.parse(stored); if (parsed.date === todayStr) limitLog.count = parsed.count; } } catch(e) {}
+      const stored = localStorage.getItem(logKey);
+      if (stored) {
+        const parsed = safeJsonParse<{ date?: string; count?: number }>(stored, {});
+        if (parsed?.date === todayStr && typeof parsed.count === 'number') limitLog.count = parsed.count;
+      }
       limitLog.count += 1;
       localStorage.setItem(logKey, JSON.stringify(limitLog));
       setOtpArray(new Array(6).fill(""));
@@ -916,7 +925,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
   const contactInfo = useMemo(() => {
     try {
         const admissionsRaw = localStorage.getItem('admin_admissions');
-        const admissions: Admission[] = admissionsRaw ? JSON.parse(admissionsRaw) : [];
+        const admissions: Admission[] = safeJsonParse<Admission[]>(admissionsRaw, []);
         const activeAdmission = admissions.find(a => a.id === initialStudent.admissionId);
         return { school: activeAdmission?.headOfSchoolNumber || '0244889791', it: activeAdmission?.headOfItNumber || '0243339546' };
     } catch (e) { return { school: '0244889791', it: '0243339546' }; }
@@ -1172,6 +1181,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
                                 student={liveStudent}
                                 applicationStatus={realTimeApplicationStatus}
                                 admission={admission}
+                                schoolName={school?.name}
                                 formSettings={formSettings}
                                 applicationData={applicationData}
                                 showToast={showToast}

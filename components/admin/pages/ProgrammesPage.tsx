@@ -64,11 +64,12 @@ interface ProgrammesPageProps {
     setProgrammes: React.Dispatch<React.SetStateAction<Programme[]>>;
     classes: Class[];
     permissions: Set<string>;
+    getActions: (permId: string) => { view: boolean; add: boolean; edit: boolean; delete: boolean };
     isSuperAdmin: boolean;
     adminUser: AdminUser;
 }
 
-const ProgrammesPage: React.FC<ProgrammesPageProps> = ({ selectedSchool, selectedAdmission, students, programmes, setProgrammes, classes, permissions, isSuperAdmin, adminUser }) => {
+const ProgrammesPage: React.FC<ProgrammesPageProps> = ({ selectedSchool, selectedAdmission, students, programmes, setProgrammes, classes, permissions, getActions, isSuperAdmin, adminUser }) => {
     const userPrefix = adminUser.email;
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -176,11 +177,11 @@ const ProgrammesPage: React.FC<ProgrammesPageProps> = ({ selectedSchool, selecte
         );
     }
     
-    const canAdd = isSuperAdmin || permissions.has('btn:prog:add');
-    const canEdit = isSuperAdmin || permissions.has('icon:prog:edit');
-    const canDelete = isSuperAdmin || permissions.has('icon:prog:delete');
-    const canPrint = isSuperAdmin || permissions.has('btn:prog:print');
-    const canShowDashboardPerm = isSuperAdmin || permissions.has('btn:prog:dash');
+    const canAdd = isSuperAdmin || (permissions.has('btn:prog:add') && getActions('btn:prog:add').add);
+    const canEdit = isSuperAdmin || (permissions.has('icon:prog:edit') && getActions('icon:prog:edit').edit);
+    const canDelete = isSuperAdmin || (permissions.has('icon:prog:delete') && getActions('icon:prog:delete').delete);
+    const canPrint = isSuperAdmin || (permissions.has('btn:prog:print') && getActions('btn:prog:print').view);
+    const canShowDashboardPerm = isSuperAdmin || (permissions.has('btn:prog:dash') && getActions('btn:prog:dash').view);
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">

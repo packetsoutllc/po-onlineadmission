@@ -6,6 +6,7 @@ import AudioCallModal from '../shared/AudioCallModal';
 import VideoCallModal from '../shared/VideoCallModal';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import Icon from '../shared/Icons';
+import { safeJsonParse } from '../../../utils/security';
 
 // --- TYPE DEFINITIONS ---
 export type MessageStatus = 'read' | 'unread' | 'blocked' | 'trash';
@@ -81,12 +82,13 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
                 const logRaw = localStorage.getItem(key);
                 if (logRaw) {
                     try {
-                        const parsed = JSON.parse(logRaw);
-                        // Infer schoolId if missing for accurate filtering
-                        if (!parsed.schoolId && parsed.schoolName) {
-                            parsed.schoolId = initialSchools.find(s => s.name === parsed.schoolName)?.id;
+                        const parsed = safeJsonParse<{ schoolId?: string; schoolName?: string } & AiChatLog>(logRaw, null);
+                        if (parsed && typeof parsed === 'object') {
+                            if (!parsed.schoolId && parsed.schoolName) {
+                                parsed.schoolId = initialSchools.find(s => s.name === parsed.schoolName)?.id;
+                            }
+                            logs.push(parsed);
                         }
-                        logs.push(parsed);
                     } catch (e) {
                         console.error(`Failed to parse AI chat log: ${key}`, e);
                     }

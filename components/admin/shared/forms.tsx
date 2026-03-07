@@ -11,7 +11,7 @@ export const AdminFormField: React.FC<{ label: string; children: React.ReactNode
 export const AdminInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ className = '', ...props }) => (
     <input
         {...props}
-        className={`w-full px-3 py-2 bg-logip-white dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-xl text-base text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle dark:placeholder-dark-text-secondary focus:outline-none focus:ring-2 focus:ring-logip-primary dark:focus:ring-dark-accent-blue transition-shadow duration-200 ${className}`}
+        className={`w-full h-10 px-3 py-2 bg-logip-white dark:bg-dark-bg border border-logip-border dark:border-dark-border rounded-xl text-base text-logip-text-header dark:text-dark-text-primary placeholder-logip-text-subtle dark:placeholder-dark-text-secondary focus:outline-none focus:ring-2 focus:ring-logip-primary dark:focus:ring-dark-accent-blue transition-shadow duration-200 ${className}`}
     />
 );
 
@@ -56,7 +56,7 @@ export const AdminSelect: React.FC<AdminSelectProps> = ({ children, value, onCha
                 type="button"
                 disabled={disabled}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
-                className={`flex w-full items-center justify-between px-2.5 py-1.5 bg-logip-white dark:bg-dark-bg border ${isOpen ? 'border-logip-primary ring-1 ring-logip-primary/20' : 'border-logip-border dark:border-report-border'} rounded-xl text-sm font-medium text-left text-logip-text-header dark:text-dark-text-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed gap-3 shadow-sm`}
+                className={`flex w-full h-10 items-center justify-between px-2.5 py-0 bg-logip-white dark:bg-dark-bg border ${isOpen ? 'border-logip-primary ring-1 ring-logip-primary/20' : 'border-logip-border dark:border-report-border'} rounded-xl text-sm font-medium text-left text-logip-text-header dark:text-dark-text-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed gap-3 shadow-sm`}
             >
                 <span className="truncate">{displayValue}</span>
                 <Icon name="expand_more" className={`w-5 h-5 text-logip-text-subtle transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
