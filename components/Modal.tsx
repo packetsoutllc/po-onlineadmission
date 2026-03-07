@@ -19,23 +19,22 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', h
   }
 
   const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    '2xl': 'max-w-2xl',
-    // FIX: Added mapping for extended sizes to Tailwind max-width classes
-    '3xl': 'max-w-3xl',
-    '4xl': 'max-w-4xl',
-    '5xl': 'max-w-5xl',
-    '6xl': 'max-w-6xl',
+    sm: 'sm:max-w-sm',
+    md: 'sm:max-w-md',
+    lg: 'sm:max-w-lg',
+    xl: 'sm:max-w-xl',
+    '2xl': 'sm:max-w-2xl',
+    '3xl': 'sm:max-w-3xl',
+    '4xl': 'sm:max-w-4xl',
+    '5xl': 'sm:max-w-5xl',
+    '6xl': 'sm:max-w-6xl',
   };
 
   const maxWidthClass = sizeClasses[size as keyof typeof sizeClasses];
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out animate-fadeIn"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300 ease-in-out animate-fadeIn"
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true"
@@ -49,8 +48,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', h
         ></div>
       )}
 
-      {/* Modal Panel */}
-      <div className={`relative w-full ${maxWidthClass} transform transition-all duration-300 ease-in-out animate-scaleIn bg-white dark:bg-[#1C1A27] rounded-xl border border-gray-200/50 dark:border-transparent p-6 sm:p-8 text-center shadow-2xl`}>
+      {/* Modal Panel – fit viewport on mobile (inline styles so they always apply), constrained from sm */}
+      <div
+        style={{ maxWidth: 'min(calc(100vw - 1rem), 100%)', maxHeight: 'calc(100vh - 1rem)' }}
+        className={`relative w-full ${maxWidthClass} overflow-y-auto overflow-x-hidden transform transition-all duration-300 ease-in-out animate-scaleIn bg-white dark:bg-[#1C1A27] rounded-xl border border-gray-200/50 dark:border-transparent p-4 sm:p-6 md:p-8 text-center shadow-2xl`}
+      >
         {children}
       </div>
     </div>

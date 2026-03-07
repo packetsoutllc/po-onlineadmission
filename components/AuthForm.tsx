@@ -803,51 +803,51 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
         </div>
       </div>
 
-      {/* Redesigned Applicant Information Modal to match Confirm Your Details UI */}
+      {/* Redesigned Applicant Information Modal – mobile/tablet optimized */}
       <Modal isOpen={!!previewStudent} onClose={() => setPreviewStudent(null)} size="xl">
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center min-w-0 w-full px-0 sm:px-2">
             {/* Top Warning Icon */}
             {!isOfficialEditOpen && (
-              <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-5">
-                  <Icon name="warning" className="w-10 h-10 text-yellow-500" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-3 sm:mb-5 flex-shrink-0">
+                  <Icon name="warning" className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-500" />
               </div>
             )}
             
             {/* Title & Instruction */}
-            <h2 id="modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">Applicant Information</h2>
-            <p className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed text-left w-full">Please double-check the following information before proceeding:</p>
+            <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 text-center px-1">Applicant Information</h2>
+            <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed text-left w-full">Please double-check the following information before proceeding:</p>
             
-            {/* Gray Detail Container */}
-            <dl className="mt-4 w-full text-left space-y-2 text-base bg-gray-100 dark:bg-gray-800/50 p-8 rounded-lg">
-                <div className="flex justify-between items-center gap-4">
-                    <dt className="text-gray-500 whitespace-nowrap">Full Name:</dt>
-                    <dd className="font-semibold text-gray-900 dark:text-gray-100 text-right truncate">{previewStudent?.student.name}</dd>
+            {/* Gray Detail Container – responsive padding and row layout */}
+            <dl className="mt-3 sm:mt-4 w-full text-left space-y-2 sm:space-y-2.5 text-sm sm:text-base bg-gray-100 dark:bg-gray-800/50 p-4 sm:p-6 md:p-8 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-4">
+                    <dt className="text-gray-500 shrink-0">Full Name:</dt>
+                    <dd className="font-semibold text-gray-900 dark:text-gray-100 break-words">{previewStudent?.student.name}</dd>
                 </div>
-                <div className="flex justify-between items-center gap-4">
-                    <dt className="text-gray-500 whitespace-nowrap">Index Number:</dt>
-                    <dd className="font-semibold text-gray-900 dark:text-gray-100 text-right font-mono">{previewStudent?.student.indexNumber}</dd>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-4">
+                    <dt className="text-gray-500 shrink-0">Index Number:</dt>
+                    <dd className="font-semibold text-gray-900 dark:text-gray-100 font-mono break-all">{previewStudent?.student.indexNumber}</dd>
                 </div>
-                <div className="flex justify-between items-center gap-4">
-                    <dt className="text-gray-500 whitespace-nowrap">Programme:</dt>
-                    <dd className="font-semibold text-gray-900 dark:text-gray-100 text-right truncate">{previewStudent?.student.programme}</dd>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-4">
+                    <dt className="text-gray-500 shrink-0">Programme:</dt>
+                    <dd className="font-semibold text-gray-900 dark:text-gray-100 break-words">{previewStudent?.student.programme}</dd>
                 </div>
-                <div className="flex justify-between items-center gap-4">
-                    <dt className="text-gray-500 whitespace-nowrap">Gender:</dt>
-                    <dd className="font-semibold text-gray-900 dark:text-gray-100 text-right">{previewStudent?.student.gender ? previewStudent.student.gender.charAt(0).toUpperCase() + previewStudent.student.gender.slice(1).toLowerCase() : 'N/A'}</dd>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-4">
+                    <dt className="text-gray-500 shrink-0">Gender:</dt>
+                    <dd className="font-semibold text-gray-900 dark:text-gray-100">{previewStudent?.student.gender ? previewStudent.student.gender.charAt(0).toUpperCase() + previewStudent.student.gender.slice(1).toLowerCase() : 'N/A'}</dd>
                 </div>
-                <div className="flex justify-between items-center gap-4">
-                    <dt className="text-gray-500 whitespace-nowrap">Residence:</dt>
-                    <dd className="font-semibold text-gray-900 dark:text-gray-100 text-right">{previewStudent?.student.residence}</dd>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-4">
+                    <dt className="text-gray-500 shrink-0">Residence:</dt>
+                    <dd className="font-semibold text-gray-900 dark:text-gray-100">{previewStudent?.student.residence}</dd>
                 </div>
-                <div className="flex justify-between items-center gap-4">
-                    <dt className="text-gray-500 whitespace-nowrap">Aggregate:</dt>
-                    <dd className="font-semibold text-gray-900 dark:text-gray-100 text-right">{previewStudent?.student.aggregate}</dd>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-4">
+                    <dt className="text-gray-500 shrink-0">Aggregate:</dt>
+                    <dd className="font-semibold text-gray-900 dark:text-gray-100">{previewStudent?.student.aggregate}</dd>
                 </div>
             </dl>
 
             {effectiveSettings.allowOfficialEditRequests && previewStudent && (
-                <div className="mt-4 w-full text-left">
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                <div className="mt-3 sm:mt-4 w-full text-left">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-2">
                         If you notice any mistake in your official school records above, you can request a correction for the admission office to review.
                     </p>
                     <button
@@ -866,27 +866,27 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
                             setOfficialEditEvidence(null);
                             setIsOfficialEditOpen(true);
                         }}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-logip-primary hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                        className="inline-flex items-center gap-2 px-3 py-2.5 sm:px-4 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-logip-primary hover:bg-blue-50 dark:hover:bg-blue-500/10 min-h-[44px] touch-manipulation"
                     >
-                        <Icon name="edit_note" className="w-4 h-4" />
-                        Request correction to Official Records
+                        <Icon name="edit_note" className="w-4 h-4 flex-shrink-0" />
+                        <span>Request correction to Official Records</span>
                     </button>
                 </div>
             )}
 
-            {/* Bottom Actions */}
-            <div className="mt-8 w-full flex items-center gap-4">
+            {/* Bottom Actions – stack on narrow, side-by-side on tablet+ */}
+            <div className="mt-6 sm:mt-8 w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <button 
                     onClick={() => setPreviewStudent(null)} 
                     type="button" 
-                    className="w-full py-2.5 px-4 text-base font-semibold rounded-lg text-gray-900 dark:text-gray-300 bg-transparent hover:bg-gray-200/50 dark:hover:bg-gray-700/50 border border-gray-300 dark:border-gray-600 transition-colors"
+                    className="w-full py-3 sm:py-2.5 px-4 text-base font-semibold rounded-lg text-gray-900 dark:text-gray-300 bg-transparent hover:bg-gray-200/50 dark:hover:bg-gray-700/50 border border-gray-300 dark:border-gray-600 transition-colors min-h-[44px] touch-manipulation"
                 >
                     Go Back
                 </button>
                 <button 
                     onClick={handleProceedFromPreview} 
                     type="button" 
-                    className="w-full py-2.5 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover shadow-md transition-all active:scale-[0.98]"
+                    className="w-full py-3 sm:py-2.5 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover shadow-md transition-all active:scale-[0.98] min-h-[44px] touch-manipulation"
                 >
                     Proceed to Application
                 </button>
@@ -969,14 +969,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
 
               setIsOfficialEditOpen(false);
             }}
-            className="space-y-4 text-left"
+            className="space-y-3 sm:space-y-4 text-left px-0 sm:px-1 min-w-0 w-full"
           >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Corrections to Official School Records Request</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Corrections to Official School Records Request</h2>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
               Update the fields that are wrong and upload a clear photo or scan of an official document that proves the correct information.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-left">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Full Name <span className="text-red-500">*</span>
@@ -1105,19 +1105,19 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
               )}
             </div>
 
-            <div className="mt-6 flex items-center gap-4">
+            <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={() => setIsOfficialEditOpen(false)}
-                className="w-full py-2.5 px-4 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-dark-bg"
+                className="w-full py-3 sm:py-2.5 px-4 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-dark-bg min-h-[44px] touch-manipulation"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="w-full py-2.5 px-4 text-sm font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md"
+                className="w-full py-3 sm:py-2.5 px-4 text-sm font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md min-h-[44px] touch-manipulation"
               >
-                Submit correction request
+                Submit
               </button>
             </div>
           </form>

@@ -267,24 +267,24 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
     };
 
     return (
-        <div className="relative w-full max-w-xl mx-auto animate-scaleIn font-display text-left">
-            <form onSubmit={handleSubmit} className="flex flex-col items-center pt-8">
+        <div className="relative w-full mx-auto px-3 sm:px-4 animate-scaleIn font-display text-left" style={{ maxWidth: 'min(calc(100vw - 1.5rem), 36rem)' }}>
+            <form onSubmit={handleSubmit} className="flex flex-col items-center pt-4 sm:pt-8">
                 {/* Top icon – hide when correction modal is open so it doesn’t show behind */}
                 {!isOfficialEditOpen && (
-                    <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-5">
-                        <Icon name="warning" className="w-10 h-10 text-yellow-500" />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-3 sm:mb-5 flex-shrink-0">
+                        <Icon name="warning" className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-500" />
                     </div>
                 )}
 
-                <h2 id="payment-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">
+                <h2 id="payment-title" className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1 text-center sm:text-left">
                     {customTitle ?? 'Applicant Information'}
                 </h2>
 
                 {/* Application System Charges: student details; Admission Document Access: what you're paying for */}
-                <div className="mt-8 w-full text-left">
+                <div className="mt-5 sm:mt-8 w-full text-left">
                     {isInitialVoucherPayment ? (
                     <>
-                        <ul className="space-y-1.5 text-base text-gray-600 dark:text-gray-400">
+                        <ul className="space-y-1.5 text-sm sm:text-base text-gray-600 dark:text-gray-400">
                             {[
                                 { label: 'Full Name', value: student.name },
                                 { label: 'Index Number', value: student.indexNumber },
@@ -324,9 +324,9 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                                         setOfficialEditEvidence(null);
                                         setIsOfficialEditOpen(true);
                                     }}
-                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-logip-primary hover:text-logip-primary-hover"
+                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-logip-primary hover:text-logip-primary-hover min-h-[44px] touch-manipulation px-3 py-2.5 rounded-lg hover:bg-blue-50/50 dark:hover:bg-blue-500/10"
                                 >
-                                    <Icon name="edit_note" className="w-4 h-4" />
+                                    <Icon name="edit_note" className="w-4 h-4 flex-shrink-0" />
                                     Request correction to Official Records
                                 </button>
                             </div>
@@ -351,8 +351,8 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                     )}
                 </div>
 
-                {/* MOMO & SMS – same gray box style */}
-                <div className="mt-10 w-full space-y-4 bg-gray-100 dark:bg-gray-800/50 p-6 rounded-lg">
+                {/* MOMO & SMS – same gray box style, responsive padding */}
+                <div className="mt-6 sm:mt-10 w-full space-y-4 bg-gray-100 dark:bg-gray-800/50 p-4 sm:p-6 rounded-lg">
                     <div>
                         <label htmlFor="momo-number-left" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                             Mobile Money number <span className="text-red-500">*</span>
@@ -415,13 +415,13 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                     <span className="font-bold text-gray-900 dark:text-gray-100">GH¢ {voucherPrice}.00</span>
                 </div>
 
-                {/* Bottom actions – same as Applicant Information (Go Back + primary button) */}
-                <div className="mt-8 mb-8 w-full flex items-center gap-4">
+                {/* Bottom actions – stack on mobile, side-by-side on tablet+ */}
+                <div className="mt-6 sm:mt-8 mb-6 sm:mb-8 w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                     {onClose && (
                         <button
                             type="button"
                             onClick={onClose}
-                            className="w-full py-2.5 px-4 text-base font-semibold rounded-lg text-gray-900 dark:text-gray-300 bg-transparent hover:bg-gray-200/50 dark:hover:bg-gray-700/50 border border-gray-300 dark:border-gray-600 transition-colors whitespace-nowrap"
+                            className="w-full py-3 sm:py-2.5 px-4 text-base font-semibold rounded-lg text-gray-900 dark:text-gray-300 bg-transparent hover:bg-gray-200/50 dark:hover:bg-gray-700/50 border border-gray-300 dark:border-gray-600 transition-colors whitespace-nowrap min-h-[44px] touch-manipulation"
                         >
                             Go Back
                         </button>
@@ -429,7 +429,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                     <button
                         type="submit"
                         disabled={isLoading || !momoNumber || momoNumber.length < 10}
-                        className="w-full py-2.5 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="w-full py-3 sm:py-2.5 px-4 text-base font-semibold rounded-lg text-white bg-logip-primary hover:bg-logip-primary-hover shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap min-h-[44px] touch-manipulation"
                     >
                         {isLoading ? 'Processing…' : (
                             'Proceed to pay'
@@ -510,14 +510,14 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
 
                             setIsOfficialEditOpen(false);
                         }}
-                        className="space-y-4 text-left"
+                        className="space-y-3 sm:space-y-4 text-left px-0 sm:px-1 min-w-0 w-full"
                     >
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Corrections to Official School Records Request</h2>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Corrections to Official School Records Request</h2>
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                             Update the fields that are wrong and upload a clear photo or scan of an official document that proves the correct information.
                         </p>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Full Name <span className="text-red-500">*</span>
@@ -646,19 +646,19 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                             )}
                         </div>
 
-                        <div className="mt-6 flex items-center gap-4">
+                        <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                             <button
                                 type="button"
                                 onClick={() => setIsOfficialEditOpen(false)}
-                                className="w-full py-2.5 px-4 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-dark-bg"
+                                className="w-full py-3 sm:py-2.5 px-4 text-sm font-semibold rounded-lg border border-logip-border dark:border-dark-border text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-dark-bg min-h-[44px] touch-manipulation"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="w-full py-2.5 px-4 text-sm font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md"
+                                className="w-full py-3 sm:py-2.5 px-4 text-sm font-semibold rounded-lg bg-logip-primary text-white hover:bg-logip-primary-hover shadow-md min-h-[44px] touch-manipulation"
                             >
-                                Submit correction request
+                                Submit
                             </button>
                         </div>
                     </form>

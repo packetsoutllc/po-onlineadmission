@@ -477,7 +477,7 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
 
             {/* REQUIREMENT: Payment Popup Centered in browser with matched height and size */}
             <Modal isOpen={isPaymentActive} onClose={() => setIsPaymentActive(false)} size="4xl">
-                 <div className="relative -m-6 sm:-m-8 rounded-xl overflow-hidden shadow-2xl">
+                 <div className="relative -m-4 sm:-m-6 md:-m-8 rounded-xl overflow-hidden shadow-2xl">
                     <PaymentGateway 
                         student={student} 
                         onPaymentSuccess={handlePaymentSuccess} 
