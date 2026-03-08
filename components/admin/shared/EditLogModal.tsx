@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminModal from './AdminModal';
 import { AdminStudent, EditLogEntry } from '../pages/StudentsPage';
 import { safeJsonParse } from '../../../utils/security';
+import { formatDateTime } from '../../../utils/date';
 
 interface EditLogModalProps {
     isOpen: boolean;
@@ -46,7 +47,7 @@ const EditLogModal: React.FC<EditLogModalProps> = ({ isOpen, onClose, student, l
                                     </span>
                                     <span className="font-bold text-logip-text-header dark:text-dark-text-primary capitalize">{log.editor}</span>
                                 </div>
-                                <div className="text-sm text-logip-text-subtle">{new Date(log.timestamp).toLocaleString()}</div>
+                                <div className="text-sm text-logip-text-subtle">{formatDateTime(log.timestamp)}</div>
                             </div>
                              <ul className="space-y-1.5 pl-4 border-l-2 border-logip-border dark:border-dark-border">
                                 {log.changedFields.map((change, i) => (

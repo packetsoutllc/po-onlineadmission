@@ -9,6 +9,7 @@ import { generateFilledPdf } from '../utils/pdfGenerator';
 import { initialClasses } from './admin/pages/ClassesPage';
 import { initialHouses } from './admin/shared/houseData';
 import { logActivity, setLocalStorageAndNotify, sanitizeDownloadFilename } from '../utils/storage';
+import { formatDate } from '../utils/date';
 import { safeJsonParse } from '../utils/security';
 import Modal from './Modal';
 import PaymentGateway from './PaymentGateway';
@@ -375,11 +376,7 @@ const AdmissionDocumentsPage: React.FC<AdmissionDocumentsPageProps> = ({ student
 
     const reopeningDateDisplay = React.useMemo(() => {
         if (!admission || !admission.date) return null;
-        const d = new Date(admission.date);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = d.toLocaleString('default', { month: 'long' });
-        const year = d.getFullYear();
-        return `${day}-${month}-${year}`;
+        return formatDate(admission.date);
     }, [admission]);
 
     const handlePaymentSuccess = () => {

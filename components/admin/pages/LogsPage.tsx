@@ -10,6 +10,7 @@ import { useToast } from '../shared/ToastContext';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import Icon from '../shared/Icons';
 import { INITIAL_ROLES, Role } from './RolesAndPermissionsPage';
+import { formatDateTime } from '../../../utils/date';
 
 // --- TYPE DEFINITIONS ---
 type LogEventType = 'user_management' | 'student_update' | 'system_settings' | 'admission_process' | 'student_delete' | 'user_add' | 'security' | 'navigation' | 'document_access';
@@ -261,14 +262,7 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
                                                 {log.details && <span className="font-bold text-logip-text-header dark:text-dark-text-primary border-b border-dashed border-gray-300 dark:border-gray-600 pb-0.5">{log.details}</span>}
                                             </td>
                                             <td className="p-4 text-base text-logip-text-body dark:text-dark-text-secondary whitespace-nowrap">
-                                                {new Date(log.timestamp).toLocaleString('en-US', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                    hour12: true
-                                                })}
+                                                {formatDateTime(log.timestamp)}
                                             </td>
                                         </tr>
                                     );

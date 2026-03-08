@@ -9,6 +9,7 @@ import { getHouseColor, initialHouses, House } from '../shared/houseData';
 import DatePicker from '../../DatePicker';
 import Icon from '../shared/Icons';
 import { safeJsonParse } from '../../../utils/security';
+import { formatDateTime } from '../../../utils/date';
 
 const StatCard: React.FC<{
     icon: string;
@@ -292,7 +293,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ selectedSchool, selectedA
         const lastLoginTimestamp = localStorage.getItem('admin_last_login_timestamp');
         if (lastLoginTimestamp) {
             const date = new Date(parseInt(lastLoginTimestamp, 10));
-            setLastLogin(date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }));
+            setLastLogin(formatDateTime(date));
         }
     }, []);
 

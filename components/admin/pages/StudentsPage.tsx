@@ -8,6 +8,7 @@ import PaginationControls from '../shared/PaginationControls';
 import PrintButton from '../shared/PrintButton';
 import { printTable } from '../shared/PrintService';
 import { setLocalStorageAndNotify, logActivity, downloadFilename } from '../../../utils/storage';
+import { formatDate, formatDateTime } from '../../../utils/date';
 import { safeJsonParse } from '../../../utils/security';
 import { Class } from './ClassesPage';
 import { initialHouses, getHouseColor, House } from '../shared/houseData';
@@ -155,7 +156,7 @@ const ResetDetailsModal: React.FC<{ isOpen: boolean; onClose: () => void; studen
     const totalResets = resetLog.totalResets ?? 0;
     const lastBy = resetLog.lastResetBy || 'N/A';
     const lastByEmail = resetLog.lastResetByEmail || '';
-    const lastAt = resetLog.lastResetAt ? new Date(resetLog.lastResetAt).toLocaleString() : 'N/A';
+    const lastAt = resetLog.lastResetAt ? formatDateTime(resetLog.lastResetAt) : 'N/A';
     const retrievalCount = retrievalLog.count ?? 0;
     const retrievalDate = retrievalLog.date || 'N/A';
 
@@ -927,8 +928,8 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                     else if (f.id === 'dormitoryId') val = dormitories.find(d => d.id === student.dormitoryId)?.name || 'N/A';
                     else if (f.id === 'feeStatus') val = student.feeStatus;
                     else if (f.id === 'status') val = student.status;
-                    else if (f.id === 'admissionDate') val = new Date(student.admissionDate).toLocaleDateString();
-                    else if (f.id === 'paymentDate') val = student.paymentDate ? new Date(student.paymentDate).toLocaleDateString() : 'N/A';
+                    else if (f.id === 'admissionDate') val = formatDate(student.admissionDate);
+                    else if (f.id === 'paymentDate') val = student.paymentDate ? formatDate(student.paymentDate) : 'N/A';
                     else val = appData[f.id] || '';
 
                     return `"${String(val).replace(/"/g, '""')}"`;

@@ -174,6 +174,10 @@ interface SettingsPageProps {
   setSchools: React.Dispatch<React.SetStateAction<School[]>>;
   admissions: Admission[];
   setAdmissions: React.Dispatch<React.SetStateAction<Admission[]>>;
+  onSaveSchool?: (school: School) => void | Promise<void>;
+  onSaveAdmission?: (admission: Admission) => void | Promise<void>;
+  onDeleteSchool?: (schoolId: string) => void | Promise<void>;
+  onDeleteAdmission?: (admissionId: string) => void | Promise<void>;
   adminUser: AdminUser;
   setAdminUser: React.Dispatch<React.SetStateAction<AdminUser | null>>;
   onExitAdmin: () => void;
@@ -193,7 +197,7 @@ const SETTINGS_TABS_PERMS: Record<string, string> = {
     'User Profile': 'tab:set:prof'
 };
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdmission, setSelectedSchoolId, setSelectedAdmissionId, schools, setSchools, admissions, setAdmissions, adminUser, setAdminUser, onExitAdmin, permissions, getActions, isSuperAdmin }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdmission, setSelectedSchoolId, setSelectedAdmissionId, schools, setSchools, admissions, setAdmissions, onSaveSchool, onSaveAdmission, onDeleteSchool, onDeleteAdmission, adminUser, setAdminUser, onExitAdmin, permissions, getActions, isSuperAdmin }) => {
     const { showToast } = useToast();
     
     const availableTabs = useMemo(() => {
@@ -295,9 +299,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
 
     const handleCloseModal = () => setModalState({ mode: null, item: null });
     
-    const handleSaveSchool = (formData: Omit<School, 'id' | 'dateCreated'>) => {
+    const handleSaveSchool = async (formData: Omit<School, 'id' | 'dateCreated'>) => {
         if (modalState.mode === 'editSchool' && modalState.item && 'dateCreated' in modalState.item) {
             const updatedSchool = { ...(modalState.item as School), ...formData };
+            try {
+                await onSaveSchool?.(updatedSchool);
+            } catch (e) {
+                showToast((e as Error)?.message ?? 'Failed to save school', 'error');
+                return;
+            }
             setSchools(schools.map(s => s.id === updatedSchool.id ? updatedSchool : s));
             showToast(`School "${formData.name}" updated successfully.`, 'success');
             logActivity(
@@ -308,8 +318,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             );
         } else {
             const newSchool: School = { id: `s${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, dateCreated: new Date().toISOString().split('T')[0], ...formData };
+            try {
+                await onSaveSchool?.(newSchool);
+            } catch (e) {
+                showToast((e as Error)?.message ?? 'Failed to create school', 'error');
+                return;
+            }
             setSchools([newSchool, ...schools]);
-            setSelectedSchoolId(newSchool.id);
+            if (!onSaveSchool) setSelectedSchoolId(newSchool.id);
             showToast(`School "${formData.name}" created successfully.`, 'success');
             logActivity(
                 { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
@@ -321,9 +337,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
         handleCloseModal();
     };
     
-    const handleSaveAdmission = (formData: Omit<Admission, 'id' | 'applicantsPlaced' | 'studentsAdmitted'>) => {
+    const handleSaveAdmission = async (formData: Omit<Admission, 'id' | 'applicantsPlaced' | 'studentsAdmitted'>) => {
         if (modalState.mode === 'editAdmission' && modalState.item && 'applicantsPlaced' in modalState.item) {
             const updatedAdmission = { ...(modalState.item as Admission), ...formData };
+            try {
+                await onSaveAdmission?.(updatedAdmission);
+            } catch (e) {
+                showToast((e as Error)?.message ?? 'Failed to save admission', 'error');
+                return;
+            }
             setAdmissions(admissions.map(a => a.id === updatedAdmission.id ? updatedAdmission : a));
             showToast(`Admission "${formData.title}" updated successfully.`, 'success');
             logActivity(
@@ -335,8 +357,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             );
         } else {
             const newAdmission: Admission = { id: `a${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, applicantsPlaced: 0, studentsAdmitted: 0, ...formData };
+            try {
+                await onSaveAdmission?.(newAdmission);
+            } catch (e) {
+                showToast((e as Error)?.message ?? 'Failed to create admission', 'error');
+                return;
+            }
             setAdmissions([newAdmission, ...admissions]);
-            setSelectedAdmissionId(newAdmission.id);
+            if (!onSaveAdmission) setSelectedAdmissionId(newAdmission.id);
             showToast(`Admission "${formData.title}" created successfully.`, 'success');
             logActivity(
                 { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
@@ -349,11 +377,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
         handleCloseModal();
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!modalState.item) return;
         if (modalState.mode === 'deleteSchool') {
             const schoolId = (modalState.item as School).id;
             const schoolName = (modalState.item as School).name;
+            try {
+                await onDeleteSchool?.(schoolId);
+            } catch (e) {
+                showToast((e as Error)?.message ?? 'Failed to delete school', 'error');
+                return;
+            }
             const remainingSchools = schools.filter(s => s.id !== schoolId);
             setSchools(remainingSchools);
             setAdmissions(admissions.filter(a => a.schoolId !== schoolId));
@@ -371,6 +405,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
         if (modalState.mode === 'deleteAdmission') {
             const admissionId = (modalState.item as Admission).id;
             const admissionTitle = (modalState.item as Admission).title;
+            try {
+                await onDeleteAdmission?.(admissionId);
+            } catch (e) {
+                showToast((e as Error)?.message ?? 'Failed to delete admission', 'error');
+                return;
+            }
             setAdmissions(admissions.filter(a => a.id !== admissionId));
             showToast(`Admission "${admissionTitle}" deleted.`, 'success');
             logActivity(

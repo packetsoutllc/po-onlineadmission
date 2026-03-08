@@ -13,6 +13,7 @@ import PaginationControls from '../shared/PaginationControls';
 import { AdminStudent, initialAdminStudents } from './StudentsPage';
 import DatePicker from '../../DatePicker';
 import { appendToLocalStorageArray } from '../../../utils/storage';
+import { formatDateTime } from '../../../utils/date';
 import Icon from '../shared/Icons';
 import { logSecurityEvent, LOGS_STORAGE_KEY } from '../shared/securityLogService';
 
@@ -724,7 +725,7 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
                                 securityLogs.map(log => (
                                     <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-dark-bg/40">
                                         <td className="p-4"><div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div></td>
-                                        <td className="p-4 text-sm text-logip-text-body dark:text-gray-300 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
+                                        <td className="p-4 text-sm text-logip-text-body dark:text-gray-300 whitespace-nowrap">{formatDateTime(log.timestamp)}</td>
                                         <td className="p-4 text-sm font-bold text-red-600 dark:text-red-400">{log.riskType}</td>
                                         <td className="p-4 text-sm text-logip-text-header dark:text-gray-100 font-medium">{log.target}</td>
                                         <td className="p-4 text-sm text-logip-text-subtle dark:text-gray-400 italic">{log.action}</td>
@@ -773,7 +774,7 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
                                         <td className="p-4 text-sm font-mono text-logip-text-header dark:text-gray-100">{log.ipAddress}</td>
                                         <td className="p-4 text-sm text-logip-text-body dark:text-gray-300">{log.country}</td>
                                         <td className="p-4 text-sm text-logip-text-body dark:text-gray-300">{log.town}</td>
-                                        <td className="p-4 text-sm text-logip-text-subtle dark:text-gray-400 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
+                                        <td className="p-4 text-sm text-logip-text-subtle dark:text-gray-400 whitespace-nowrap">{formatDateTime(log.timestamp)}</td>
                                         <td className="p-4 text-sm text-logip-text-subtle dark:text-gray-400 truncate max-w-[200px]" title={log.device}>{log.device}</td>
                                     </tr>
                                 ))

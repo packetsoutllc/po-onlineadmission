@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminModal from './AdminModal';
 import { AdminInput, AdminTextarea, AdminSelect } from './forms';
+import DatePicker from '../../DatePicker';
 import { Admission } from '../pages/SettingsPage';
 
 interface AdmissionFormModalProps {
@@ -83,7 +84,7 @@ const AdmissionFormModal: React.FC<AdmissionFormModalProps> = ({ isOpen, onClose
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                     <div>
                         <label className="block text-base font-medium text-logip-text-subtle dark:text-dark-text-secondary mb-1">Admission Date</label>
-                        <AdminInput name="date" type="date" value={date} onChange={e => setDate(e.target.value)} />
+                        <DatePicker value={date} onChange={setDate} />
                     </div>
                     <div>
                         <div className="flex items-center justify-between p-3 rounded-lg border border-logip-border dark:border-dark-border bg-gray-50 dark:bg-dark-bg/30">

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { formatDate } from '../utils/date';
 
 interface DatePickerProps {
     id?: string;
@@ -143,10 +144,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ id, value, onChange, disabled, 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const d = value ? new Date(value + 'T00:00:00') : new Date();
-    const formattedValue = value 
-        ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` 
-        : '';
+    const formattedValue = value ? formatDate(value.includes('T') ? value : value + 'T00:00:00') : '';
     
     const getHeader = () => {
         switch (viewMode) {
@@ -164,7 +162,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ id, value, onChange, disabled, 
                 return (
                     <div className="flex gap-1">
                         <button onClick={() => setViewMode('months')} className="font-semibold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-md text-gray-900 dark:text-gray-100">{displayDate.toLocaleDateString('en-US', { month: 'long' })}</button>
-                        <button onClick={() => setViewMode('years')} className="font-semibold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-md text-gray-900 dark:text-gray-100">{displayDate.toLocaleDateString('en-US', { year: 'numeric' })}</button>
+                        <button onClick={() => setViewMode('years')} className="font-semibold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-md text-gray-900 dark:text-gray-100">{displayDate.getFullYear()}</button>
                     </div>
                 );
         }

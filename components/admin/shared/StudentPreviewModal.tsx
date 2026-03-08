@@ -9,6 +9,7 @@ import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { School, Admission } from '../pages/SettingsPage';
 import { FormSettings, INITIAL_FORM_SETTINGS } from '../pages/ApplicationDashboardSettings';
 import { safeJsonParse } from '../../../utils/security';
+import { formatDate } from '../../../utils/date';
 
 /** Only read application data for the given school+index to avoid cross-school data. */
 const getMedicalReport = (indexNumber: string, schoolId?: string) => {
@@ -175,7 +176,7 @@ const StudentPreviewModal: React.FC<StudentPreviewModalProps> = ({ isOpen, onClo
                                     <h3 className="font-black text-gray-900 dark:text-white text-sm uppercase tracking-widest">PROFILE</h3>
                                 </div>
                                 <dl className="divide-y divide-gray-100 dark:divide-dark-border">
-                                    <DataRow label="Admission Date" value={new Date(student.admissionDate).toLocaleDateString()} />
+                                    <DataRow label="Admission Date" value={formatDate(student.admissionDate)} />
                                     <DataRow label="Date of Birth" value={appData.dateOfBirth || 'Not Set'} isAlternate />
                                     <DataRow label="Programme" value={student.programme} />
                                     <DataRow label="Mobile Number" value={student.phoneNumber} isAlternate />

@@ -3,6 +3,7 @@
  * Use getInsForgeClient() from insforgeClient; these helpers assume client is configured.
  */
 import type { InsForgeClient } from "@insforge/sdk";
+import { normalizeNewlines } from "../utils/text";
 
 export interface SchoolRow {
   id: string;
@@ -10,7 +11,7 @@ export interface SchoolRow {
   slug: string;
   logo?: string | null;
   status: string;
-  date_created?: string | null;
+  created_at?: string | null;
   home_region?: string | null;
 }
 
@@ -65,7 +66,7 @@ function mapSchool(row: SchoolRow): School {
     slug: row.slug,
     logo: row.logo ?? undefined,
     status: row.status === "Inactive" ? "Inactive" : "Active",
-    dateCreated: row.date_created ?? new Date().toISOString(),
+    dateCreated: row.created_at ?? new Date().toISOString(),
     homeRegion: row.home_region ?? undefined,
   };
 }
@@ -83,22 +84,68 @@ function mapAdmission(row: AdmissionRow): Admission {
     portalStatus: row.portal_status as Admission["portalStatus"] | undefined,
     applicantsPlaced: row.applicants_placed ?? 0,
     studentsAdmitted: row.students_admitted ?? 0,
-    indexHint: row.index_hint ?? undefined,
+    indexHint: row.index_hint != null ? normalizeNewlines(row.index_hint) : undefined,
     headOfSchoolNumber: row.head_of_school_number ?? undefined,
     headOfItNumber: row.head_of_it_number ?? undefined,
   };
 }
 
 export async function fetchSchools(client: InsForgeClient): Promise<School[]> {
-  const { data, error } = await client.database.from("schools").select("id,name,slug,logo,status,date_created,home_region");
+  const { data, error } = await client.database.from("schools").select("id,name,slug,logo,status,home_region,created_at");
   if (error) throw new Error(error.message ?? "Failed to fetch schools");
-  return (data ?? []).map((r: SchoolRow) => mapSchool(r));
+  return (Array.isArray(data) ? data : []).map((r: SchoolRow) => mapSchool(r));
 }
 
 export async function fetchAdmissions(client: InsForgeClient): Promise<Admission[]> {
   const { data, error } = await client.database.from("admissions").select("id,school_id,title,slug,description,date,auth_method,status,portal_status,applicants_placed,students_admitted,index_hint,head_of_school_number,head_of_it_number");
   if (error) throw new Error(error.message ?? "Failed to fetch admissions");
   return (data ?? []).map((r: AdmissionRow) => mapAdmission(r));
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function upsertSchool(client: InsForgeClient, school: School): Promise<void> {
+  const payload: Record<string, unknown> = {
+    name: school.name,
+    slug: school.slug,
+    logo: school.logo ?? null,
+    status: school.status,
+    home_region: school.homeRegion ?? null,
+  };
+  if (school.id && UUID_REGEX.test(school.id)) payload.id = school.id;
+  const { error } = await client.database.from("schools").upsert(payload, { onConflict: "slug" });
+  if (error) throw new Error(error.message ?? "Failed to upsert school");
+}
+
+export async function upsertAdmission(client: InsForgeClient, admission: Admission): Promise<void> {
+  const payload: Record<string, unknown> = {
+    school_id: admission.schoolId,
+    title: admission.title,
+    slug: admission.slug,
+    description: admission.description ?? "",
+    date: admission.date ?? "",
+    auth_method: admission.authMethod ?? "Index number only",
+    status: admission.status,
+    portal_status: admission.portalStatus ?? "opened",
+    applicants_placed: admission.applicantsPlaced ?? 0,
+    students_admitted: admission.studentsAdmitted ?? 0,
+    index_hint: admission.indexHint ?? null,
+    head_of_school_number: admission.headOfSchoolNumber ?? null,
+    head_of_it_number: admission.headOfItNumber ?? null,
+  };
+  if (admission.id && UUID_REGEX.test(admission.id)) payload.id = admission.id;
+  const { error } = await client.database.from("admissions").upsert(payload, { onConflict: "school_id,slug" });
+  if (error) throw new Error(error.message ?? "Failed to upsert admission");
+}
+
+export async function deleteSchool(client: InsForgeClient, schoolId: string): Promise<void> {
+  const { error } = await client.database.from("schools").delete().eq("id", schoolId);
+  if (error) throw new Error(error.message ?? "Failed to delete school");
+}
+
+export async function deleteAdmission(client: InsForgeClient, admissionId: string): Promise<void> {
+  const { error } = await client.database.from("admissions").delete().eq("id", admissionId);
+  if (error) throw new Error(error.message ?? "Failed to delete admission");
 }
 
 export interface VerifyStudentPayload {

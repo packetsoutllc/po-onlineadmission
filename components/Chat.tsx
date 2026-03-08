@@ -12,6 +12,7 @@ import { safeJsonParse } from '../utils/security';
 import { Conversation, ThreadMessage, initialConversations } from './admin/pages/MessagesPage';
 import { initialSchools, School, initialAdmissions, Admission } from './admin/pages/SettingsPage';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { formatDateTime } from '../utils/date';
 
 type ApplicationStatus = 'not_submitted' | 'submitted';
 
@@ -77,13 +78,7 @@ const useIsDesktop = () => {
 const HANDOFF_TRIGGERS = ['human', 'agent', 'person', 'representative', 'support', 'speak to someone', 'technician', 'personnel', 'talk to', 'chat with', 'i want human agent'];
 const AI_FAIL_TRIGGERS = ["i'm sorry, i cannot", "i am unable to", "i don't have information"];
 
-export const getTimestamp = () => new Date().toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-});
+export const getTimestamp = () => formatDateTime(new Date());
 
 interface SectionAccessSettings {
     class: { prospective: boolean; prospectiveReason?: string; admitted: boolean; admittedReason?: string; };
@@ -176,7 +171,7 @@ const Chat: React.FC<ChatProps> = ({
                 id: m.id,
                 text: m.text,
                 sender: 'ai',
-                timestamp: new Date(m.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }),
+                timestamp: formatDateTime(m.timestamp),
                 imageUrl: m.imageUrl,
                 fromHuman: true,
             }));

@@ -1,4 +1,5 @@
 import { escapeHtml, sanitizeResourceUrl } from '../../../utils/security';
+import { formatDate } from '../../../utils/date';
 import { School } from '../pages/SettingsPage';
 
 export const printTable = (
@@ -21,7 +22,7 @@ export const printTable = (
     }
 
     const now = new Date();
-    const formattedDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const formattedDate = formatDate(now);
     const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
     // Using a more reliable default placeholder for school logo (must be safe URL)

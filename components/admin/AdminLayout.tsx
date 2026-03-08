@@ -8,6 +8,9 @@ import StudentDetails, { Student, ApplicationStatus } from '../StudentDetails';
 import { AdminStudent, initialAdminStudents, StudentStatus } from './pages/StudentsPage';
 import { ToastProvider, useToast } from './shared/ToastContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useSchoolsAndAdmissions } from '../hooks/useSchoolsAndAdmissions';
+import { isInsForgeConfigured, getInsForgeClient } from '../../lib/insforgeClient';
+import { upsertSchool, upsertAdmission, deleteSchool, deleteAdmission } from '../../lib/insforgeData';
 import { INITIAL_ROLES, Role, getActionsForRole, PermissionActions } from './pages/RolesAndPermissionsPage';
 import { initialClasses, Class } from './pages/ClassesPage';
 import { initialProgrammes, Programme } from './pages/ProgrammesPage';
@@ -66,8 +69,40 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
         setActivePage(page);
         setIsSidebarOpen(false);
     }, []);
-    const [allSchools, setAllSchools] = useLocalStorage<School[]>('admin_schools', initialSchools);
-    const [allAdmissions, setAllAdmissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
+    const [localSchools, setLocalSchools] = useLocalStorage<School[]>('admin_schools', initialSchools);
+    const [localAdmissions, setLocalAdmissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
+    const { schools: backendSchools, admissions: backendAdmissions, source: schoolsSource, refetch: refetchSchoolsAndAdmissions } = useSchoolsAndAdmissions();
+    const useBackendSchools = isInsForgeConfigured() && schoolsSource === 'insforge';
+    const allSchools = useBackendSchools ? backendSchools : localSchools;
+    const allAdmissions = useBackendSchools ? backendAdmissions : localAdmissions;
+    const setAllSchools = useBackendSchools ? (() => {}) as React.Dispatch<React.SetStateAction<School[]>> : setLocalSchools;
+    const setAllAdmissions = useBackendSchools ? (() => {}) as React.Dispatch<React.SetStateAction<Admission[]>> : setLocalAdmissions;
+
+    const handleSaveSchool = useCallback(async (school: School) => {
+        const client = getInsForgeClient();
+        if (!client) return;
+        await upsertSchool(client, school);
+        refetchSchoolsAndAdmissions();
+    }, [refetchSchoolsAndAdmissions]);
+    const handleSaveAdmission = useCallback(async (admission: Admission) => {
+        const client = getInsForgeClient();
+        if (!client) return;
+        await upsertAdmission(client, admission);
+        refetchSchoolsAndAdmissions();
+    }, [refetchSchoolsAndAdmissions]);
+    const handleDeleteSchool = useCallback(async (schoolId: string) => {
+        const client = getInsForgeClient();
+        if (!client) return;
+        await deleteSchool(client, schoolId);
+        refetchSchoolsAndAdmissions();
+    }, [refetchSchoolsAndAdmissions]);
+    const handleDeleteAdmission = useCallback(async (admissionId: string) => {
+        const client = getInsForgeClient();
+        if (!client) return;
+        await deleteAdmission(client, admissionId);
+        refetchSchoolsAndAdmissions();
+    }, [refetchSchoolsAndAdmissions]);
+
     const [students, setStudents] = useLocalStorage<AdminStudent[]>('admin_students', initialAdminStudents);
     const [classes] = useLocalStorage<Class[]>('admin_classes', initialClasses);
     const [programmes] = useLocalStorage<Programme[]>('admin_programmes', initialProgrammes);
@@ -175,6 +210,15 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
 
     const [selectedAdmissionId, setSelectedAdmissionId] = useLocalStorage<string | null>(`${adminUser.email}_admin_selected_admission_id`, initialAdmissionValue);
 
+    // When using backend, if selected school/admission id is no longer in the list (e.g. after add with temp id), pick first valid
+    useEffect(() => {
+        if (!useBackendSchools || allSchools.length === 0) return;
+        const schoolExists = allSchools.some(s => s.id === selectedSchoolId);
+        if (!schoolExists) {
+            setSelectedSchoolId(allSchools[0]?.id ?? null);
+        }
+    }, [useBackendSchools, allSchools, selectedSchoolId, setSelectedSchoolId]);
+
     useEffect(() => {
         if (!selectedSchoolId) return;
 
@@ -254,6 +298,10 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
                             setSchools={setAllSchools} 
                             admissions={allAdmissions} 
                             setAdmissions={setAllAdmissions} 
+                            onSaveSchool={useBackendSchools ? handleSaveSchool : undefined}
+                            onSaveAdmission={useBackendSchools ? handleSaveAdmission : undefined}
+                            onDeleteSchool={useBackendSchools ? handleDeleteSchool : undefined}
+                            onDeleteAdmission={useBackendSchools ? handleDeleteAdmission : undefined}
                             students={students} 
                             setStudents={setStudents} 
                             classes={classes} 

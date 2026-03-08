@@ -8,6 +8,7 @@ import { initialClasses } from '../pages/ClassesPage';
 import Icon from './Icons';
 import { safeJsonParse } from '../../../utils/security';
 import { downloadFilename } from '../../../utils/storage';
+import { formatDate } from '../../../utils/date';
 
 interface MemberListModalProps {
     isOpen: boolean;
@@ -109,7 +110,7 @@ const MemberListModal: React.FC<MemberListModalProps> = ({ isOpen, onClose, titl
             `"${member.name.replace(/"/g, '""')}"`, // Handle quotes in names
             member.gender,
             member.status,
-            new Date(member.admissionDate).toLocaleDateString('en-GB').replace(/\//g, '-'),
+            formatDate(member.admissionDate),
         ].join(','));
 
         const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
@@ -203,7 +204,7 @@ const MemberListModal: React.FC<MemberListModalProps> = ({ isOpen, onClose, titl
                                         </div>
                                         <h4 className="font-semibold text-logip-text-header dark:text-dark-text-primary truncate w-full" title={member.name}>{member.name}</h4>
                                         {className && <p className="text-xs text-logip-text-subtle dark:text-dark-text-secondary mt-1">{className}</p>}
-                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{new Date(member.admissionDate).toLocaleDateString('en-GB').replace(/\//g, '-')}</p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{formatDate(member.admissionDate)}</p>
                                         <div className="mt-2">
                                             <StatusPill status={member.status} />
                                         </div>
@@ -254,7 +255,7 @@ const MemberListModal: React.FC<MemberListModalProps> = ({ isOpen, onClose, titl
                                     <td>{member.name}</td>
                                     <td>{member.gender}</td>
                                     <td>{member.status}</td>
-                                    <td>{new Date(member.admissionDate).toLocaleDateString('en-GB').replace(/\//g, '-')}</td>
+                                    <td>{formatDate(member.admissionDate)}</td>
                                 </tr>
                             ))}
                         </tbody>

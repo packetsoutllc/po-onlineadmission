@@ -1,7 +1,7 @@
 /**
  * Single source for schools and admissions: InsForge when configured, else localStorage.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { getInsForgeClient, isInsForgeConfigured } from "../../lib/insforgeClient";
 import { fetchSchools, fetchAdmissions } from "../../lib/insforgeData";
@@ -14,11 +14,13 @@ export interface UseSchoolsAndAdmissionsResult {
   loading: boolean;
   error: string | null;
   source: "insforge" | "localStorage";
+  refetch: () => void;
 }
 
 export function useSchoolsAndAdmissions(): UseSchoolsAndAdmissionsResult {
   const [localSchools] = useLocalStorage<School[]>("admin_schools", initialSchools);
   const [localAdmissions] = useLocalStorage<Admission[]>("admin_admissions", initialAdmissions);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [schools, setSchools] = useState<School[]>(localSchools);
   const [admissions, setAdmissions] = useState<Admission[]>(localAdmissions);
@@ -27,6 +29,10 @@ export function useSchoolsAndAdmissions(): UseSchoolsAndAdmissionsResult {
   const [source, setSource] = useState<"insforge" | "localStorage">(
     isInsForgeConfigured() ? "insforge" : "localStorage"
   );
+
+  const refetch = useCallback(() => {
+    setRefreshTrigger((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     if (!isInsForgeConfigured()) {
@@ -73,7 +79,7 @@ export function useSchoolsAndAdmissions(): UseSchoolsAndAdmissionsResult {
     return () => {
       cancelled = true;
     };
-  }, [localSchools, localAdmissions]);
+  }, [localSchools, localAdmissions, refreshTrigger]);
 
-  return { schools, admissions, loading, error, source };
+  return { schools, admissions, loading, error, source, refetch };
 }

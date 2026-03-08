@@ -17,6 +17,7 @@ import { AdmissionSettings } from './SecuritySettingsTab';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { AdminUser } from '../AdminLayout';
 import { safeJsonParse } from '../../../utils/security';
+import { formatDateTime } from '../../../utils/date';
 
 // --- TYPE DEFINITIONS ---
 export interface Transaction {
@@ -521,12 +522,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
                                         </div>
                                     </td>
                                     <td className="p-4 text-base text-gray-600 dark:text-gray-400">
-                                        {trans.date ? 
-                                            new Date(trans.date).toLocaleString('en-GB', {
-                                                day: '2-digit', month: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true 
-                                            }).replace(/\//g, '-')
-                                            : 'N/A'
-                                        }
+                                        {trans.date ? formatDateTime(trans.date) : 'N/A'}
                                     </td>
                                     <td className="p-4 text-base font-mono text-gray-600 dark:text-gray-400">{trans.serialNumber || 'N/A'}</td>
                                     <td className="p-4 text-base font-mono text-gray-600 dark:text-gray-400">{trans.pin || 'N/A'}</td>

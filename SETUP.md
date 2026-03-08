@@ -20,6 +20,28 @@ Repeat for PSHS002/98765432109825, PSHS003/11111111111125, PSHS004/2222222222222
 
 **Test applicant login:** Index e.g. `12345678901225`, Serial `PSHS001`, PIN `12345`.
 
+Run **007** so the admin panel can create/edit/delete schools and admissions on the backend (optional; required for full backend mode):
+
+```powershell
+npx insforge db import "insforge\migrations\007_anon_write_schools_admissions.sql"
+```
+
+To add **2026 Admissions** (so the portal and Settings can use 2026 in sync with the DB), run migration 006:
+
+```powershell
+npx insforge db import "insforge\migrations\006_seed_2026_admission.sql"
+```
+
+Then verification and applicant login work for 2026 (e.g. index `12345678901226`, Serial `PSHS001`, PIN `12345`).
+
+### App and database sync
+
+When InsForge is configured, the **public portal** (verification page, protocol page) uses **schools and admissions from the database**, not from the browser’s localStorage. So:
+
+- Only schools and admissions that exist in the DB can be used for verification and applicant flows.
+- If the admin selects “2026 Admissions” in Settings, that admission must exist in the DB (run migration 006 above) or verification will fail.
+- The **landing page** also loads schools/admissions from the DB when InsForge is configured, so the list matches what the backend supports.
+
 ## 2. Set environment variables
 
 1. Copy `.env.example` to `.env` if you don’t have `.env` yet.

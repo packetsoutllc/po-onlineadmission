@@ -3,6 +3,7 @@ import { Admission, School } from './SettingsPage';
 import { useToast } from '../shared/ToastContext';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import { downloadFilename } from '../../../utils/storage';
+import { formatDate } from '../../../utils/date';
 
 interface BackupSettingsTabProps {
     allAdmissions: Admission[];
@@ -163,7 +164,7 @@ const BackupSettingsTab: React.FC<BackupSettingsTabProps> = ({ allAdmissions, se
                     </div>
                     <div>
                         <h4 className="font-semibold text-logip-text-header dark:text-dark-text-primary mb-3">
-                            Backups for {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                            Backups for {formatDate(selectedDate)}
                         </h4>
                         <div className="space-y-3 max-h-80 overflow-y-auto no-scrollbar pr-2 -mr-2">
                             {selectedDayBackups.length > 0 ? (

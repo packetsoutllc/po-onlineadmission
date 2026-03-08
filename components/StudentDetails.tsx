@@ -20,6 +20,7 @@ import { safeJsonParse } from '../utils/security';
 import { getInsForgeClient } from '../lib/insforgeClient';
 import { upsertSubmissionStatus, upsertApplicationData, upsertCredentials } from '../lib/insforgeData';
 import { setFavicon } from '../utils/favicon';
+import { formatDate, formatDateTime } from '../utils/date';
 import { Dormitory, initialDormitories } from './admin/shared/dormitoryData';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
 import NotificationPreviewModal from './admin/shared/NotificationPreviewModal';
@@ -157,16 +158,6 @@ export const isNotificationActive = (notif: any, admissionId: string, type: 'scr
         }
     }
     return true;
-};
-
-const formatDateTime = (dateStr: string | null) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
-    return `${day}-${month}-${year}, ${timeStr}`;
 };
 
 const formatTime = (seconds: number) => {
@@ -965,7 +956,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ student: initialStudent
   const showTopBanner = scrollingBanner && scrollingBanner.position === 'top';
   const showBottomBanner = scrollingBanner && scrollingBanner.position === 'bottom';
   const houseColors = getHouseColor(houseDisplay.value !== 'N/A' && !houseDisplay.isRestricted ? { ...initialHouses.find(h => h.name === houseDisplay.value), studentCount: 0 } as any : undefined);
-  const lastLoginTime = useMemo(() => { const timestamp = localStorage.getItem(`student_login_timestamp_${initialStudent.schoolId}_${activeStudentIndex}`); if (!timestamp) return null; return new Date(parseInt(timestamp, 10)).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }); }, [activeStudentIndex, initialStudent.schoolId]);
+  const lastLoginTime = useMemo(() => { const timestamp = localStorage.getItem(`student_login_timestamp_${initialStudent.schoolId}_${activeStudentIndex}`); if (!timestamp) return null; return formatDateTime(parseInt(timestamp, 10)); }, [activeStudentIndex, initialStudent.schoolId]);
   const displayedAdmissionNumber = useMemo(() => { if (admissionNumber) return admissionNumber; if (realTimeApplicationStatus === 'Admitted') { const counterKey = `admissionSubmissionCounter_${initialStudent.schoolId}`; const currentCount = localStorage.getItem(counterKey) || '0'; return `${liveStudent.programme.substring(0,3).toUpperCase()}-${activeStudentIndex.slice(-3)}/${String(currentCount).padStart(3, '0')}`; } return null; }, [admissionNumber, realTimeApplicationStatus, liveStudent.programme, activeStudentIndex, initialStudent.schoolId]);
   const displayedSubmissionDate = useMemo(() => { if (submissionDate) return submissionDate; if (realTimeApplicationStatus === 'Admitted') return new Date().toISOString(); return null; }, [submissionDate, realTimeApplicationStatus]);
   const footerBranding = (

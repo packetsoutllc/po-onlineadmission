@@ -1,6 +1,7 @@
 import React from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { escapeHtml, safeJsonParse, sanitizeResourceUrl } from '../../utils/security';
+import { formatDate } from '../../utils/date';
 
 interface ImagePreviewModalProps {
     isOpen: boolean;
@@ -55,7 +56,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ isOpen, onClose, 
         const safeImageUrl = sanitizeResourceUrl(imageUrl);
 
         const now = new Date();
-        const formattedDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const formattedDate = formatDate(now);
         const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
         const doc = `

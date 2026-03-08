@@ -7,6 +7,7 @@ import VideoCallModal from '../shared/VideoCallModal';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import Icon from '../shared/Icons';
 import { safeJsonParse } from '../../../utils/security';
+import { formatDateTime } from '../../../utils/date';
 
 // --- TYPE DEFINITIONS ---
 export type MessageStatus = 'read' | 'unread' | 'blocked' | 'trash';
@@ -222,7 +223,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
                     )}
                     <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
                     <p className={`text-[10px] mt-1.5 font-medium tracking-wide uppercase ${msg.isMine ? 'text-white/60 text-right' : 'text-gray-400 dark:text-gray-500'}`}>
-                        {new Date(msg.timestamp).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })}
+                        {formatDateTime(msg.timestamp)}
                     </p>
                 </div>
             </div>

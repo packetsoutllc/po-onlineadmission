@@ -34,6 +34,10 @@ interface PageContentProps {
     setSchools: React.Dispatch<React.SetStateAction<School[]>>;
     admissions: Admission[];
     setAdmissions: React.Dispatch<React.SetStateAction<Admission[]>>;
+    onSaveSchool?: (school: School) => void | Promise<void>;
+    onSaveAdmission?: (admission: Admission) => void | Promise<void>;
+    onDeleteSchool?: (schoolId: string) => void | Promise<void>;
+    onDeleteAdmission?: (admissionId: string) => void | Promise<void>;
     students: AdminStudent[];
     setStudents: React.Dispatch<React.SetStateAction<AdminStudent[]>>;
     classes: Class[];
@@ -54,7 +58,7 @@ interface PageContentProps {
 
 const PageContent: React.FC<PageContentProps> = ({ 
     activePage, setActivePage, selectedSchool, selectedAdmission, setSelectedSchoolId, setSelectedAdmissionId, onEditStudent, 
-    schools, setSchools, admissions, setAdmissions, students, setStudents,
+    schools, setSchools, admissions, setAdmissions, onSaveSchool, onSaveAdmission, onDeleteSchool, onDeleteAdmission, students, setStudents,
     classes, setClasses, programmes, setProgrammes,
     dormitories, setDormitories, conversations, setConversations,
     adminUser, setAdminUser, onExitAdmin,
@@ -179,6 +183,10 @@ const PageContent: React.FC<PageContentProps> = ({
                 setSchools={setSchools}
                 admissions={admissions}
                 setAdmissions={setAdmissions}
+                onSaveSchool={onSaveSchool}
+                onSaveAdmission={onSaveAdmission}
+                onDeleteSchool={onDeleteSchool}
+                onDeleteAdmission={onDeleteAdmission}
                 adminUser={adminUser}
                 setAdminUser={setAdminUser}
                 onExitAdmin={onExitAdmin}

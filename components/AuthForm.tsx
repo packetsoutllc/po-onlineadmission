@@ -6,6 +6,7 @@ import { setLocalStorageAndNotify, logActivity, getPortalSlugSchool, getPortalSl
 import { safeJsonParse } from '../utils/security';
 import { setFavicon } from '../utils/favicon';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useSchoolsAndAdmissions } from './hooks/useSchoolsAndAdmissions';
 import { Admission, initialAdmissions, School, initialSchools } from './admin/pages/SettingsPage';
 import { AdminStudent, initialAdminStudents, StudentStatus } from './admin/pages/StudentsPage';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
@@ -15,6 +16,7 @@ import VideoPreviewModal from './admin/shared/VideoPreviewModal';
 import Icon from './admin/shared/Icons';
 import { isInsForgeConfigured, getInsForgeBaseUrl, getInsForgeClient } from '../lib/insforgeClient';
 import { invokeVerify, fetchFinancialsSettings } from '../lib/insforgeData';
+import { normalizeNewlines } from '../utils/text';
 
 // Default settings
 const defaultAdmissionSettings: AdmissionSettings = {
@@ -183,9 +185,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
   const [officialEditEvidence, setOfficialEditEvidence] = useState<{ name: string; dataUrl: string } | null>(null);
   const [correctionSuccessModal, setCorrectionSuccessModal] = useState<{ title: string; message: string } | null>(null);
 
-  const [admissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
+  const [localAdmissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
   const [adminStudents, setAdminStudents] = useLocalStorage<AdminStudent[]>('admin_students', initialAdminStudents);
-  const [schools] = useLocalStorage<School[]>('admin_schools', initialSchools);
+  const [localSchools] = useLocalStorage<School[]>('admin_schools', initialSchools);
+  const { schools: insforgeSchools, admissions: insforgeAdmissions, source: schoolsSource } = useSchoolsAndAdmissions();
+  // When InsForge is configured, use DB data so portal and verify API stay in sync; otherwise use localStorage
+  const schools = isInsForgeConfigured() && schoolsSource === 'insforge' ? insforgeSchools : localSchools;
+  const admissions = isInsForgeConfigured() && schoolsSource === 'insforge' ? insforgeAdmissions : localAdmissions;
 
   const activeSchoolsList = useMemo(
     () => schools.filter((s) => s.status === 'Active'),
@@ -225,7 +231,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
       if (admissionSlug) {
           return admissions.find(a => a.schoolId === activeSchool.id && (a.slug === admissionSlug || getPortalSlugAdmission(a.id) === admissionSlug)) ?? null;
       }
-      return admissions.find(a => a.schoolId === activeSchool.id && a.status === 'Active') || admissions.find(a => a.schoolId === activeSchool.id) ?? null;
+      return (admissions.find(a => a.schoolId === activeSchool.id && a.status === 'Active') || admissions.find(a => a.schoolId === activeSchool.id)) ?? null;
   }, [admissions, admissionSlug, activeSchool]);
 
 
@@ -636,11 +642,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
   }, [authMethod, effectiveSettings]);
 
   const displayedHint = useMemo(() => {
-    if (indexHint) return indexHint;
-    if (authMethod === 'Full name only') {
-      return "Enter your full name exactly as it appears on\nthe placement form. Example: Doe John";
-    }
-    return "Add the year you completed JHS\nExample: xxxxxxxxxxxx25";
+    const raw = indexHint || (authMethod === 'Full name only'
+      ? "Enter your full name exactly as it appears on\nthe placement form. Example: Doe John"
+      : "Add the year you completed JHS\nExample: xxxxxxxxxxxx25");
+    return normalizeNewlines(raw);
   }, [authMethod, indexHint]);
 
   if (!activeSchool || !activeAdmission) {
@@ -816,25 +821,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ schoolSlug, admissionSlug, onVerifi
 
                 {displayedHint && (
                   <div className="mt-3">
-                    <div className="bg-info-bg-light dark:bg-yellow-950/40 border border-info-border-light/60 dark:border-yellow-500/40 rounded-lg px-4 py-3 flex items-start space-x-3 overflow-x-auto no-scrollbar">
-                      <Icon name="info" className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
+                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/50 rounded-lg px-4 py-3 flex items-start space-x-3 overflow-x-auto no-scrollbar">
+                      <Icon name="info" className="w-5 h-5 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
                       <div className="min-w-0 flex-1">
-                        {displayedHint.split('\n').map((line, i) => {
-                          const parts = line.split(/(Example:.*)/);
-                          return (
-                            <p key={i} className="text-xs sm:text-sm text-red-700 dark:text-red-300">
-                              {parts.map((part, index) =>
-                                part.startsWith('Example:') ? (
-                                  <span key={index} className="font-medium">
-                                    {part}
-                                  </span>
-                                ) : (
-                                  part
-                                )
-                              )}
-                            </p>
-                          );
-                        })}
+                        {displayedHint.split('\n').map((line, i) => (
+                          <p key={i} className="text-xs sm:text-sm text-amber-800 dark:text-amber-200">
+                            {line}
+                          </p>
+                        ))}
                       </div>
                     </div>
                   </div>

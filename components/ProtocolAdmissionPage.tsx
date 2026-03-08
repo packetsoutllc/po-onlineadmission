@@ -2,9 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Modal from './Modal';
 import { FormField, Input, Select } from './FormControls';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useSchoolsAndAdmissions } from './hooks/useSchoolsAndAdmissions';
 import { setFavicon } from '../utils/favicon';
+import { isInsForgeConfigured } from '../lib/insforgeClient';
 import { safeJsonParse } from '../utils/security';
 import { getPortalSlugSchool, getPortalSlugAdmission } from '../utils/storage';
+import { normalizeNewlines } from '../utils/text';
 import { AdminStudent, initialAdminStudents } from './admin/pages/StudentsPage';
 import { Admission, initialAdmissions, School, initialSchools } from './admin/pages/SettingsPage';
 import { AdmissionSettings } from './admin/pages/SecuritySettingsTab';
@@ -51,8 +54,11 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
     const [indexError, setIndexError] = useState('');
 
     const [adminStudents, setAdminStudents] = useLocalStorage<AdminStudent[]>('admin_students', initialAdminStudents);
-    const [admissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
-    const [schools] = useLocalStorage<School[]>('admin_schools', initialSchools);
+    const [localAdmissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
+    const [localSchools] = useLocalStorage<School[]>('admin_schools', initialSchools);
+    const { schools: insforgeSchools, admissions: insforgeAdmissions, source: schoolsSource } = useSchoolsAndAdmissions();
+    const schools = isInsForgeConfigured() && schoolsSource === 'insforge' ? insforgeSchools : localSchools;
+    const admissions = isInsForgeConfigured() && schoolsSource === 'insforge' ? insforgeAdmissions : localAdmissions;
 
     // Determine active school/admission by URL segment (slug or admin-configured portal slug)
     const activeSchool = useMemo(() => {
@@ -64,7 +70,7 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
                 return bySlug;
             }
         }
-        const fallback = schools.find(s => s.id === 's1') || null;
+        const fallback = schools.find(s => s.id === 's1') || schools[0] || null;
         if (fallback) {
             document.title = 'Packets Out - Online Admission System';
             setFavicon(fallback.logo ?? null);
@@ -134,7 +140,7 @@ const ProtocolAdmissionPage: React.FC<ProtocolAdmissionPageProps> = ({ onReturnT
     
     const { indexHint = '' } = activeAdmission || {};
     const requiredEnding = useMemo(() => { if (!indexHint) return null; const match = indexHint.match(/(\d+)$/); return match ? match[1] : null; }, [indexHint]);
-    const inlineHint = useMemo(() => { if (!indexHint) return null; const exampleLine = indexHint.split('\n').find(line => line.toLowerCase().startsWith('example:')); return exampleLine || null; }, [indexHint]);
+    const inlineHint = useMemo(() => { if (!indexHint) return null; const normalized = normalizeNewlines(indexHint); const exampleLine = normalized.split('\n').find(line => line.toLowerCase().startsWith('example:')); return exampleLine || null; }, [indexHint]);
 
     const isLocked = isFinalConfirmed;
 
