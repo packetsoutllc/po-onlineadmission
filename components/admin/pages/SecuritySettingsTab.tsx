@@ -236,6 +236,8 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
     const [isPreviewScrollOpen, setIsPreviewScrollOpen] = useState(false);
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
     const [securityLogs, setSecurityLogs] = useLocalStorage<SecurityLog[]>(LOGS_STORAGE_KEY, []);
+    const [securityPage, setSecurityPage] = useState(1);
+    const [securityItemsPerPage, setSecurityItemsPerPage] = useLocalStorage<number>(`${adminUser.email}_security_logs_items_per_page`, 10);
     const [browsingLogs] = useLocalStorage<BrowsingLogEntry[]>('admin_browsing_logs', initialBrowsingLogs);
     const [browsingSearchTerm, setBrowsingSearchTerm] = useState('');
     const [browsingPage, setBrowsingPage] = useState(1);
@@ -252,8 +254,14 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
 
     const totalBrowsingPages = Math.ceil(filteredBrowsingLogs.length / browsingItemsPerPage);
     const browsingStartIndex = (browsingPage - 1) * browsingItemsPerPage;
-    // FIX: Corrected undeclared variable 'startIndex' to 'browsingStartIndex'
     const paginatedBrowsingLogs = filteredBrowsingLogs.slice(browsingStartIndex, browsingStartIndex + browsingItemsPerPage);
+
+    const totalSecurityPages = Math.max(1, Math.ceil(securityLogs.length / securityItemsPerPage));
+    const securityStartIndex = (securityPage - 1) * securityItemsPerPage;
+    const paginatedSecurityLogs = securityLogs.slice(securityStartIndex, securityStartIndex + securityItemsPerPage);
+    useEffect(() => {
+        if (securityPage > totalSecurityPages && totalSecurityPages > 0) setSecurityPage(totalSecurityPages);
+    }, [totalSecurityPages, securityPage]);
 
     const handleSaveAdmissionSettings = () => { if (admissionSettingsKey) { setAdmissionSettings(localAdmissionSettings); showToast('Settings saved successfully.', 'success'); } };
 
@@ -721,8 +729,8 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-logip-border dark:divide-dark-border">
-                            {securityLogs.length > 0 ? (
-                                securityLogs.map(log => (
+                            {paginatedSecurityLogs.length > 0 ? (
+                                paginatedSecurityLogs.map(log => (
                                     <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-dark-bg/40">
                                         <td className="p-4"><div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div></td>
                                         <td className="p-4 text-sm text-logip-text-body dark:text-gray-300 whitespace-nowrap">{formatDateTime(log.timestamp)}</td>
@@ -741,6 +749,18 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({ selectedSchoo
                 </div>
                 <div className="mt-4 flex justify-end">
                     <button onClick={() => setSecurityLogs([])} className="text-xs font-bold text-red-500 hover:underline uppercase tracking-widest">Clear Logs</button>
+                </div>
+                <div className="pt-4 border-t border-logip-border dark:border-dark-border">
+                    <PaginationControls
+                        currentPage={securityPage}
+                        totalPages={totalSecurityPages}
+                        onPageChange={setSecurityPage}
+                        totalItems={securityLogs.length}
+                        itemsPerPage={securityItemsPerPage}
+                        onItemsPerPageChange={setSecurityItemsPerPage}
+                        startItem={securityLogs.length === 0 ? 0 : securityStartIndex + 1}
+                        endItem={Math.min(securityStartIndex + securityItemsPerPage, securityLogs.length)}
+                    />
                 </div>
             </div>
 

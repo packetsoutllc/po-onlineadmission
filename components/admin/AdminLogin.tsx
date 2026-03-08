@@ -8,8 +8,17 @@ import { logSecurityEvent } from './shared/securityLogService';
 import { safeJsonParse } from '../../utils/security';
 import { getInsForgeClient, isInsForgeConfigured } from '../../lib/insforgeClient';
 
-/** No demo data: use InsForge Auth or add users in the admin Users page after first login. */
-const ADMIN_USERS: (AdminUser & { password: string; phoneNumber?: string; schoolId?: string; admissionId?: string; expiryDate?: string; status?: string; })[] = [];
+/** Super administrator and any other bootstrap users. InsForge Auth (if configured) is tried first; then this list + localStorage admin_users. */
+const ADMIN_USERS: (AdminUser & { password: string; phoneNumber?: string; schoolId?: string; admissionId?: string; expiryDate?: string; status?: string; })[] = [
+  {
+    email: 'amabotsi@gmail.com',
+    name: 'Super Administrator',
+    roleId: 'role_super_admin',
+    password: 'aUGUtus@7010',
+    status: 'active',
+    phoneNumber: undefined, // optional: set to skip 2FA prompt when no phone
+  },
+];
 
 const PekiLogo: React.FC = () => (
     <div className="flex items-center justify-center mb-6">
@@ -179,8 +188,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturnToStude
           const globalSettingsRaw = localStorage.getItem('globalAdminSecuritySettings');
           const globalSettings: Partial<GlobalAdminSecuritySettings> = safeJsonParse(globalSettingsRaw, { enable2FA: true });
           const is2faRequired = globalSettings.enable2FA ?? true;
-          
-          if (is2faRequired) {
+          const isSuperAdminNoPhone = foundUser.roleId === 'role_super_admin' && !foundUser.phoneNumber;
+
+          if (is2faRequired && !isSuperAdminNoPhone) {
               if (!foundUser.phoneNumber) {
                   setError("2FA is required, but no phone number is configured for your account. Please contact a system administrator.");
                   setIsLoading(false);

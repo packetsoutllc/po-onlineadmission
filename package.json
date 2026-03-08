@@ -13,7 +13,8 @@
     "sync:out": "git add -A && git commit -m \"chore: sync to GitHub\" --allow-empty && git push origin HEAD",
     "setup:github": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-github-sync.ps1",
     "insforge": "insforge",
-    "db:migrate": "powershell -ExecutionPolicy Bypass -File ./scripts/run-insforge-migrations.ps1"
+    "db:migrate": "powershell -ExecutionPolicy Bypass -File ./scripts/run-insforge-migrations.ps1",
+    "create:insforge-admin": "node scripts/create-insforge-admin.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.25.0",

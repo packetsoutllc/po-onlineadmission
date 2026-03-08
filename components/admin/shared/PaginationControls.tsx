@@ -1,5 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import Icon from './Icons';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface PaginationControlsProps {
     currentPage: number;
@@ -12,6 +11,10 @@ interface PaginationControlsProps {
     endItem: number;
 }
 
+/**
+ * Pagination bar matching design: "Showing X to Y of Z results" | "SHOW:" [dropdown] | [<] [current page] [>]
+ * Single current-page button only (no ellipsis or multiple numbers). Prev/Next as carets, faded when disabled.
+ */
 const PaginationControls: React.FC<PaginationControlsProps> = ({
     currentPage,
     totalPages,
@@ -25,38 +28,6 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const paginationRange = useMemo((): (number | string)[] => {
-        const initialShowCount = 6;
-
-        if (totalPages <= initialShowCount + 1) {
-            return Array.from({ length: totalPages }, (_, i) => i + 1);
-        }
-
-        const firstPageIndex = 1;
-        const lastPageIndex = totalPages;
-
-        if (currentPage < 5) {
-            let leftRange = Array.from({ length: initialShowCount }, (_, i) => i + 1);
-            return [...leftRange, '...', lastPageIndex];
-        }
-
-        if (currentPage > totalPages - 4) {
-            let rightRange = Array.from({ length: initialShowCount }, (_, i) => totalPages - initialShowCount + 1 + i);
-            return [firstPageIndex, '...', ...rightRange];
-        }
-
-        return [
-            firstPageIndex,
-            '...',
-            currentPage - 1,
-            currentPage,
-            currentPage + 1,
-            '...',
-            lastPageIndex
-        ];
-
-    }, [totalPages, currentPage]);
-
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -69,113 +40,100 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
 
     if (totalItems === 0) {
         return (
-             <div className="flex items-center justify-between w-full h-8 no-print">
+            <div className="flex items-center justify-between w-full py-3 no-print">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing 0 to 0 of 0 results
+                    Showing <span className="font-bold text-gray-900 dark:text-gray-100">0</span> to <span className="font-bold text-gray-900 dark:text-gray-100">0</span> of <span className="font-bold text-gray-900 dark:text-gray-100">0</span> results
                 </p>
             </div>
-        )
+        );
     }
 
     const handlePrevious = () => onPageChange(Math.max(1, currentPage - 1));
     const handleNext = () => onPageChange(Math.min(totalPages, currentPage + 1));
-    const options = [5, 10, 25, 50, 100];
+    const options = [5, 10, 20, 50, 100];
+    const canPrev = currentPage > 1;
+    const canNext = currentPage < totalPages;
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between w-full no-print">
-            {/* Left Side: Info and Row Count - Height matched to h-8 */}
-            <div className="flex items-center gap-4 h-8">
-                <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap leading-none">
-                    Showing <span className="font-bold text-gray-800 dark:text-white">{startItem}</span> to <span className="font-bold text-gray-800 dark:text-white">{endItem}</span> of <span className="font-bold text-gray-800 dark:text-white">{totalItems}</span> results
+        <div className="flex flex-wrap items-center justify-between w-full gap-4 py-3 no-print">
+            {/* Left: "Showing X to Y of Z results" + "SHOW:" dropdown */}
+            <div className="flex flex-wrap items-center gap-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    Showing <span className="font-bold text-gray-900 dark:text-gray-100">{startItem}</span> to <span className="font-bold text-gray-900 dark:text-gray-100">{endItem}</span> of <span className="font-bold text-gray-900 dark:text-gray-100">{totalItems}</span> results
                 </p>
-                
-                {/* Custom Items Per Page Dropdown to match image UI */}
-                <div className="flex items-center gap-2 h-full relative" ref={dropdownRef}>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 leading-none">Show:</label>
-                    <button
-                        type="button"
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className={`h-8 min-w-[54px] flex items-center justify-between px-2 bg-white dark:bg-dark-bg border ${isDropdownOpen ? 'border-logip-primary' : 'border-gray-200 dark:border-dark-border'} rounded-md text-xs font-bold text-gray-700 dark:text-gray-200 transition-all cursor-pointer outline-none focus:outline-none`}
-                    >
-                        <span>{itemsPerPage}</span>
-                        <Icon name="expand_more" className={`w-5 h-5 leading-none transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {isDropdownOpen && (
-                        <div className="absolute bottom-full left-0 mb-1 w-full min-w-[60px] bg-white dark:bg-dark-surface border border-gray-300 dark:border-dark-border rounded-md shadow-lg overflow-hidden z-[400] animate-scaleIn origin-bottom">
-                            {options.map((opt) => (
-                                <button
-                                    key={opt}
-                                    type="button"
-                                    onClick={() => {
-                                        onItemsPerPageChange(opt);
-                                        setIsDropdownOpen(false);
-                                    }}
-                                    className={`w-full text-left px-3 py-2 text-xs font-bold transition-colors ${
-                                        itemsPerPage === opt 
-                                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
-                                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-bg'
-                                    }`}
-                                >
-                                    {opt}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">Show:</span>
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            type="button"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            aria-expanded={isDropdownOpen}
+                            aria-haspopup="listbox"
+                            className="h-9 min-w-[72px] flex items-center justify-between gap-1 px-3 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-md text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300 dark:focus:ring-blue-700"
+                        >
+                            <span>{itemsPerPage}</span>
+                            <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        {isDropdownOpen && (
+                            <div
+                                className="absolute top-full left-0 mt-1 min-w-[72px] bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-md shadow-lg z-[400] py-1 overflow-hidden"
+                                role="listbox"
+                            >
+                                {options.map((opt) => (
+                                    <button
+                                        key={opt}
+                                        type="button"
+                                        role="option"
+                                        aria-selected={itemsPerPage === opt}
+                                        onClick={() => {
+                                            onItemsPerPageChange(opt);
+                                            setIsDropdownOpen(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-sm transition-colors block border-0 ${
+                                            itemsPerPage === opt
+                                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-semibold'
+                                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-bg'
+                                        }`}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* Right Side: Navigation buttons matched to image height */}
-            <nav className="flex items-center h-8">
-                <ul className="flex items-center gap-1.5 h-full">
-                    <li>
-                        <button
-                            onClick={handlePrevious}
-                            disabled={currentPage === 1}
-                            className="w-8 h-8 flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-gray-200 dark:hover:bg-gray-700 outline-none focus:outline-none"
-                            aria-label="Previous Page"
-                        >
-                            <Icon name="chevron_left" className="w-5 h-5 leading-none" />
-                        </button>
-                    </li>
-                    
-                    {paginationRange.map((page, index) => {
-                        if (page === '...') {
-                            return (
-                                <li key={`dots-${index}`}>
-                                    <span className="w-8 h-8 flex items-center justify-center text-gray-400 font-bold text-xs leading-none">...</span>
-                                </li>
-                            );
-                        }
-                        const isActive = currentPage === page;
-                        return (
-                            <li key={page}>
-                                <button
-                                    onClick={() => onPageChange(page as number)}
-                                    className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold border transition-all duration-200 outline-none focus:outline-none ${
-                                        isActive
-                                            ? 'border-logip-primary text-logip-primary bg-white dark:bg-dark-surface'
-                                            : 'border-gray-200 dark:border-dark-border text-gray-700 dark:text-gray-400 bg-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                                    }`}
-                                    aria-current={isActive ? 'page' : undefined}
-                                >
-                                    {page}
-                                </button>
-                            </li>
-                        );
-                    })}
-
-                    <li>
-                        <button
-                            onClick={handleNext}
-                            disabled={currentPage === totalPages}
-                            className="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border text-gray-400 dark:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-gray-50 dark:hover:bg-gray-800 outline-none focus:outline-none"
-                            aria-label="Next Page"
-                        >
-                            <Icon name="chevron_right" className="w-5 h-5 leading-none" />
-                        </button>
-                    </li>
-                </ul>
+            {/* Right: [<] [current page] [>] */}
+            <nav className="flex items-center gap-1" aria-label="Pagination">
+                <button
+                    onClick={handlePrevious}
+                    disabled={!canPrev}
+                    className="w-9 h-9 flex items-center justify-center rounded-md border border-gray-200 dark:border-dark-border text-gray-500 dark:text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-dark-bg/50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300 dark:focus:ring-blue-700"
+                    aria-label="Previous page"
+                >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <span
+                    className="min-w-[36px] h-9 flex items-center justify-center rounded-md border-2 border-blue-500 dark:border-blue-400 bg-white dark:bg-dark-surface text-blue-600 dark:text-blue-400 text-sm font-semibold"
+                    aria-current="page"
+                >
+                    {currentPage}
+                </span>
+                <button
+                    onClick={handleNext}
+                    disabled={!canNext}
+                    className="w-9 h-9 flex items-center justify-center rounded-md border border-gray-200 dark:border-dark-border text-gray-500 dark:text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-dark-bg/50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300 dark:focus:ring-blue-700"
+                    aria-label="Next page"
+                >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
             </nav>
         </div>
     );
