@@ -9,6 +9,7 @@ import Icon from './Icons';
 import { safeJsonParse } from '../../../utils/security';
 import { downloadFilename } from '../../../utils/storage';
 import { formatDate } from '../../../utils/date';
+import { asArray } from '../../../utils/guards';
 
 interface MemberListModalProps {
     isOpen: boolean;
@@ -52,7 +53,8 @@ const StatusPill: React.FC<{ status: StudentStatus }> = ({ status }) => {
     return <span className={`${baseClasses} ${styles[status]}`}>{status}</span>;
 };
 
-const MemberListModal: React.FC<MemberListModalProps> = ({ isOpen, onClose, title, members, icon, headerColor, selectedSchool, listMeta, groupGender, onEditStudent }) => {
+const MemberListModal: React.FC<MemberListModalProps> = ({ isOpen, onClose, title, members: membersProp, icon, headerColor, selectedSchool, listMeta, groupGender, onEditStudent }) => {
+    const members = asArray(membersProp);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(12); // Adjusted for grid view
@@ -192,7 +194,7 @@ const MemberListModal: React.FC<MemberListModalProps> = ({ isOpen, onClose, titl
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                             {paginatedMembers.map(member => {
                                 const avatarUrl = getStudentAvatarUrl(member.indexNumber, member.gender, member.schoolId);
-                                const className = initialClasses.find(c => c.id === member.classId)?.name;
+                                const className = asArray(initialClasses).find(c => c.id === member.classId)?.name;
                                 return (
                                     <button 
                                         key={member.id} 

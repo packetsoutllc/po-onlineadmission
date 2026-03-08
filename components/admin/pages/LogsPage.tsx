@@ -11,6 +11,7 @@ import ConfirmationModal from '../shared/ConfirmationModal';
 import Icon from '../shared/Icons';
 import { INITIAL_ROLES, Role } from './RolesAndPermissionsPage';
 import { formatDateTime } from '../../../utils/date';
+import { asArray } from '../../../utils/guards';
 
 // --- TYPE DEFINITIONS ---
 type LogEventType = 'user_management' | 'student_update' | 'system_settings' | 'admission_process' | 'student_delete' | 'user_add' | 'security' | 'navigation' | 'document_access';
@@ -75,7 +76,7 @@ const LogsPage: React.FC<LogsPageProps> = ({ adminUser, selectedSchool }) => {
     const [currentPage, setCurrentPage] = useState(1);
 
     const filteredLogs = useMemo(() => {
-        return logs.filter(log => {
+        return asArray(logs).filter(log => {
             const matchesSchool = isSuperAdmin || !log.schoolId || (selectedSchool && log.schoolId === selectedSchool.id);
             if (!matchesSchool) return false;
 

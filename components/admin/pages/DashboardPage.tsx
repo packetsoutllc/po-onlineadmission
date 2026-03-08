@@ -10,6 +10,7 @@ import DatePicker from '../../DatePicker';
 import Icon from '../shared/Icons';
 import { safeJsonParse } from '../../../utils/security';
 import { formatDateTime } from '../../../utils/date';
+import { asArray } from '../../../utils/guards';
 
 const StatCard: React.FC<{
     icon: string;
@@ -66,7 +67,9 @@ const StatusPill: React.FC<{ status: StudentStatus }> = ({ status }) => {
     return <span className={`${baseClasses} ${styles[status]}`}>{status}</span>;
 };
 
-const RecentAdmissionsTable: React.FC<{ students: AdminStudent[], onEditStudent: (student: AdminStudent) => void, classes: Class[] }> = ({ students, onEditStudent, classes }) => {
+const RecentAdmissionsTable: React.FC<{ students: AdminStudent[], onEditStudent: (student: AdminStudent) => void, classes: Class[] }> = ({ students: studentsProp, onEditStudent, classes: classesProp }) => {
+    const students = asArray(studentsProp);
+    const classes = asArray(classesProp);
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const prevStudentsRef = useRef<AdminStudent[] | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState('');
@@ -126,7 +129,7 @@ const RecentAdmissionsTable: React.FC<{ students: AdminStudent[], onEditStudent:
                     </div>
                 ) : (
                     paginatedStudents.map((student) => {
-                        const studentHouse = initialHouses.find(h => h.id === student.houseId) as (House & { studentCount: number }) | undefined;
+                        const studentHouse = asArray(initialHouses).find(h => h.id === student.houseId) as (House & { studentCount: number }) | undefined;
                         const studentClass = classes.find(c => c.id === student.classId);
                         const houseColors = getHouseColor(studentHouse);
                         const isHighlighted = student.id === highlightedId;

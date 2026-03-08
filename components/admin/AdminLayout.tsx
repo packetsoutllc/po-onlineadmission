@@ -18,6 +18,7 @@ import { Dormitory, initialDormitories } from './shared/dormitoryData';
 import { Conversation, initialConversations } from './pages/MessagesPage';
 import { logActivity } from '../../utils/storage';
 import { safeJsonParse } from '../../utils/security';
+import { asArray } from '../../utils/guards';
 
 export interface AdminUser {
     email: string;
@@ -31,7 +32,8 @@ export interface AdminUser {
 }
 
 const mapAdminStudentToStudent = (adminStudent: AdminStudent, allStudents: AdminStudent[]): Student => {
-    const freshStudent = allStudents.find(s => s.id === adminStudent.id) || adminStudent;
+    const list = asArray(allStudents);
+    const freshStudent = list.find(s => s.id === adminStudent.id) || adminStudent;
     return {
         name: freshStudent.name,
         indexNumber: freshStudent.indexNumber,
@@ -73,8 +75,8 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
     const [localAdmissions, setLocalAdmissions] = useLocalStorage<Admission[]>('admin_admissions', initialAdmissions);
     const { schools: backendSchools, admissions: backendAdmissions, source: schoolsSource, refetch: refetchSchoolsAndAdmissions } = useSchoolsAndAdmissions();
     const useBackendSchools = isInsForgeConfigured() && schoolsSource === 'insforge';
-    const allSchools = useBackendSchools ? backendSchools : localSchools;
-    const allAdmissions = useBackendSchools ? backendAdmissions : localAdmissions;
+    const allSchools = asArray(useBackendSchools ? backendSchools : localSchools);
+    const allAdmissions = asArray(useBackendSchools ? backendAdmissions : localAdmissions);
     const setAllSchools = useBackendSchools ? (() => {}) as React.Dispatch<React.SetStateAction<School[]>> : setLocalSchools;
     const setAllAdmissions = useBackendSchools ? (() => {}) as React.Dispatch<React.SetStateAction<Admission[]>> : setLocalAdmissions;
 
@@ -108,8 +110,14 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
     const [programmes] = useLocalStorage<Programme[]>('admin_programmes', initialProgrammes);
     const [dormitories] = useLocalStorage<Dormitory[]>('admin_dormitories', initialDormitories);
     const [conversations, setConversations] = useLocalStorage<Conversation[]>('admin_conversations', initialConversations);
-    
-    const [allRoles] = useLocalStorage<Role[]>('admin_roles', INITIAL_ROLES);
+    const [allRolesRaw] = useLocalStorage<Role[]>('admin_roles', INITIAL_ROLES);
+
+    const safeStudents = asArray(students, initialAdminStudents);
+    const safeClasses = asArray(classes, initialClasses);
+    const safeProgrammes = asArray(programmes, initialProgrammes);
+    const safeDormitories = asArray(dormitories, initialDormitories);
+    const safeConversations = asArray(conversations, initialConversations);
+    const allRoles = asArray(allRolesRaw, INITIAL_ROLES);
 
     const isSuperAdmin = adminUser.roleId === 'role_super_admin';
 
@@ -166,7 +174,8 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
             if (e.key === 'admin_users') {
                 try {
                     const users = safeJsonParse<AdminUser[]>(e.newValue, []);
-                    const me = users.find((u: any) => u.email === adminUser.email);
+                    const safeUsers = asArray(users);
+                    const me = safeUsers.find((u: any) => u.email === adminUser.email);
                     if (me && me.roleId !== adminUser.roleId) {
                         setAdminUser(prev => prev ? ({ ...prev, roleId: me.roleId }) : null);
                         showToast('Your security profile has been updated.', 'info');
@@ -179,22 +188,24 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
     }, [adminUser.email, adminUser.roleId, setAdminUser, showToast]);
 
     const schools = useMemo(() => {
-        let list = isSuperAdmin ? allSchools : allSchools.filter(s => s.id === adminUser.schoolId);
+        const source = Array.isArray(allSchools) ? allSchools : [];
+        let list = isSuperAdmin ? source : source.filter((s: School) => s.id === adminUser.schoolId);
         if (!isSuperAdmin) {
-            list = list.filter(s => s.status === 'Active');
+            list = list.filter((s: School) => s.status === 'Active');
         }
         return list;
     }, [allSchools, isSuperAdmin, adminUser.schoolId]);
     
     const admissions = useMemo(() => {
-        let list = allAdmissions;
+        const source = Array.isArray(allAdmissions) ? allAdmissions : [];
+        let list = source;
         if (!isSuperAdmin) {
             if (adminUser.admissionId && adminUser.admissionId !== 'none') {
-                list = allAdmissions.filter(a => a.id === adminUser.admissionId);
+                list = source.filter((a: Admission) => a.id === adminUser.admissionId);
             } else {
-                list = allAdmissions.filter(a => a.schoolId === adminUser.schoolId);
+                list = source.filter((a: Admission) => a.schoolId === adminUser.schoolId);
             }
-            list = list.filter(a => a.status === 'Active');
+            list = list.filter((a: Admission) => a.status === 'Active');
         }
         return list;
     }, [allAdmissions, isSuperAdmin, adminUser.admissionId, adminUser.schoolId]);
@@ -243,7 +254,7 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
     if (studentToEdit) {
         return (
             <div className="absolute inset-0 z-[100] bg-logip-bg dark:bg-background-dark">
-                 <StudentDetails student={mapAdminStudentToStudent(studentToEdit, students)} onReturn={() => setStudentToEdit(null)} applicationStatus={studentToEdit.status} isAdminEditMode={true} allStudents={students} toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
+                 <StudentDetails student={mapAdminStudentToStudent(studentToEdit, safeStudents)} onReturn={() => setStudentToEdit(null)} applicationStatus={studentToEdit.status} isAdminEditMode={true} allStudents={safeStudents} toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
             </div>
         );
     }
@@ -264,7 +275,7 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
                     setActivePage={setActivePageWithTransition} 
                     onExitAdmin={onExitAdmin} 
                     permissions={permissions} 
-                    conversations={conversations} 
+                    conversations={safeConversations} 
                     isOpen={isSidebarOpen} 
                     isSuperAdmin={isSuperAdmin} 
                 />
@@ -302,15 +313,15 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ adminUser, setAdminUse
                             onSaveAdmission={useBackendSchools ? handleSaveAdmission : undefined}
                             onDeleteSchool={useBackendSchools ? handleDeleteSchool : undefined}
                             onDeleteAdmission={useBackendSchools ? handleDeleteAdmission : undefined}
-                            students={students} 
+                            students={safeStudents} 
                             setStudents={setStudents} 
-                            classes={classes} 
+                            classes={safeClasses} 
                             setClasses={() => {}} 
-                            programmes={programmes} 
+                            programmes={safeProgrammes} 
                             setProgrammes={() => {}} 
-                            dormitories={dormitories} 
+                            dormitories={safeDormitories} 
                             setDormitories={() => {}} 
-                            conversations={conversations} 
+                            conversations={safeConversations} 
                             setConversations={setConversations} 
                             adminUser={adminUser} 
                             setAdminUser={setAdminUser} 

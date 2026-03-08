@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Role, INITIAL_ROLES } from './RolesAndPermissionsPage';
 import type { PermissionActions } from './RolesAndPermissionsPage';
-import { School, Admission, initialSchools, initialAdmissions } from './SettingsPage';
+import { School, Admission } from './SettingsPage';
 import AdminModal from '../shared/AdminModal';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import { AdminInput, AdminSelect } from '../shared/forms';
@@ -13,6 +13,7 @@ import SortableHeader from '../shared/SortableHeader';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useToast } from '../shared/ToastContext';
 import { logActivity } from '../../../utils/storage';
+import { asArray } from '../../../utils/guards';
 import Icon from '../shared/Icons';
 
 // --- TYPE DEFINITIONS ---
@@ -33,15 +34,10 @@ export interface User {
     status: UserStatus;
 }
 
-// --- MOCK DATA ---
-export const initialUsers: User[] = [
-    { id: 1, username: 'REGISTRATION OFFICER', email: 'pescoobserver@gmail.com', phoneNumber: '0244222222', whatsappNumber: '0244222222', roleId: 'role_registration_officer', schoolId: 's1', admissionId: 'a1', accountDuration: 'No limit', status: 'active', password: 'password123' },
-    { id: 2, username: 'GAMELI FAITHSON AXAME', email: 'ec@gameli.com', phoneNumber: '0244444444', whatsappNumber: '0244444444', roleId: 'role_school_admin', schoolId: 's1', admissionId: 'a1', accountDuration: 'No limit', status: 'active', password: 'password123' },
-    { id: 3, username: 'SYSTEM ADMINISTRATOR', email: 'amabotsi@gmail.com', phoneNumber: '0244333333', roleId: 'role_super_admin', accountDuration: 'No limit', status: 'active', password: 'password123' },
-    { id: 4, username: 'MARGARET', email: 'admin@peki.edu', phoneNumber: '0244111111', whatsappNumber: '0244111111', roleId: 'role_school_admin', schoolId: 's1', accountDuration: 'No limit', status: 'active', password: 'password123' },
-];
+/** No demo data: admin users come from InsForge Auth or are added in the Users page. */
+export const initialUsers: User[] = [];
 
-const getSchoolById = (id?: string) => initialSchools.find(s => s.id === id);
+const getSchoolById = (schools: School[], id?: string) => (id ? schools.find(s => s.id === id) : undefined);
 
 // --- HELPER COMPONENTS ---
 
@@ -66,16 +62,22 @@ const ActionButton: React.FC<{ icon: string, onClick: (e: React.MouseEvent) => v
 interface UsersPageProps {
     selectedSchool?: School | null;
     selectedAdmission?: Admission | null;
+    schools: School[];
+    admissions: Admission[];
     permissions: Set<string>;
     getActions: (permId: string) => PermissionActions;
     isSuperAdmin: boolean;
     adminUser?: { name: string; avatar?: string; email: string; roleId: string } | null;
 }
 
-const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission, permissions, getActions, isSuperAdmin, adminUser }) => {
+const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission, schools: schoolsProp, admissions: admissionsProp, permissions, getActions, isSuperAdmin, adminUser }) => {
     const { showToast } = useToast();
+    const schools = asArray(schoolsProp);
+    const admissions = asArray(admissionsProp);
     const [users, setUsers] = useLocalStorage<User[]>('admin_users', initialUsers);
-    const [roles] = useLocalStorage<Role[]>('admin_roles', INITIAL_ROLES);
+    const [rolesRaw] = useLocalStorage<Role[]>('admin_roles', INITIAL_ROLES);
+    const roles = Array.isArray(rolesRaw) ? rolesRaw : (INITIAL_ROLES ?? []);
+    const safeUsers = asArray(users, initialUsers);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [categoryFilter, setCategoryFilter] = useState('all');
@@ -93,7 +95,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
     }>({ mode: null, user: null });
 
     const filteredUsers = useMemo(() => {
-        return users.filter(user => {
+        return safeUsers.filter(user => {
             // For Super Administrators, skip school and admission context filtering to show all users globally.
             const matchesSchool = isSuperAdmin ? true : (!selectedSchool || !user.schoolId || user.schoolId === selectedSchool.id || user.schoolId === 'none');
             const matchesAdmission = isSuperAdmin ? true : (!selectedAdmission || !user.admissionId || user.admissionId === 'none' || user.admissionId === selectedAdmission.id);
@@ -105,7 +107,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
 
             return matchesSchool && matchesAdmission && matchesSearch && matchesStatus && matchesCategory;
         });
-    }, [users, searchTerm, statusFilter, categoryFilter, selectedSchool, selectedAdmission, isSuperAdmin]);
+    }, [safeUsers, searchTerm, statusFilter, categoryFilter, selectedSchool, selectedAdmission, isSuperAdmin]);
     
     const { items: sortedUsers, requestSort, sortConfig } = useSortableData(filteredUsers, { key: 'username', direction: 'ascending' });
 
@@ -129,7 +131,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
 
     const handleSaveUser = (userData: Omit<User, 'id'>) => {
         if (modalState.mode === 'edit' && modalState.user) {
-            setUsers(users.map(u => u.id === modalState.user!.id ? { ...modalState.user!, ...userData } : u));
+            setUsers(prev => asArray(prev).map(u => u.id === modalState.user!.id ? { ...modalState.user!, ...userData } : u));
             showToast(`User "${userData.username}" updated successfully.`, 'success');
             logActivity(
                 { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
@@ -140,7 +142,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
             );
         } else {
             const newUser: User = { id: Date.now() + Math.random(), ...userData };
-            setUsers([...users, newUser]);
+            setUsers(prev => [...asArray(prev), newUser]);
             showToast(`User "${userData.username}" created successfully.`, 'success');
             logActivity(
                 { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
@@ -156,7 +158,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
     const handleDeleteUser = () => {
         if (!modalState.user) return;
         const name = modalState.user.username;
-        setUsers(users.filter(u => u.id !== modalState.user!.id));
+        setUsers(prev => asArray(prev).filter(u => u.id !== modalState.user!.id));
         showToast(`User "${name}" deleted.`, 'info');
         logActivity(
             { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
@@ -171,7 +173,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
     const handleSuspendUser = () => {
         if (!modalState.user) return;
         const newStatus = modalState.user.status === 'suspended' ? 'active' : 'suspended';
-        setUsers(users.map(u => u.id === modalState.user!.id ? { ...u, status: newStatus } : u));
+        setUsers(prev => asArray(prev).map(u => u.id === modalState.user!.id ? { ...u, status: newStatus } : u));
         showToast(`User "${modalState.user.username}" has been ${newStatus === 'active' ? 'reactivated' : 'suspended'}.`, 'info');
         logActivity(
             { name: adminName, avatar: adminAvatar, email: adminEmail, roleId: adminRoleId },
@@ -270,7 +272,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
                                     <td className="p-4 text-base text-gray-600 dark:text-gray-400">{user.email}</td>
                                     <td className="p-4 text-base text-gray-600 dark:text-gray-400">{user.phoneNumber || 'N/A'}</td>
                                     <td className="p-4 text-base text-gray-600 dark:text-gray-400">{roles.find(r => r.id === user.roleId)?.name || user.roleId}</td>
-                                    <td className="p-4 text-base text-gray-600 dark:text-gray-400">{getSchoolById(user.schoolId)?.name || (user.schoolId === 'none' ? 'All Schools' : 'N/A')}</td>
+                                    <td className="p-4 text-base text-gray-600 dark:text-gray-400">{getSchoolById(schools, user.schoolId)?.name || (user.schoolId === 'none' ? 'All Schools' : 'N/A')}</td>
                                     <td className="p-4"><StatusPill status={user.status} /></td>
                                     <td className="p-4 no-print">
                                         <div className="flex items-center gap-1">
@@ -312,8 +314,8 @@ const UsersPage: React.FC<UsersPageProps> = ({ selectedSchool, selectedAdmission
                     onSave={handleSaveUser} 
                     user={modalState.user} 
                     roles={roles}
-                    schools={initialSchools}
-                    admissions={initialAdmissions}
+                    schools={schools}
+                    admissions={admissions}
                 />
             )}
 

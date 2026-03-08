@@ -116,6 +116,7 @@ const PageContent: React.FC<PageContentProps> = ({
                 conversations={conversations} 
                 setConversations={setConversations} 
                 selectedSchool={selectedSchool}
+                schools={schools}
             />;
         case 'Programmes':
             return <ProgrammesPage 
@@ -166,6 +167,8 @@ const PageContent: React.FC<PageContentProps> = ({
         case 'Users':
             return <UsersPage 
                 selectedSchool={selectedSchool} 
+                schools={schools}
+                admissions={admissions}
                 permissions={permissions}
                 getActions={getActions}
                 isSuperAdmin={isSuperAdmin}

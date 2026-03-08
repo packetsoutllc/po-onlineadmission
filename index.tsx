@@ -2,6 +2,18 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
+// One-time permanent clear of all demo/dummy data from localStorage (runs once per browser)
+const DEMO_DATA_CLEARED_KEY = 'logip_demo_data_cleared_v1';
+try {
+  if (typeof window !== 'undefined' && !localStorage.getItem(DEMO_DATA_CLEARED_KEY)) {
+    localStorage.removeItem('admin_users');
+    localStorage.removeItem('logip_activity_logs');
+    localStorage.setItem(DEMO_DATA_CLEARED_KEY, '1');
+  }
+} catch {
+  // ignore
+}
+
 // Show errors on screen instead of blank page
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },

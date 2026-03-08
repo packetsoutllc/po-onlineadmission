@@ -10,6 +10,7 @@ import { School, Admission } from '../pages/SettingsPage';
 import { FormSettings, INITIAL_FORM_SETTINGS } from '../pages/ApplicationDashboardSettings';
 import { safeJsonParse } from '../../../utils/security';
 import { formatDate } from '../../../utils/date';
+import { asArray } from '../../../utils/guards';
 
 /** Only read application data for the given school+index to avoid cross-school data. */
 const getMedicalReport = (indexNumber: string, schoolId?: string) => {
@@ -195,7 +196,7 @@ const StudentPreviewModal: React.FC<StudentPreviewModalProps> = ({ isOpen, onClo
                                 </div>
                                 <dl className="divide-y divide-gray-100 dark:divide-dark-border">
                                     <DataRow label="Blood Group" value={appData.bloodGroup || 'Not Specified'} />
-                                    <DataRow label="Student House" value={initialHouses.find(h => h.id === student.houseId)?.name} isAlternate />
+                                    <DataRow label="Student House" value={asArray(initialHouses).find(h => h.id === student.houseId)?.name} isAlternate />
                                     <DataRow label="Enrollment Code" value={appData.enrollmentCode} />
                                     <DataRow label="Special Needs" value={appData.disabilityDetails} isAlternate />
                                     <DataRow label="Aggregate" value={student.aggregate} />

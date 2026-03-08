@@ -8,13 +8,8 @@ import { logSecurityEvent } from './shared/securityLogService';
 import { safeJsonParse } from '../../utils/security';
 import { getInsForgeClient, isInsForgeConfigured } from '../../lib/insforgeClient';
 
-// Mock user data including roles - now consistent with UsersPage.tsx
-const ADMIN_USERS: (AdminUser & { password: string; phoneNumber?: string; schoolId?: string; admissionId?: string; expiryDate?: string; status?: string; })[] = [
-    { email: 'admin@peki.edu', password: 'password123', roleId: 'role_school_admin', name: 'Margaret', avatar: 'https://i.pravatar.cc/32?u=megan', phoneNumber: '0244111111', schoolId: 's1', status: 'active' },
-    { email: 'pescoobserver@gmail.com', password: '00000000', roleId: 'role_registration_officer', name: 'Registration Officer', avatar: `https://i.pravatar.cc/32?u=regofficer`, phoneNumber: '0244222222', schoolId: 's1', status: 'active' },
-    { email: 'amabotsi@gmail.com', password: 'password123', roleId: 'role_super_admin', name: 'System Administrator', avatar: `https://i.pravatar.cc/32?u=sysadmin`, phoneNumber: '0244333333', status: 'active' },
-    { email: 'ec@gameli.com', password: 'password123', roleId: 'role_school_admin', name: 'Gameli Faithson Axame', avatar: `https://i.pravatar.cc/32?u=gameli`, phoneNumber: '0244444444', schoolId: 's1', status: 'active' },
-];
+/** No demo data: use InsForge Auth or add users in the admin Users page after first login. */
+const ADMIN_USERS: (AdminUser & { password: string; phoneNumber?: string; schoolId?: string; admissionId?: string; expiryDate?: string; status?: string; })[] = [];
 
 const PekiLogo: React.FC = () => (
     <div className="flex items-center justify-center mb-6">

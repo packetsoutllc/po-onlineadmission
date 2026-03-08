@@ -15,6 +15,7 @@ import UserProfileSettingsTab from './UserProfileSettingsTab';
 import { AdminUser } from '../AdminLayout';
 import ApplicationDashboardSettings from './ApplicationDashboardSettings';
 import { logActivity, getPortalSlugSchool, getPortalSlugAdmission, setPortalSlugSchool, setPortalSlugAdmission } from '../../../utils/storage';
+import { asArray } from '../../../utils/guards';
 
 // --- TYPE DEFINITIONS & MOCK DATA (CENTRALIZED) ---
 /** Display state on landing: opened (green), closed (red), yet_to_open (grey). When missing, derived from status. */
@@ -54,21 +55,11 @@ export const GHANA_REGIONS = [
     'Upper East', 'Upper West', 'Volta', 'Western', 'Western North'
 ];
 
-export const initialSchools: School[] = [
-    { id: 's1', name: 'Peki Senior High School', slug: 'peki-senior-high', status: 'Active', logo: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=200&h=200&auto=format&fit=crop', dateCreated: '2023-05-10', homeRegion: 'Volta' },
-    { id: 's2', name: 'Accra Academy', slug: 'accra-academy', status: 'Inactive', dateCreated: '2023-06-15', homeRegion: 'Greater Accra' },
-    { id: 's3', name: 'Mfantsipim School', slug: 'mfantsipim-school', status: 'Active', dateCreated: '2023-07-20', homeRegion: 'Central' },
-    { id: 's4', name: 'Peki Secondary Technical', slug: 'peki-sectech', status: 'Active', dateCreated: '2024-01-05', homeRegion: 'Volta' },
-];
+/** No demo data: app syncs with database (InsForge) or starts empty (localStorage). */
+export const initialSchools: School[] = [];
 
-export const initialAdmissions: Admission[] = [
-    { id: 'a1', schoolId: 's1', title: '2025 Admissions', slug: '2025-admissions', description: '', date: '2025-01-01', authMethod: 'Index number only', status: 'Active', applicantsPlaced: 400, studentsAdmitted: 350, indexHint: 'Add the year you completed JHS\nExample: xxxxxxxxxxxx25', headOfSchoolNumber: '0244889791', headOfItNumber: '0243339546' },
-    { id: 'a2', schoolId: 's1', title: '2024 Protocol', slug: '2024-protocol', description: '', date: '2024-01-01', authMethod: 'Index number only', status: 'Archived', applicantsPlaced: 30, studentsAdmitted: 25, indexHint: 'Add the year you completed JHS\nExample: xxxxxxxxxxxx24', headOfSchoolNumber: '0244889791', headOfItNumber: '0243339546' },
-    { id: 'a3', schoolId: 's2', title: '2025 Admissions', slug: '2025-admissions', description: '', date: '2025-01-01', authMethod: 'Index number only', status: 'Archived', applicantsPlaced: 450, studentsAdmitted: 410, indexHint: '', headOfSchoolNumber: '0200000000', headOfItNumber: '0201111111' },
-    { id: 'a4', schoolId: 's3', title: '2025 Regular Intake', slug: '2025-regular', description: '', date: '2025-01-01', authMethod: 'Index number only', status: 'Active', applicantsPlaced: 550, studentsAdmitted: 520, indexHint: '', headOfSchoolNumber: '0550000000', headOfItNumber: '0551111111' },
-    { id: 'a5', schoolId: 's3', title: '2025 Boarding Intake', slug: '2025-boarding', description: '', date: '2025-01-01', authMethod: 'Index number only', status: 'Active', applicantsPlaced: 500, studentsAdmitted: 480, indexHint: '', headOfSchoolNumber: '0550000000', headOfItNumber: '0551111111' },
-    { id: 'a6', schoolId: 's4', title: '2025 Admissions', slug: '2025-admissions', description: '', date: '2025-01-01', authMethod: 'Index number only', status: 'Active', applicantsPlaced: 200, studentsAdmitted: 180, indexHint: '', headOfSchoolNumber: '0240000000', headOfItNumber: '0241111111' },
-];
+/** No demo data: app syncs with database (InsForge) or starts empty (localStorage). */
+export const initialAdmissions: Admission[] = [];
 
 // --- SUB-COMPONENTS ---
 
@@ -197,9 +188,11 @@ const SETTINGS_TABS_PERMS: Record<string, string> = {
     'User Profile': 'tab:set:prof'
 };
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdmission, setSelectedSchoolId, setSelectedAdmissionId, schools, setSchools, admissions, setAdmissions, onSaveSchool, onSaveAdmission, onDeleteSchool, onDeleteAdmission, adminUser, setAdminUser, onExitAdmin, permissions, getActions, isSuperAdmin }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdmission, setSelectedSchoolId, setSelectedAdmissionId, schools: schoolsProp, setSchools, admissions: admissionsProp, setAdmissions, onSaveSchool, onSaveAdmission, onDeleteSchool, onDeleteAdmission, adminUser, setAdminUser, onExitAdmin, permissions, getActions, isSuperAdmin }) => {
     const { showToast } = useToast();
-    
+    const schools = asArray(schoolsProp);
+    const admissions = asArray(admissionsProp);
+
     const availableTabs = useMemo(() => {
         return Object.keys(SETTINGS_TABS_PERMS).filter(tab => 
             isSuperAdmin || permissions.has(SETTINGS_TABS_PERMS[tab])
@@ -308,7 +301,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
                 showToast((e as Error)?.message ?? 'Failed to save school', 'error');
                 return;
             }
-            setSchools(schools.map(s => s.id === updatedSchool.id ? updatedSchool : s));
+            setSchools(prev => asArray(prev).map(s => s.id === updatedSchool.id ? updatedSchool : s));
             showToast(`School "${formData.name}" updated successfully.`, 'success');
             logActivity(
                 { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
@@ -346,7 +339,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
                 showToast((e as Error)?.message ?? 'Failed to save admission', 'error');
                 return;
             }
-            setAdmissions(admissions.map(a => a.id === updatedAdmission.id ? updatedAdmission : a));
+            setAdmissions(prev => asArray(prev).map(a => a.id === updatedAdmission.id ? updatedAdmission : a));
             showToast(`Admission "${formData.title}" updated successfully.`, 'success');
             logActivity(
                 { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
@@ -390,7 +383,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
             }
             const remainingSchools = schools.filter(s => s.id !== schoolId);
             setSchools(remainingSchools);
-            setAdmissions(admissions.filter(a => a.schoolId !== schoolId));
+            setAdmissions(prev => asArray(prev).filter(a => a.schoolId !== schoolId));
             if (selectedSchool?.id === schoolId) {
                 setSelectedSchoolId(remainingSchools[0]?.id || null);
             }
@@ -411,7 +404,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
                 showToast((e as Error)?.message ?? 'Failed to delete admission', 'error');
                 return;
             }
-            setAdmissions(admissions.filter(a => a.id !== admissionId));
+            setAdmissions(prev => asArray(prev).filter(a => a.id !== admissionId));
             showToast(`Admission "${admissionTitle}" deleted.`, 'success');
             logActivity(
                 { name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId },
@@ -432,7 +425,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
 
     const setAdmissionPortalStatus = (admission: Admission, portalStatus: AdmissionPortalStatus) => {
         const status = portalStatus === 'closed' ? 'Archived' as const : 'Active' as const;
-        setAdmissions(admissions.map(a =>
+        setAdmissions(prev => asArray(prev).map(a =>
             a.id === admission.id ? { ...a, portalStatus, status } : a
         ));
         const labels: Record<AdmissionPortalStatus, string> = { opened: 'Admission opened', closed: 'Admission Closed', yet_to_open: 'Admission yet to be opened' };
@@ -449,7 +442,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ selectedSchool, selectedAdm
 
     const handleToggleSchoolStatus = (schoolToToggle: School) => {
         const newStatus = schoolToToggle.status === 'Active' ? 'Inactive' : 'Active';
-        setSchools(schools.map(s => 
+        setSchools(prev => asArray(prev).map(s => 
             s.id === schoolToToggle.id 
             ? { ...s, status: newStatus } 
             : s

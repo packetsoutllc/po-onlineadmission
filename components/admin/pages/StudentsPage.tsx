@@ -10,6 +10,7 @@ import { printTable } from '../shared/PrintService';
 import { setLocalStorageAndNotify, logActivity, downloadFilename } from '../../../utils/storage';
 import { formatDate, formatDateTime } from '../../../utils/date';
 import { safeJsonParse } from '../../../utils/security';
+import { asArray } from '../../../utils/guards';
 import { Class } from './ClassesPage';
 import { initialHouses, getHouseColor, House } from '../shared/houseData';
 import { getHouseCounts } from '../shared/houseAllocationService';
@@ -85,17 +86,8 @@ export interface EditLogEntry {
     }[];
 }
 
-// --- MOCK DATA ---
-export const initialAdminStudents: AdminStudent[] = [
-    { id: 'stud1', name: 'JOHN DOE', surname: 'DOE', firstName: 'JOHN', indexNumber: '12345678901225', schoolId: 's1', admissionId: 'a1', programme: 'General Science', gender: 'Male', aggregate: '08', status: 'Admitted', classId: 'c1', houseId: 'h1', dormitoryId: 'd1', feeStatus: 'Paid', residence: 'Boarding', admissionDate: new Date().toISOString(), paymentDate: new Date().toISOString() },
-    { id: 'stud2', name: 'JANE SMITH', surname: 'SMITH', firstName: 'JANE', indexNumber: '98765432109825', schoolId: 's1', admissionId: 'a1', programme: 'Visual Arts', gender: 'Female', aggregate: '12', status: 'Admitted', classId: 'c3', houseId: 'h2', dormitoryId: 'd4', feeStatus: 'Paid', residence: 'Boarding', admissionDate: new Date().toISOString(), paymentDate: new Date().toISOString() },
-    { id: 'stud3', name: 'ABABIO PATIENCE', surname: 'ABABIO', firstName: 'PATIENCE', indexNumber: '11', schoolId: 's1', admissionId: 'a1', programme: 'General Arts', gender: 'Female', aggregate: '10', status: 'Placed', classId: 'c2', houseId: 'h4', feeStatus: 'Unpaid', residence: 'Boarding', admissionDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), paymentDate: null },
-    { id: 'stud4', name: 'KOFI MENSAH', surname: 'MENSAH', firstName: 'KOFI', indexNumber: '10', schoolId: 's1', admissionId: 'a1', programme: 'General Science', gender: 'Male', aggregate: '09', status: 'Placed', classId: 'c4', houseId: 'h3', dormitoryId: 'd2', feeStatus: 'Unpaid', residence: 'Boarding', admissionDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentDate: null },
-    { id: 'stud5', name: 'YAW ADDO', surname: 'ADDO', firstName: 'YAW', indexNumber: '09', schoolId: 's1', admissionId: 'a1', programme: 'Business', gender: 'Male', aggregate: '14', status: 'Pending', classId: 'c5', houseId: 'h5', feeStatus: 'Unpaid', residence: 'Day', admissionDate: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), paymentDate: null },
-    { id: 'stud6', name: 'EMMANUEL TETTEH', surname: 'TETTEH', firstName: 'EMMANUEL', indexNumber: 'PROTO001', schoolId: 's1', admissionId: 'a2', programme: 'General Science', gender: 'Male', aggregate: '15', status: 'Admitted', classId: 'c1', houseId: 'h7', feeStatus: 'Paid', residence: 'Boarding', admissionDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), paymentDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), isProtocol: true },
-    { id: 'stud7', name: 'KWAME NKRUMAH', surname: 'NKRUMAH', firstName: 'KWAME', indexNumber: 'MFANTS001', schoolId: 's3', admissionId: 'a4', programme: 'General Science', gender: 'Male', aggregate: '07', status: 'Admitted', classId: '', houseId: 'h9', feeStatus: 'Paid', residence: 'Boarding', admissionDate: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(), paymentDate: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString() },
-    { id: 'stud8', name: 'AKUA AGYEMAN', surname: 'AGYEMAN', firstName: 'AKUA', indexNumber: 'MFANTS002', schoolId: 's3', admissionId: 'a4', programme: 'General Arts', gender: 'Female', aggregate: '11', status: 'Placed', classId: '', houseId: 'h10', feeStatus: 'Unpaid', residence: 'Boarding', admissionDate: new Date(Date.now() - 70 * 24 * 60 * 60 * 1000).toISOString(), paymentDate: null },
-];
+/** No demo data: students come from database (InsForge) or localStorage (user-added). */
+export const initialAdminStudents: AdminStudent[] = [];
 
 const StatusPill: React.FC<{ status: StudentStatus }> = ({ status }) => {
     const baseClasses = 'px-2.5 py-1 text-xs font-semibold rounded-md capitalize';
@@ -243,14 +235,14 @@ const ExpandedStudentRow: React.FC<{
         { id: 'other', title: 'Other Information' },
     ];
 
-    const documentFields = formSettings.fields.filter(f => (f.type === 'document' || f.type === 'photo') && f.id !== 'passportPhotograph' && f.visible);
+    const documentFields = asArray(formSettings?.fields).filter(f => (f.type === 'document' || f.type === 'photo') && f.id !== 'passportPhotograph' && f.visible);
     const hasDocs = documentFields.some(f => appData[f.id]);
 
     return (
         <div className="p-6 bg-gray-50 dark:bg-black/10 border-t border-b border-logip-border dark:border-dark-border shadow-inner">
              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                 {sections.map(section => {
-                    const fields = formSettings.fields.filter(f => f.section === section.id && f.visible && f.type !== 'photo' && f.type !== 'document');
+                    const fields = asArray(formSettings?.fields).filter(f => f.section === section.id && f.visible && f.type !== 'photo' && f.type !== 'document');
                     const hasData = fields.some(f => appData[f.id]);
                     if (!hasData && section.id === 'other') return null;
 
@@ -332,8 +324,12 @@ interface StudentsPageProps {
     adminUser: AdminUser;
 }
 
-const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdmission, onEditStudent, students, setStudents, dormitories, classes, programmes, permissions, getActions, isSuperAdmin, adminUser }) => {
+const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdmission, onEditStudent, students: studentsProp, setStudents, dormitories: dormitoriesProp, classes: classesProp, programmes: programmesProp, permissions, getActions, isSuperAdmin, adminUser }) => {
     const { showToast } = useToast();
+    const students = asArray(studentsProp);
+    const classes = asArray(classesProp);
+    const programmes = asArray(programmesProp);
+    const dormitories = asArray(dormitoriesProp);
 
     // PERMANENCE: Scope settings by user email
     const userPrefix = adminUser.email;
@@ -434,7 +430,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
         ];
 
         const systemIds = new Set(systemFields.map(f => f.id));
-        const customFields = formSettings.fields
+        const customFields = asArray(formSettings?.fields)
             .filter(f => !systemIds.has(f.id) && f.section !== 'official_records')
             .map(f => ({ id: f.id, label: f.label }));
 
@@ -547,7 +543,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
                 }
             });
             if (Object.keys(updates).length) {
-                setStudents((prev) => prev.map((s) => (s.id === student.id ? { ...s, ...updates } : s)));
+                setStudents((prev) => asArray(prev).map((s) => (s.id === student.id ? { ...s, ...updates } : s)));
             }
         }
         setOfficialEditRequests((prev) => ({ ...prev, [student.indexNumber]: updated }));
@@ -864,7 +860,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
     }, [selectablePaginatedStudents, selectedStudentIds]);
 
     const handleBulkDelete = () => {
-        setStudents(prev => prev.filter(s => !selectedStudentIds.includes(s.id)));
+        setStudents(prev => asArray(prev).filter(s => !selectedStudentIds.includes(s.id)));
         setSelectedStudentIds([]);
         handleCloseModal();
     };
@@ -890,7 +886,7 @@ const StudentsPage: React.FC<StudentsPageProps> = ({ selectedSchool, selectedAdm
             ...s,
             id: `stud${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
         }));
-        setStudents(prev => [...processedNewStudents, ...prev]);
+        setStudents(prev => [...processedNewStudents, ...asArray(prev)]);
         showToast(`${processedNewStudents.length} students uploaded successfully.`, 'success');
         logActivity({ name: adminUser.name, avatar: adminUser.avatar || '', email: adminUser.email, roleId: adminUser.roleId }, 'performed bulk upload', 'admission_process', `${processedNewStudents.length} students`, selectedSchool?.id);
     };

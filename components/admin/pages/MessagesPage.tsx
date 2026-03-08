@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { initialSchools, School } from './SettingsPage';
+import { School } from './SettingsPage';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import AudioCallModal from '../shared/AudioCallModal';
 import VideoCallModal from '../shared/VideoCallModal';
@@ -8,6 +8,7 @@ import { useLocalStorage } from '../../hooks/useLocalStorage';
 import Icon from '../shared/Icons';
 import { safeJsonParse } from '../../../utils/security';
 import { formatDateTime } from '../../../utils/date';
+import { asArray } from '../../../utils/guards';
 
 // --- TYPE DEFINITIONS ---
 export type MessageStatus = 'read' | 'unread' | 'blocked' | 'trash';
@@ -52,7 +53,7 @@ export interface AiChatLog {
 export const initialConversations: Conversation[] = [];
 
 // --- HELPER FUNCTIONS & COMPONENTS ---
-const getSchoolById = (id: string) => initialSchools.find(s => s.id === id);
+const getSchoolById = (schools: School[] | undefined | null, id: string) => asArray(schools).find(s => s.id === id);
 const timeSince = (date: string) => { const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000); if (seconds < 5) return "Just now"; let interval = seconds / 86400; if (interval > 1) return `${Math.floor(interval)}d ago`; interval = seconds / 3600; if (interval > 1) return `${Math.floor(interval)}h ago`; interval = seconds / 60; if (interval > 1) return `${Math.floor(interval)}m ago`; return "Just now"; };
 
 // --- MAIN COMPONENT ---
@@ -60,9 +61,12 @@ interface MessagesPageProps {
     conversations: Conversation[];
     setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
     selectedSchool?: School | null;
+    schools: School[];
 }
 
-const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversations, selectedSchool }) => {
+const MessagesPage: React.FC<MessagesPageProps> = ({ conversations: conversationsProp, setConversations, selectedSchool, schools: schoolsProp }) => {
+    const conversations = asArray(conversationsProp);
+    const schools = asArray(schoolsProp);
     const [viewMode, setViewMode] = useState<'human' | 'ai'>('human');
     const [activeFilter, setActiveFilter] = useState<MessageStatus | 'all' | 'ai'>('all');
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -86,7 +90,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
                         const parsed = safeJsonParse<{ schoolId?: string; schoolName?: string } & AiChatLog>(logRaw, null);
                         if (parsed && typeof parsed === 'object') {
                             if (!parsed.schoolId && parsed.schoolName) {
-                                parsed.schoolId = initialSchools.find(s => s.name === parsed.schoolName)?.id;
+                                parsed.schoolId = asArray(schools).find(s => s.name === parsed.schoolName)?.id;
                             }
                             logs.push(parsed);
                         }
@@ -153,13 +157,13 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
         if (viewMode === 'human') {
             const conv = conversations.find(c => c.id === id);
             if (conv && conv.status === 'unread') {
-                setConversations(prev => prev.map(c => c.id === id ? { ...c, status: 'read' } : c));
+                setConversations(prev => asArray(prev).map(c => c.id === id ? { ...c, status: 'read' } : c));
             }
         }
     };
 
     const handleUpdateStatus = (id: string, newStatus: MessageStatus) => {
-        setConversations(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
+        setConversations(prev => asArray(prev).map(c => c.id === id ? { ...c, status: newStatus } : c));
         // If trashing or blocking, deselect the conversation
         if (newStatus === 'trash' || newStatus === 'blocked') {
             setActiveConversationId(null);
@@ -176,11 +180,11 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
             timestamp: new Date().toISOString(),
         };
 
-        setConversations(prev => prev.map(c => {
+        setConversations(prev => asArray(prev).map(c => {
             if (c.id === (activeConversation as Conversation).id) {
                 return {
                     ...c,
-                    messages: [...c.messages, newMessage],
+                    messages: [...asArray(c.messages), newMessage],
                     lastMessageTimestamp: newMessage.timestamp,
                 };
             }
@@ -196,7 +200,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
         let messagesToRender: any[] = [];
         
         if (isHumanMode) {
-             messagesToRender = (activeConversation as Conversation).messages.map(m => ({
+             messagesToRender = asArray((activeConversation as Conversation).messages).map(m => ({
                 id: m.id,
                 text: m.text,
                 sender: m.sender,
@@ -205,7 +209,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
                 imageUrl: m.imageUrl
              }));
         } else {
-             messagesToRender = (activeConversation as AiChatLog).messages.map(m => ({
+             messagesToRender = asArray((activeConversation as AiChatLog).messages).map(m => ({
                 id: m.id,
                 text: m.text,
                 sender: m.sender,
@@ -268,7 +272,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
                     {filteredConversations.length > 0 ? (
                         filteredConversations.map(conv => {
                             const isHuman = 'subject' in conv;
-                            const school = getSchoolById(isHuman ? (conv as Conversation).schoolId : (conv as AiChatLog).schoolId || '');
+                            const school = getSchoolById(schools, isHuman ? (conv as Conversation).schoolId : (conv as AiChatLog).schoolId || '');
                             const lastMessage = isHuman ? (conv as Conversation).messages[(conv as Conversation).messages.length - 1] : null;
 
                             const title = isHuman ? (conv as Conversation).subject : (conv as AiChatLog).studentName;
@@ -306,7 +310,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
                                 {'subject' in activeConversation ? (
                                     <>
                                         <h2 className="text-lg font-bold text-logip-text-header dark:text-gray-100 truncate">{activeConversation.subject}</h2>
-                                        <p className="text-xs font-semibold text-logip-text-subtle uppercase tracking-wider">{getSchoolById(activeConversation.schoolId)?.name || 'Support Request'}</p>
+                                        <p className="text-xs font-semibold text-logip-text-subtle uppercase tracking-wider">{getSchoolById(schools, activeConversation.schoolId)?.name || 'Support Request'}</p>
                                     </>
                                 ) : (
                                      <>
@@ -374,10 +378,10 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ conversations, setConversat
             </main>
 
              {isAudioCallOpen && activeConversation && 'subject' in activeConversation && (
-                <AudioCallModal isOpen={isAudioCallOpen} onClose={() => setIsAudioCallOpen(false)} userName={getSchoolById(activeConversation.schoolId)?.name || 'School Support'} />
+                <AudioCallModal isOpen={isAudioCallOpen} onClose={() => setIsAudioCallOpen(false)} userName={getSchoolById(schools, activeConversation.schoolId)?.name || 'School Support'} />
             )}
             {isVideoCallOpen && activeConversation && 'subject' in activeConversation && (
-                <VideoCallModal isOpen={isVideoCallOpen} onClose={() => setIsVideoCallOpen(false)} userName={getSchoolById(activeConversation.schoolId)?.name || 'School Support'} />
+                <VideoCallModal isOpen={isVideoCallOpen} onClose={() => setIsVideoCallOpen(false)} userName={getSchoolById(schools, activeConversation.schoolId)?.name || 'School Support'} />
             )}
         </div>
     );

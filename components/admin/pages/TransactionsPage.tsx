@@ -18,6 +18,7 @@ import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { AdminUser } from '../AdminLayout';
 import { safeJsonParse } from '../../../utils/security';
 import { formatDateTime } from '../../../utils/date';
+import { asArray } from '../../../utils/guards';
 
 // --- TYPE DEFINITIONS ---
 export interface Transaction {
@@ -53,7 +54,8 @@ const TransactionDashboard: React.FC<{
     transactions: Transaction[];
     chartTimeframe: 'hourly' | 'daily' | 'weekly' | 'monthly';
     setChartTimeframe: (timeframe: 'hourly' | 'daily' | 'weekly' | 'monthly') => void;
-}> = ({ transactions, chartTimeframe, setChartTimeframe }) => {
+}> = ({ transactions: transactionsProp, chartTimeframe, setChartTimeframe }) => {
+    const transactions = asArray(transactionsProp);
     const [dateOffset, setDateOffset] = useState(0);
 
     useEffect(() => {
@@ -230,7 +232,8 @@ interface TransactionsPageProps {
     adminUser: AdminUser;
 }
 
-const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, selectedAdmission, students, setStudents, permissions, getActions, isSuperAdmin, adminUser }) => {
+const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, selectedAdmission, students: studentsProp, setStudents, permissions, getActions, isSuperAdmin, adminUser }) => {
+    const students = asArray(studentsProp);
     const userPrefix = adminUser.email;
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -337,7 +340,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
 
     const handleSaveTransaction = (updatedData: Partial<Transaction>) => {
         if (!modalState.transaction) return;
-        setStudents(prevStudents => prevStudents.map(s => {
+        setStudents(prevStudents => asArray(prevStudents).map(s => {
             if (s.id === modalState.transaction!.studentId) {
                 const updatedStudent: AdminStudent = { ...s };
                 if (updatedData.status) updatedStudent.feeStatus = updatedData.status;
@@ -392,7 +395,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
 
     const handleResetPayment = () => {
         if (!modalState.transaction || !selectedSchool) return;
-        setStudents(prevStudents => prevStudents.map(s => {
+        setStudents(prevStudents => asArray(prevStudents).map(s => {
             if (s.id === modalState.transaction!.studentId) {
                 return { ...s, feeStatus: 'Unpaid', paymentDate: null };
             }
@@ -406,7 +409,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ selectedSchool, sel
     
     const handleRegenerateCredentials = () => {
         if (!modalState.transaction || !selectedSchool) return;
-        const student = students.find(s => s.id === modalState.transaction!.studentId);
+        const student = asArray(students).find(s => s.id === modalState.transaction!.studentId);
         if (!student) return;
         const admissionSettingsKey = `admissionSettings_${student.schoolId}_${student.admissionId}`;
         const settingsRaw = localStorage.getItem(admissionSettingsKey);

@@ -22,8 +22,8 @@ export function useSchoolsAndAdmissions(): UseSchoolsAndAdmissionsResult {
   const [localAdmissions] = useLocalStorage<Admission[]>("admin_admissions", initialAdmissions);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const [schools, setSchools] = useState<School[]>(localSchools);
-  const [admissions, setAdmissions] = useState<Admission[]>(localAdmissions);
+  const [schools, setSchools] = useState<School[]>(() => (isInsForgeConfigured() ? [] : localSchools));
+  const [admissions, setAdmissions] = useState<Admission[]>(() => (isInsForgeConfigured() ? [] : localAdmissions));
   const [loading, setLoading] = useState(isInsForgeConfigured());
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<"insforge" | "localStorage">(
@@ -62,13 +62,19 @@ export function useSchoolsAndAdmissions(): UseSchoolsAndAdmissionsResult {
           setSchools(s);
           setAdmissions(a);
           setSource("insforge");
+          try {
+            localStorage.removeItem("admin_schools");
+            localStorage.removeItem("admin_admissions");
+          } catch {
+            // ignore
+          }
         }
       })
       .catch((e) => {
         if (!cancelled) {
           setError(e?.message ?? "Failed to load from backend");
-          setSchools(localSchools);
-          setAdmissions(localAdmissions);
+          setSchools([]);
+          setAdmissions([]);
           setSource("localStorage");
         }
       })

@@ -3,6 +3,7 @@ import AdminModal from './AdminModal';
 import { AdminStudent, EditLogEntry } from '../pages/StudentsPage';
 import { safeJsonParse } from '../../../utils/security';
 import { formatDateTime } from '../../../utils/date';
+import { asArray } from '../../../utils/guards';
 
 interface EditLogModalProps {
     isOpen: boolean;
@@ -19,7 +20,7 @@ const EditLogModal: React.FC<EditLogModalProps> = ({ isOpen, onClose, student, l
             try {
                 const logRaw = localStorage.getItem(`editHistory_${student.indexNumber}`);
                 const history: EditLogEntry[] = safeJsonParse<EditLogEntry[]>(logRaw, []);
-                const filteredHistory = history.filter(log => log.editor === logType);
+                const filteredHistory = asArray(history).filter(log => log.editor === logType);
                 const seen = new Set();
                 const uniqueHistory = filteredHistory.filter(entry => {
                     const signature = `${entry.timestamp}-${JSON.stringify(entry.changedFields)}`;
@@ -50,7 +51,7 @@ const EditLogModal: React.FC<EditLogModalProps> = ({ isOpen, onClose, student, l
                                 <div className="text-sm text-logip-text-subtle">{formatDateTime(log.timestamp)}</div>
                             </div>
                              <ul className="space-y-1.5 pl-4 border-l-2 border-logip-border dark:border-dark-border">
-                                {log.changedFields.map((change, i) => (
+                                {asArray(log.changedFields).map((change, i) => (
                                     <li key={i} className="text-sm text-logip-text-body dark:text-dark-text-secondary">
                                         <span className="font-semibold text-logip-text-header dark:text-dark-text-primary">{change.field}:</span> {String(change.from)} → {String(change.to)}
                                     </li>
